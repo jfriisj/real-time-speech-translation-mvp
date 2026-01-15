@@ -47,6 +47,22 @@ services:
     networks:
       - speech_net
 
+  asr-service:
+    build:
+      context: .
+      dockerfile: services/asr/Dockerfile
+    container_name: speech-asr-service
+    depends_on:
+      - schema-registry
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      MODEL_NAME: openai/whisper-tiny
+      SCHEMA_DIR: /app/shared/schemas/avro
+    networks:
+      - speech_net
+
 networks:
   speech_net:
     driver: bridge
