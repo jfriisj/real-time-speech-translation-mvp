@@ -9,4 +9,6 @@ dist/
 *.egg-info/
 
 .env/
-.vscode/
+.vscode
+.env
+.vscode/mcp.json
