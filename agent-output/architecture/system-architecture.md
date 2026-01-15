@@ -8,6 +8,7 @@
 |------|--------|-----------|------|
 | 2026-01-15 | Initial architecture baseline + decisions for Epic 1.1 | Establishes the Hard MVP backbone (Kafka + Schema Registry + shared contract) and constrains scope to avoid creep | Epic 1.1 (Shared Infrastructure & Contract Definition) |
 | 2026-01-15 | Pinned canonical `AudioInputEvent`, topic taxonomy, and SR governance notes | Removes naming drift; makes contract + registry behavior explicit for downstream epics | Epic 1.1 (post-delivery alignment) |
+| 2026-01-15 | Epic 1.2 pre-planning guardrails (topics, audio format, failure signaling, delivery semantics) | Prevents downstream integration drift between plans and the v0.1.0 infrastructure contract | Epic 1.2 (ASR Service) |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:
@@ -117,6 +118,40 @@ Deliver a **hard MVP** event-driven speech translation pipeline that is:
 - Kafka broker max message size: 2 MiB (`message.max.bytes=2097152`) for local dev MVP.
 - `AudioInputEvent` inline audio payload hard cap: 1.5 MiB.
 - Larger-than-cap audio is rejected in v0.1.0 (reference/URI pattern is deferred).
+
+### Decision: ASR topic bindings are non-negotiable (Epic 1.2)
+**Context**: The ASR service is the first real microservice to bind to the shared contract. Topic-name drift between plans and the shared infra smoke test will break integration.
+
+**Choice**:
+- ASR MUST consume `AudioInputEvent` from topic `speech.audio.ingress`.
+- ASR MUST publish `TextRecognizedEvent` to topic `speech.asr.text`.
+
+**Consequences**:
+- Any alternate topic names (e.g., `audio-input`, `text-recognized`) are treated as a plan defect unless an explicit architecture change is approved.
+
+### Decision: Supported audio format for MVP
+**Context**: Allowing multiple formats expands the decoding surface area and increases integration ambiguity.
+
+**Choice**:
+- For MVP, `AudioInputEvent.payload.audio_format` MUST be `"wav"`.
+- If `audio_format` is not `"wav"`, services MUST log and drop the event (no crash).
+
+**Alternatives**:
+- Best-effort decode multiple formats (rejected for MVP due to non-determinism and operational complexity).
+
+### Decision: Failure signaling (MVP)
+**Context**: Introducing new error-event schemas or DLQ patterns in Epic 1.2 increases contract surface area and coordination cost.
+
+**Choice**:
+- For MVP, ASR failures (oversize payloads, empty payloads, decode errors, model errors) MUST be handled by **logging + dropping** the event.
+- The system MUST NOT introduce new error-event schemas in Epic 1.2 without an explicit architecture decision.
+
+### Decision: Delivery semantics (MVP)
+**Context**: Kafka consumer processing is typically at-least-once. Exactly-once processing requires additional infrastructure and complexity.
+
+**Choice**:
+- MVP processing semantics are **at-least-once**; duplicate outputs are possible.
+- Downstream services and demos MUST tolerate duplicates (use `correlation_id` for traceability; dedupe is out-of-scope for MVP).
 
 ## Recommendations
 - Keep event set minimal for v0.1.0: audio ingress + recognized text + translated text.

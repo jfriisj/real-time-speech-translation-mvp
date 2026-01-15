@@ -18,6 +18,7 @@
 | Implementation | - | - | - | Completed efficiently with `smoke_infra.py` validation. |
 | QA | - | - | - | No major defects found in code; finding was documentation/alignment. |
 | UAT | - | - | - | Blocked by naming mismatch, then overrides applied. |
+| Release | - | - | - | Blocked by `project.license` warning and remote URL check. |
 | **Total** | < 1 day | < 1 day | - | Fast cycle time. |
 
 ## What Went Well (Process Focus)
@@ -50,7 +51,7 @@
 ## Agent Output Analysis
 
 ### Changelog Patterns
-**Total Handoffs**: 4 major phases (Plan -> Impl -> QA -> UAT -> Release).
+**Total Handoffs**: 5 major phases (Plan -> Impl -> QA -> UAT -> Release).
 **Handoff Chain**: planner -> implementer -> qa -> uat -> release -> retrospective.
 
 | From Agent | To Agent | Artifact | What Requested | Issues Identified |
@@ -59,6 +60,7 @@
 | Implementer | QA | Impl Report | Verification | - |
 | QA | UAT | QA Report | Value Validation | Naming mismatch not blocking QA, but noted as risk |
 | UAT | Release | UAT Report | Release | Blocked by naming mismatch initially |
+| Release | Retro | Release Doc | Analysis | License warning & remote URL placeholder |
 
 **Handoff Quality Assessment**:
 - Handoffs were clear.
@@ -84,7 +86,7 @@
 - Implementation: Created once.
 - QA: Created once.
 - UAT: Created once.
-- Release: Created once.
+- Release: Updated twice (Pre/Post push).
 - **Assessment**: Very clean, linear flow. No "churn" or excessive updates to the plan.
 
 ## Detailed Tool Usage Analysis (Process Focus)
@@ -113,7 +115,6 @@
 
 ## Follow-Up Actions
 - [ ] Update Roadmap Acceptance Criteria to use `AudioInputEvent`.
-- [ ] Create `.gitignore` file.
 - [ ] Update `pyproject.toml` license field syntax.
 - [ ] Configure valid git remote.
 

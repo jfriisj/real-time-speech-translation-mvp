@@ -9,12 +9,13 @@
 |-------------|--------|-----------|
 | 2026-01-15 10:00 | Initial Roadmap Creation | Defining Hard MVP scope based on Thesis MVP Plan |
 | 2026-01-15 19:30 | Epic 1.1 Delivered & AC Update | Updated status to Delivered; renamed AudioProcessingEvent to AudioInputEvent per Retrospective 001 findings. |
+| 2026-01-15 20:30 | Released v0.1.0 & Rescoped v0.2.0 | Release v0.1.0 completed (Infrastructure); moved Services to v0.2.0 to reflect iterative delivery pipeline. |
 
 ---
 
-## Release v0.1.0 - The 'Hard MVP' Skeleton
-**Target Date**: 2026-02-15
-**Strategic Goal**: Establish the "Walking Skeleton"—a functional, event-driven pipeline that moves data end-to-end with correct correlation and schema validation. Prioritize architectural integrity over feature breadth.
+## Release v0.1.0 - Shared Infrastructure Foundation
+**Released**: 2026-01-15
+**Strategic Goal**: Establish the "Walking Skeleton" foundation—a functional event bus and schema contract that allows subsequent services to integrate without coupling.
 
 ### Epic 1.1: Shared Infrastructure & Contract Definition (Shared)
 **Priority**: P0
@@ -44,6 +45,10 @@ So that microservices can communicate reliably without direct dependencies or in
 - Must use Confluent Schema Registry.
 
 ---
+
+## Release v0.2.0 - Core Services (The 'Walking Skeleton')
+**Target Date**: 2026-02-15
+**Strategic Goal**: Implement the core functional services (ASR, Translation) on top of the shared infrastructure to achieve end-to-end data flow.
 
 ### Epic 1.2: Audio-to-Text Ingestion (ASR Service)
 **Priority**: P0
@@ -118,12 +123,7 @@ So that I can validate the performance claims of the architecture.
 
 ---
 
-## Release v0.2.0 - Expand & Speak (MVP+)
-**Target Date**: TBD
-**Strategic Goal**: Demonstrate the "Expandability" of the shared architecture by adding a new modality (TTS) without rewriting existing services.
-
-### Epic 2.1: Speech Synthesis (TTS Service)
-**Priority**: P1
+## Release v0.3.0 - Expand & Speak (MVP+)
 **Status**: Planned
 
 **User Story**:
