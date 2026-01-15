@@ -1,0 +1,143 @@
+\documentclass[a4paper,11pt]{article}
+
+%%%%%%%%%%%%%%%%%%%
+%%%% PACKAGES %%%%%
+%%%%%%%%%%%%%%%%%%%
+
+
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}  
+
+\usepackage{graphicx}               % Håndtering af billeder
+%\usepackage{graphics}              % Udkommenteret da den ikke ændre på noget
+%\usepackage{import}                % Udkommenteret da den ikke ændre på noget
+\usepackage{tabularx}               % for ability to adjust column spacing in tabular better
+%\usepackage{multirow}              % Udkommenteret da den ikke ændre på noget, antager det er noget med flere kolonner
+\usepackage{float}                  % forhindre figure i at placere sig i toppen af en side, husk at tilføje [H]
+\usepackage[portrait]{geometry}     % Package for changing page margins (before fancyhdr) 
+\usepackage{lastpage}               % bruges til at finde sidste side til i footer
+\usepackage{fancyhdr}               % Package to change header and footer
+\usepackage[danish]{babel}         % Load language package
+\usepackage{setspace} 
+\usepackage{tabto}                  % Packages for tabs
+\usepackage{wrapfig}                % Used to wrap text arrounc images
+\usepackage{hyperref}               %web page link package
+
+\usepackage{pdflscape}              % Used to make pages in landscape mode
+\usepackage{longtable}              % Add the option to create a table which expands over multiple pages
+
+
+\usepackage{multirow}       % Bruges i tabeller til at tillade flere rows at expande over
+
+
+
+%\usepackage{glossaries}
+%\input{glossaries}
+
+% Provices alot of colors, they can be seen here https://www.overleaf.com/learn/latex/Using_colours_in_LaTeX 
+\usepackage[dvipsnames]{xcolor}
+
+\usepackage{cite}
+
+% added an option to let an enumerate continue counting from the last enumerate
+\usepackage{enumitem}
+
+%allow subfigures insite a figure
+\usepackage{subcaption}
+
+
+
+
+
+% Aner ikke hvad den gør
+%\usepackage{amssymb}                % Math symbols
+
+
+
+%%%%%%%%%%%%%%%%%%%
+%%%%% SETTINGS %%%%
+%%%%%%%%%%%%%%%%%%%
+% margin setup
+\geometry{a4paper, top=3cm, bottom=3cm, left = 2.5cm, right= 2.5cm}
+% Remove indentation for a new paragraf
+\setlength{\parindent}{0pt}                                 
+% Load language
+\selectlanguage{English}                                    
+% Sets font to Sans Serif, which is required for the document
+%\renewcommand{\familydefault}{\sfdefault}                   
+
+% Color style links
+\hypersetup{
+  colorlinks   = true, % Colours links instead of red boxes
+  urlcolor     = Blue, % Colour for external hyperlinks
+  %linkcolor    = BlueViolet, % Colour of internal links
+  linkcolor    = Black, % Colour of internal links
+  citecolor   = Periwinkle % Colour of citations
+} 
+
+% SETUP OF TOC
+% \setcounter{tocdepth}{-1} %-- only parts
+% \setcounter{tocdepth}{0}  %-- only parts and chapters
+% \setcounter{tocdepth}{1}  %-- part,chapters,sections
+\setcounter{tocdepth}{2}  %-- part,chapters,sections, subsections
+% \setcounter{tocdepth}{3}  %-- part,chapters,sections, subsections,subsubsections
+% \setcounter{tocdepth}{4}  %-- part,chapters,sections, subsections,subsubsections and paragraphs
+% \setcounter{tocdepth}{5}  %-- part,chapters,sections, subsections, subsubsections, paragraphs and subparagraphs.
+
+
+% Page Header Styling
+\pagestyle{fancy}                                           % Default 
+%\fancyhf{}                      
+% fixes issue where fancyhdr complains that header in to low
+\setlength{\headheight}{14.5pt}                             
+
+% Left header column
+% \lhead{ANALYSE OG DESIGN AF PLATFORM TIL REALTIDS TALEOVERSÆTTELSE}
+% \lhead{Analyse og design af platform til realtids taleoversættelse}
+
+\lhead{Analysis and design of a platform for real-time speech translation}
+
+%\lhead{}
+% Center colum header
+\chead{}
+% Right header Column
+\rhead{4 august 2025}
+%\rhead{}
+
+% Left footer column
+\lfoot{Jon Friis Jakobsen}
+%\lfoot{}
+% Center footer column
+%\cfoot{}
+% Right footer column
+%\rfoot{Page \thepage \hspace{1pt} of \pageref{LastPage}}
+%\rfoot{}
+
+
+
+%\setlength{\marginparwidth}{2cm}                           % Udkommenteret da den ikke ændre på noget
+%\setstretch{1} % package=setspace                          % Udkommenteret da den ikke ændre på noget
+
+
+\begin{document}
+
+\thispagestyle{empty}
+\input{Frontpage}
+\newpage
+
+\pagenumbering{roman}
+
+\newpage
+\tableofcontents
+\newpage
+
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{thesis_statement}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

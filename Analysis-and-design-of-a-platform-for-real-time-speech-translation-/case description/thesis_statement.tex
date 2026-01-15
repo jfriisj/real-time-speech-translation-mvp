@@ -1,0 +1,82 @@
+\section{Problem Statement}
+
+\subsection{Background and Motivation}
+
+In a world characterized by increasing globalization and digitalization, the need for effective communication across languages is more urgent than ever. Real-time speech-to-speech translation has the potential to break down language barriers and create new opportunities for collaboration, knowledge sharing and access to information across borders\cite{mordor2024speech,kudo2024stats}.
+This applies not only to large companies, but also to smaller actors, public institutions and civil society, where linguistic inclusion can have a major impact on participation and equality\cite{unesco2022inclusion}.
+
+\smallskip
+
+Current solutions in the real-time speech-to-speech translation market are primarily developed and owned by large technology companies such as Microsoft, Amazon and Google. These platforms are often embedded in larger, proprietary ecosystems, which can make them inaccessible, expensive or difficult to adapt to smaller actors, open source environments or specialized applications. At the same time, independent research on optimal architectural principles for such systems is lacking, especially around the balance between latency, scalability and robustness\cite{xu2025scalability, zhang2024direct}.
+
+The market for real-time speech-to-speech translation is dominated by large technology companies such as Google (Alphabet Inc.), Microsoft Corporation and Amazon, which offer integrated solutions via Google Translate \cite{google_cloud_translate}, Microsoft Translator \cite{microsoft_translator} and AWS' combination of Transcribe, Translate and Polly \cite{aws_transcribe,aws_translate,aws_polly}, respectively.
+
+\smallskip
+
+Therefore, this project focuses on developing and evaluating an alternative architectural approach based on event-driven microservices\cite{newman2019monolith,richardson2018microservices,fowler2014microservices}, with a particular focus on optimizing the balance between latency, scalability and robustness in real-time speech-to-speech translation.
+
+\subsection{Problem Statement}
+
+Existing research on microservice architecture and real-time translation systems rarely addresses the complex integration of multiple AI components under stringent latency requirements. The literature focuses primarily on improving individual components (ASR models, translation quality) or monolithic end-to-end systems \cite{bahdanau2014neural,vaswani2017attention,radford2022whisper,wang2020fairseq}, but lacks systematic treatment of distributed architectures specifically designed for real-time speech-to-speech translation \cite{xu2025scalability,zhang2024direct}.
+
+\smallskip
+
+In particular, there is a need for empirical knowledge on how event-driven communication can be optimized to handle the sequential data flow from speech to speech through multiple processing steps, while allowing the system to scale horizontally and maintain high availability under varying load scenarios\cite{kleppmann2017designing,apachekafka2023,kubernetes2023}.
+
+\subsection{Main question}
+
+How can an event-driven microservice architecture be designed and implemented to deliver robust and scalable real-time speech-to-speech translation with measurable performance optimization?
+
+\subsection{Sub-questions}
+\begin{enumerate}
+\item What architectural principles and design patterns support an efficient real-time speech translation pipeline?
+\item What factors affect the system's latency and ability to scale?
+\item How can these factors be measured and optimized in practice?
+\item How can the system be made robust and available even if individual components fail?
+\item How can the system's performance and quality be evaluated and possibly compared to existing solutions?
+\end{enumerate}
+
+\section{Research Contribution and Originality}
+
+The project will contribute as a reference architecture for event-driven real-time translation systems, where the central architectural principles and design patterns are analyzed and discussed based on the sub-question of precisely these choices and considerations. The empirical analysis of performance trade-offs in microservice-based AI pipelines is based on a systematic collection of data on the factors that affect the system's latency and scalability, as well as how these factors can be measured and optimized in practice. The identification of critical design patterns for low-latency integration of AI components is also included in the discussion of both architecture and performance. The development of a concrete platform and dissemination of best practices aim to achieve high robustness and enable a comparison with existing solutions, so that the system's strengths and weaknesses can be assessed in relation to these alternatives. Finally, evaluation and comparison form the framework for the work with benchmark datasets and evaluation methods, while the project's methodological contribution regarding systematic performance evaluation and measurement of robustness and scalability is integrated as a central part of the analysis.
+
+\subsection{Success criteria and evaluation parameters}
+
+The success of the project is evaluated by measuring the system's response times, capacity, availability and resource consumption during tests with increasing load. The results are compared with set requirements for response time, concurrent sessions and resource utilization. The translation quality is assessed both automatically and by human assessment in relation to commercial solutions. The system's implementation ability and documentation are tested by installation on a cloud platform, and the flexibility is tested by extension to a new language pair. All results are documented and discussed in the report.
+
+\subsection{Minimum Viable Product (MVP)}
+
+At a minimum, the project delivers an event-driven pipeline that enables live transcription and translation from one language to another in as close to real time as possible. The user speaks into the system, which transcribes the speech, translates the text and returns the translated text (possibly also as synthetic speech). The focus is on demonstrating low latency and robust event flow between the components, where the entire process from input to output occurs automatically and without manual intervention. The MVP must be demonstrable with integration of existing open source components for speech recognition, machine translation and text-to-speech.
+
+
+\section{Schedule}
+\begin{table}[!ht]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|X|}
+\hline
+\textbf{Period} & \textbf{Activities} & \textbf{Deliverables} \\
+\hline
+Sep-Oct & Literature study, requirements analysis & Literature review, Requirements specifications \\
+\hline
+Nov-Dec & Architecture design, technology evaluation & Technical architecture document \\
+\hline
+Jan-Mar & Implementation, integration testing & MVP demonstrator, working prototype, test suite \\
+\hline
+April & Performance testing, evaluation & Experiment results, benchmark data \\
+\hline
+May & Analysis, report writing & Final thesis, presentation \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Scope}
+
+The project includes design and implementation of microservice architecture, integration of existing AI components, evaluation of performance and scalability, as well as deployment strategies for both cloud and on-premise. Development of new AI models, detailed security analysis, user interface design, legal aspects and in-depth cost optimization are outside the scope of the project.
+
+\subsection{Expected benefits and perspectives}
+
+Academically, the project is expected to result in a master's thesis focusing on performance optimization in microservice-based AI systems, an open source reference implementation and contributions to relevant conferences. On a practical level, the project delivers a functional platform, documented best practices for deployment and a cost-effective alternative to proprietary solutions. Perspectives for future research include edge deployment, federated learning, integration of multimodal inputs and automatic scaling based on predicted demand.
+
+\subsection{Risk management}
+
+Technical risks include, among others, excessive latency, scalability issues and complex integration. These are countered with fallback solutions, focus on vertical scaling and prioritization of core functionality. Resource risks such as timeouts and lack of computing resources are handled through the use of pre-implemented components, utilization of cloud credits and local fallback options.

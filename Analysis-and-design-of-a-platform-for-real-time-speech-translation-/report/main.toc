@@ -1,0 +1,31 @@
+\contentsline {chapter}{Contents}{ii}{}%
+\contentsline {chapter}{\chapternumberline {1}Introduction}{1}{}%
+\contentsline {subsection}{Background and Motivation}{1}{}%
+\contentsline {subsection}{Problem Statement}{1}{}%
+\contentsline {subsection}{Research Questions}{1}{}%
+\contentsline {subsection}{Success Criteria}{1}{}%
+\contentsline {chapter}{\chapternumberline {2}Background}{2}{}%
+\contentsline {subsection}{State of the Art}{2}{}%
+\contentsline {subsection}{Microservices vs. Monoliths}{2}{}%
+\contentsline {subsection}{AI Components}{2}{}%
+\contentsline {subsection}{Event-Driven Principles}{2}{}%
+\contentsline {chapter}{\chapternumberline {3}Analysis and Design}{3}{}%
+\contentsline {subsection}{System Architecture}{3}{}%
+\contentsline {subsection}{Data Modeling}{3}{}%
+\contentsline {subsection}{End-to-End Pipeline}{3}{}%
+\contentsline {subsection}{Orchestration Logic}{3}{}%
+\contentsline {chapter}{\chapternumberline {4}Implementation}{4}{}%
+\contentsline {subsection}{Container Orchestration}{4}{}%
+\contentsline {subsection}{Scaling Strategies}{4}{}%
+\contentsline {subsection}{CI/CD \& GitOps}{4}{}%
+\contentsline {subsection}{Metrics Collection Setup}{4}{}%
+\contentsline {chapter}{\chapternumberline {5}Evaluation}{5}{}%
+\contentsline {subsection}{Performance Results}{5}{}%
+\contentsline {subsection}{Scalability Testing}{5}{}%
+\contentsline {subsection}{Cross-Linguistic Analysis}{5}{}%
+\contentsline {subsection}{Robustness Evaluation}{5}{}%
+\contentsline {chapter}{\chapternumberline {6}Conclusion}{6}{}%
+\contentsline {subsection}{Summary}{6}{}%
+\contentsline {subsection}{Future Work}{6}{}%
+\contentsline {appendix}{\chapternumberline {A}Appendix}{7}{}%
+\contentsline {chapter}{Bibliography}{8}{}%

@@ -1,0 +1,25 @@
+{
+  "type": "record",
+  "name": "TextRecognizedEvent",
+  "namespace": "ai.speech.shared.events",
+  "doc": "ASR output event.",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "event_type", "type": "string"},
+    {"name": "correlation_id", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "source_service", "type": "string"},
+    {
+      "name": "payload",
+      "type": {
+        "type": "record",
+        "name": "TextRecognizedPayload",
+        "fields": [
+          {"name": "text", "type": "string"},
+          {"name": "language", "type": "string"},
+          {"name": "confidence", "type": "float"}
+        ]
+      }
+    }
+  ]
+}

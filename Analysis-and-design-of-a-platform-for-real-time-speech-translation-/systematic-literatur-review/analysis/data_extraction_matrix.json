@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "extraction_date": "2025-12-20",
+    "protocol_version": "1.0",
+    "extractor": "Automated systematic review agent",
+    "notes": "No studies met inclusion criteria after full-text screening. All 7 UNSURE records from Level-1 were excluded at Level-2 for lacking distributed/event-driven/microservice architecture descriptions."
+  },
+  "included_studies": [],
+  "exclusion_summary": {
+    "total_assessed": 7,
+    "total_excluded": 7,
+    "exclusion_reasons": {
+      "EXCL01_model_only_no_architecture": 6,
+      "EXCL04_pipeline_less_than_2_components": 1
+    }
+  },
+  "evidence_notes": "All assessed papers described ASR/MT/TTS pipelines with latency/quality optimization, but none described distributed system architectures with microservice decomposition, event-driven messaging, or distributed deployment infrastructure. Most were model-centric or on-device monolithic systems."
+}

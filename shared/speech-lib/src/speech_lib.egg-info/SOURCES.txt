@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+src/speech_lib/__init__.py
+src/speech_lib/constants.py
+src/speech_lib/consumer.py
+src/speech_lib/correlation.py
+src/speech_lib/events.py
+src/speech_lib/producer.py
+src/speech_lib/schema_registry.py
+src/speech_lib/serialization.py
+src/speech_lib.egg-info/PKG-INFO
+src/speech_lib.egg-info/SOURCES.txt
+src/speech_lib.egg-info/dependency_links.txt
+src/speech_lib.egg-info/requires.txt
+src/speech_lib.egg-info/top_level.txt
+tests/test_events.py
+tests/test_serialization.py

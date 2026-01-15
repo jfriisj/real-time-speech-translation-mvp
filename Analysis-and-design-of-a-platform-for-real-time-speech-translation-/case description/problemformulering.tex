@@ -1,0 +1,93 @@
+\section{Problemformulering}
+
+\subsection{Baggrund og motivation}
+
+I en verden præget af stigende globalisering og digitalisering er behovet for effektiv kommunikation på tværs af sprog mere presserende end nogensinde. Tale-til-tale-oversættelse i realtid har potentialet til at nedbryde sprogbarrierer og skabe nye muligheder for samarbejde, videndeling og adgang til information på tværs af grænser\cite{mordor2024speech,kudo2024stats}. 
+Dette gælder ikke kun for store virksomheder, men også for mindre aktører, offentlige institutioner og civilsamfundet, hvor sproglig inklusion kan have en stor indflydelse på deltagelse og ligestilling\cite{unesco2022inclusion}.
+
+\smallskip
+
+Nuværende løsninger på markedet for tale-til-tale-oversættelse i realtid er primært udviklet og ejet af store teknologivirksomheder som Microsoft, Amazon og Google. Disse platforme er ofte indlejret i større, proprietære økosystemer, hvilket kan gøre dem utilgængelige, dyre eller vanskelige at tilpasse til mindre aktører, open source-miljøer eller specialiserede applikationer. Samtidig mangler der uafhængig forskning i optimale arkitekturprincipper for sådanne systemer, især omkring balancen mellem latenstid, skalerbarhed og robusthed\cite{xu2025scalability, zhang2024direct}.
+
+
+Markedet for tale-til-tale-oversættelse i realtid er domineret af store teknologivirksomheder som Google (Alphabet Inc.), Microsoft Corporation og Amazon, der tilbyder integrerede løsninger via henholdsvis Google Translate \cite{google_cloud_translate}, Microsoft Translator \cite{microsoft_translator} og AWS' kombination af Transcribe, Translate og Polly \cite{aws_transcribe,aws_translate,aws_polly}.
+
+\smallskip
+
+Derfor fokuserer dette projekt på at udvikle og evaluere en alternativ arkitektonisk tilgang baseret på begivenhedsdrevne mikrotjenester\cite{newman2019monolith,richardson2018microservices,fowler2014microservices}, med et særligt fokus på at optimere balancen mellem latenstid, skalerbarhed og robusthed i tale-til-tale-oversættelse i realtid.
+
+
+\subsection{Problemstilling}
+
+Eksisterende forskning i mikrotjenestearkitektur og realtidsoversættelsessystemer omhandler sjældent den komplekse integration af flere AI-komponenter under strenge latenstidskrav. Litteraturen fokuserer primært på at forbedre individuelle komponenter (ASR-modeller, oversættelseskvalitet) eller monolitiske end-to-end-systemer \cite{bahdanau2014neural,vaswani2017attention,radford2022whisper,wang2020fairseq}, men mangler systematisk behandling af distribuerede arkitekturer, der er specifikt designet til tale-til-tale-oversættelse i realtid \cite{xu2025scalability,zhang2024direct}.
+
+\smallskip
+
+Især er der behov for empirisk viden om, hvordan hændelsesdrevet kommunikation kan optimeres til at håndtere den sekventielle datastrøm fra tale til tale gennem flere behandlingstrin, samtidig med at systemet kan skaleres horisontalt og opretholde høj tilgængelighed under varierende belastningsscenarier\cite{kleppmann2017designing,apachekafka2023,kubernetes2023}.
+
+\subsection{Hovedspørgsmål}
+
+Hvordan kan en event-drevet mikroservice-arkitektur designes og implementeres til at levere robust og skalerbar realtids tale-til-tale oversættelse med målbar performance-optimering?
+
+\subsection{Underspørgsmål}
+\begin{enumerate}
+    \item Hvilke arkitekturprincipper og designmønstre understøtter en effektiv realtids pipeline til taleoversættelse?
+    \item Hvilke faktorer påvirker systemets latenstid og evne til at skalere?
+    \item Hvordan kan disse faktorer måles og optimeres i praksis?
+    \item Hvordan kan systemet gøres robust og tilgængeligt, selv hvis enkelte komponenter fejler?
+    \item Hvordan kan systemets performance og kvalitet evalueres og evt. sammenlignes med eksisterende løsninger?
+\end{enumerate}
+
+
+\section{Forskningsbidrag og originalitet}
+
+Projektet vil bidrage som referencearkitektur for event-drevne realtidsoversættelsessysteme, hvor de centrale arkitektoniske principper og designmønstre analyseres og diskuteres på baggrund af delspørgsmålet om netop disse valg og overvejelser. Den empiriske analyse af performance-trade-offs i microservice-baserede AI-pipelines er baseret på en systematisk indsamling af data om de faktorer, der påvirker systemets latenstid og skalerbarhed, samt hvordan disse faktorer kan måles og optimeres i praksis. Identifikationen af kritiske designmønstre for lav-latency integration af AI-komponenter er også inkluderet i diskussionen af både arkitektur og performance. Udviklingen af en konkret platform og formidling af bedste praksis sigter mod at opnå høj robusthed og muliggøre en sammenligning med eksisterende løsninger, således at systemets styrker og svagheder kan vurderes i forhold til disse alternativer. Endelig danner evaluering og sammenligning rammen for arbejdet med benchmark-datasæt og evalueringsmetoder, mens projektets metodologiske bidrag vedrørende systematisk performanceevaluering og måling af robusthed og skalerbarhed er integreret som en central del af analysen.
+
+\subsection{Succeskriterier og evalueringsparametre}
+
+Projektets succes evalueres ved at måle systemets svartider, kapacitet, tilgængelighed og ressourceforbrug under test med stigende belastning. Resultaterne sammenlignes med fastsatte krav til svartid, samtidige sessioner og ressourceudnyttelse. Oversættelseskvaliteten vurderes både automatisk og ved menneskelig vurdering i forhold til kommercielle løsninger. Systemets implementeringsevne og dokumentation testes ved installation på en cloudplatform, og fleksibiliteten testes ved udvidelse til et nyt sprogpar. Alle resultater dokumenteres og diskuteres i rapporten.
+
+\subsection{Minimum Viable Product (MVP)}
+
+Som minimum leverer projektet en event-drevet pipeline, der muliggør live transskribering og oversættelse fra ét sprog til et andet i så tæt på realtid som muligt. Brugeren taler ind i systemet, som transskriberer talen, oversætter teksten og returnerer den oversatte tekst (eventuelt også som syntetisk tale). Fokus er på at demonstrere lav latenstid og robust event-flow mellem komponenterne, hvor hele processen fra input til output sker automatisk og uden manuel indgriben. MVP'en skal kunne demonstreres med integration af eksisterende open source-komponenter for talegenkendelse, maskinoversættelse og tekst-til-tale.
+
+% \subsection{Proof of Concept og Minimum Viable Product}
+
+% \textbf{Proof of Concept (PoC):}
+% Som første skridt udvikles en PoC for at validere de kritiske arkitektoniske antagelser og reducere teknisk risiko. PoC'en fokuserer på at bevise, at event-drevet kommunikation mellem ASR, maskinoversættelse og TTS-komponenter kan opnå acceptable latenstider i en mikroservice-arkitektur. Dette omfatter teknisk validering af message-passing mellem services, måling af end-to-end latenstid og verifikation af, at systemet kan håndtere real-time datastrømme uden betydelige flaskehalse. PoC'en implementeres som en forenklet pipeline med basale komponenter for at demonstrere den overordnede arkitekturs gennemførlighed.
+% \smallskip
+% \textbf{Minimum Viable Product (MVP):}
+% Baseret på PoC'ens validering leverer projektet som minimum en event-drevet pipeline, der muliggør live transskribering og oversættelse fra ét sprog til et andet i så tæt på realtid som muligt. Brugeren taler ind i systemet, som transskriberer talen, oversætter teksten og returnerer den oversatte tekst (eventuelt også som syntetisk tale). Fokus er på at demonstrere lav latenstid og robust event-flow mellem komponenterne, hvor hele processen fra input til output sker automatisk og uden manuel indgriben. MVP'en skal kunne demonstreres med integration af eksisterende open source-komponenter for talegenkendelse, maskinoversættelse og tekst-til-tale, og bygger direkte videre på de arkitektoniske principper som PoC'en har valideret.
+
+\section{Tidsplan}
+\begin{table}[h!]
+    \centering
+    \begin{tabularx}{\textwidth}{|l|X|X|}
+        \hline
+        \textbf{Periode} & \textbf{Aktiviteter} & \textbf{Leverancer} \\
+        \hline
+        Sep-Okt & Litteraturstudie, kravanalyse & Literature review, Krav specifikationer \\
+        \hline
+        Nov-Dec & Arkitekturdesign, teknologievaluering & Teknisk arkitektur dokument \\
+        \hline
+        Jan-Mar & Implementering, integration testing & MVP demonstrator, fungerende prototype, test suite \\
+        \hline
+        April & Performance testing, evaluering & Eksperimentresultater, benchmark data \\
+        \hline
+        Maj & Analyse, rapportskrivning & Final thesis, præsentation \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+\subsection{Afgrænsning}
+
+Projektet omfatter design og implementering af mikroservice-arkitektur, integration af eksisterende AI-komponenter, evaluering af performance og skalerbarhed samt deployment-strategier til både cloud og on-premise. Udvikling af nye AI-modeller, detaljeret sikkerhedsanalyse, brugergrænsefladedesign, juridiske aspekter og dybdegående cost-optimering er uden for projektets scope.
+
+\subsection{Forventet udbytte og perspektivering}
+
+Akademisk forventes projektet at resultere i en kandidatafhandling med fokus på performanceoptimering i mikroservice-baserede AI-systemer, en open source referenceimplementering samt bidrag til relevante konferencer. På det praktiske plan leveres en funktionsdygtig platform, dokumenterede best practices for deployment og et omkostningseffektivt alternativ til proprietære løsninger. Perspektiver for fremtidig forskning omfatter blandt andet edge deployment, federated learning, integration af multimodale input og automatisk skalering baseret på forudsiget efterspørgsel.
+
+\subsection{Risikostyring}
+
+Tekniske risici omfatter blandt andet for høj latenstid, skalerbarhedsproblemer og kompleks integration. Disse imødegås med fallback-løsninger, fokus på vertikal skalering og prioritering af kernefunktionalitet. Ressourcemæssige risici såsom tidsoverskridelser og manglende computing-ressourcer håndteres gennem anvendelse af pre-implementerede komponenter, udnyttelse af cloud credits og lokale fallback-muligheder.
+

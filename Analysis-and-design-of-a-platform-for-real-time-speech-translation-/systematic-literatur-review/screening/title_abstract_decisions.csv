@@ -1,0 +1,51 @@
+record_id,decision,reason_code,reason_text,notes
+arxiv:2502.03382v2,UNSURE,,,Abstract missing in export; could contain system/architecture details.
+arxiv:2503.04799v1,EXCLUDE,EXCL03,Papers without a concrete architecture/system description (e.g., purely conceptual opinion pieces without design specifics).,Title indicates a review; no specific distributed system/pipeline described.
+arxiv:2310.11141v1,EXCLUDE,EXCL03,Papers without a concrete architecture/system description (e.g., purely conceptual opinion pieces without design specifics).,Thesis proposal; architecture/evaluation unclear at title-only.
+arxiv:2406.03049v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Title suggests model/method focus; no distributed/microservice architecture indicated.
+arxiv:2504.18715v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Appears model/task-focused; no distributed architecture indicated.
+arxiv:2506.00740v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Video dubbing method; no distributed/microservice architecture indicated.
+arxiv:2011.00033v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Transformer architecture paper; distributed system not evidenced from title.
+arxiv:2508.13358v1,UNSURE,,,Abstract missing; title suggests system-level latency work but architecture (distributed vs monolithic) unclear.
+arxiv:2406.00497v2,EXCLUDE,EXCL03,Papers without a concrete architecture/system description (e.g., purely conceptual opinion pieces without design specifics).,Survey/review ("Recent Advances"); not a concrete system architecture study.
+arxiv:2406.02133v1,EXCLUDE,EXCL02,Monolithic end-to-end systems with no distributed/microservice/event-driven architecture described.,On-device S2ST likely monolithic; no distributed/microservice architecture indicated.
+arxiv:2407.11010v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Algorithmic focus (beam search) without system architecture indicated.
+arxiv:2006.03331v1,UNSURE,,,IWSLT system paper; abstract missing so pipeline/deployment/distribution unclear.
+arxiv:2406.10223v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Synthesizer/model contribution; no distributed architecture indicated.
+arxiv:2409.15911v3,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Training strategy focus; no distributed architecture indicated.
+arxiv:2509.01200v2,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,MoE/policy model; no distributed system architecture indicated.
+arxiv:2103.08364v2,EXCLUDE,EXCL03,Papers without a concrete architecture/system description (e.g., purely conceptual opinion pieces without design specifics).,Evaluation perspective paper; system architecture not indicated.
+arxiv:2106.04833v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Model architecture focus; no distributed/microservice architecture indicated.
+arxiv:2110.08214v3,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Incremental TTS focus; distributed system architecture not indicated.
+arxiv:2509.21932v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Method/policy focus; no distributed architecture indicated.
+arxiv:2212.07850v2,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Policy/model contribution; no distributed architecture indicated.
+arxiv:2211.05967v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Model/decoding method; no distributed architecture indicated.
+arxiv:2312.05187v1,EXCLUDE,EXCL02,Monolithic end-to-end systems with no distributed/microservice/event-driven architecture described.,Large end-to-end system/model; no distributed/microservice architecture indicated in title.
+arxiv:2510.12195v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,LLM segmentation method; no distributed architecture indicated.
+arxiv:1509.09090v1,EXCLUDE,EXCL02,Monolithic end-to-end systems with no distributed/microservice/event-driven architecture described.,Real-time ST title but distributed/microservice architecture not evidenced.
+arxiv:2506.18828v1,UNSURE,,,IWSLT system submission; abstract missing so architecture/pipeline composition unclear.
+arxiv:2507.09342v3,EXCLUDE,EXCL03,Papers without a concrete architecture/system description (e.g., purely conceptual opinion pieces without design specifics).,Corpus creation paper; not a distributed speech translation system architecture study.
+arxiv:2511.09525v1,UNSURE,,,Virtual-meetings context could imply distributed pipeline; abstract missing so architecture unclear.
+arxiv:2505.02707v1,EXCLUDE,EXCL04,Papers that do not include at least two of ASR/MT/TTS in the described pipeline.,Voice role-play; translation pipeline not evidenced from title.
+arxiv:2507.18827v1,EXCLUDE,EXCL04,Papers that do not include at least two of ASR/MT/TTS in the described pipeline.,Education/navigation tool; speech translation pipeline not evidenced from title.
+arxiv:2110.05249v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Speech-to-text generation modeling; no distributed architecture indicated.
+arxiv:2007.16193v1,EXCLUDE,EXCL03,Papers without a concrete architecture/system description (e.g., purely conceptual opinion pieces without design specifics).,Evaluation toolkit; not an architecture/system study of an ST pipeline.
+arxiv:2306.11646v1,EXCLUDE,EXCL03,Papers without a concrete architecture/system description (e.g., purely conceptual opinion pieces without design specifics).,Survey/review ("Recent Advances"); not a concrete architecture study.
+arxiv:2310.00230v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Foundation models focus; no distributed architecture indicated.
+arxiv:2310.17940v4,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Generic simult. generation framework; no distributed architecture indicated.
+arxiv:2507.17527v3,UNSURE,,,Product/system-like title; abstract missing so distributed vs monolithic architecture unclear.
+arxiv:2310.14806v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Streaming recognition/translation method; no distributed architecture indicated.
+arxiv:2305.16894v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,MT robustness paper; no distributed pipeline architecture indicated.
+arxiv:cmp-lg/9607031v1,EXCLUDE,EXCL06,Outside the date range (before 2014 or after 2025).,Published 1996.
+arxiv:2310.04399v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Decoding approach; no distributed architecture indicated.
+arxiv:2407.12020v2,EXCLUDE,EXCL04,Papers that do not include at least two of ASR/MT/TTS in the described pipeline.,ASL translation (sign language) not the target speech translation pipeline.
+arxiv:2010.11362v1,EXCLUDE,EXCL04,Papers that do not include at least two of ASR/MT/TTS in the described pipeline.,Not speech translation; GAN upsampling.
+arxiv:1807.07281v3,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,TTS model paper; no distributed architecture indicated.
+arxiv:2401.03497v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,Audio pretraining model; no distributed architecture indicated.
+arxiv:2312.12783v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,ASR training method; no distributed architecture indicated.
+arxiv:2311.10057v3,EXCLUDE,EXCL04,Papers that do not include at least two of ASR/MT/TTS in the described pipeline.,Dataset for audio captions; not speech translation pipeline.
+arxiv:2402.02781v1,EXCLUDE,EXCL04,Papers that do not include at least two of ASR/MT/TTS in the described pipeline.,Sound event detection; not speech translation pipeline.
+arxiv:2402.05457v1,EXCLUDE,EXCL01,Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.,ASR-focused method; no distributed architecture indicated.
+arxiv:2404.14736v1,EXCLUDE,EXCL04,Papers that do not include at least two of ASR/MT/TTS in the described pipeline.,Voice UX qualitative study; not speech translation pipeline.
+arxiv:2303.13631v2,EXCLUDE,EXCL04,Papers that do not include at least two of ASR/MT/TTS in the described pipeline.,Music analysis; not speech translation pipeline.
+arxiv:2310.16609v1,EXCLUDE,EXCL04,Papers that do not include at least two of ASR/MT/TTS in the described pipeline.,NLU robustness to ASR errors; not speech translation pipeline.

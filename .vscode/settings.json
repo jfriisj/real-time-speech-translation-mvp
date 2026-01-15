@@ -1,0 +1,6 @@
+{
+    "terminal.integrated.shellIntegration.enabled": true,
+    "chat.tools.terminal.autoApprove": {
+        "/home/jonfriis/github/translation-engine/.venv/bin/python": true
+    }
+}

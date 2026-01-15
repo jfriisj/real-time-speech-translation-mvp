@@ -1,0 +1,26 @@
+{
+  "type": "record",
+  "name": "AudioInputEvent",
+  "namespace": "ai.speech.shared.events",
+  "doc": "Audio ingress event. Payload bytes must be <= 1.5MB for MVP.",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "event_type", "type": "string"},
+    {"name": "correlation_id", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "source_service", "type": "string"},
+    {
+      "name": "payload",
+      "type": {
+        "type": "record",
+        "name": "AudioInputPayload",
+        "fields": [
+          {"name": "audio_bytes", "type": "bytes"},
+          {"name": "audio_format", "type": "string", "doc": "e.g., wav"},
+          {"name": "sample_rate_hz", "type": "int"},
+          {"name": "language_hint", "type": ["null", "string"], "default": null}
+        ]
+      }
+    }
+  ]
+}

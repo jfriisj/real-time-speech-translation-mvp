@@ -1,0 +1,14 @@
+{
+  "initial_records": 239,
+  "final_records": 214,
+  "duplicates_removed": 25,
+  "sources": {
+    "arxiv": 39,
+    "openalex": 100,
+    "crossref": 100
+  },
+  "dedup_rules": [
+    "DOI exact match (case-insensitive)",
+    "Title (alphanumeric only) + Year match"
+  ]
+}

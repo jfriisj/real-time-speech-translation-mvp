@@ -1,0 +1,26 @@
+{
+  "type": "record",
+  "name": "TextTranslatedEvent",
+  "namespace": "ai.speech.shared.events",
+  "doc": "Translation output event.",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "event_type", "type": "string"},
+    {"name": "correlation_id", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "source_service", "type": "string"},
+    {
+      "name": "payload",
+      "type": {
+        "type": "record",
+        "name": "TextTranslatedPayload",
+        "fields": [
+          {"name": "text", "type": "string"},
+          {"name": "source_language", "type": "string"},
+          {"name": "target_language", "type": "string"},
+          {"name": "quality_score", "type": ["null", "float"], "default": null}
+        ]
+      }
+    }
+  ]
+}

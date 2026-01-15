@@ -1,0 +1,825 @@
+{
+  "title": "Event-driven microservice architectures for real-time speech-to-speech translation: an SLR protocol (2014–2025)",
+  "research_questions": [
+    "RQ1: Which architecture principles and design patterns are reported for building event-driven/distributed pipelines for real-time speech(-to-speech) translation?",
+    "RQ2: Which factors (and measurement approaches) are reported as key drivers of end-to-end latency, scalability, and robustness/availability in such AI microservice pipelines?",
+    "RQ3: Which evaluation/benchmark approaches are used to quantify trade-offs between performance (latency/throughput), scaling, and quality (ASR/MT/TTS), and what research gaps remain?"
+  ],
+  "framework": "SPIDER",
+  "protocol_metadata": {
+    "version": "2.1",
+    "status": "final",
+    "approved": true,
+    "created_date": "2025-12-20",
+    "notes": "v2.1 splits the search into two parallel strands: (A) LLMs within microservice/event-driven architectures and (B) LLM implemented as a microservice (no change to inclusion/exclusion criteria)."
+  },
+
+  "search_iteration": {
+    "iteration": 2,
+    "trigger": "INCLUDE=0 after Level-2 screening",
+    "intent": "Increase recall for systems/architecture papers that do not explicitly use 'microservice'/'event-driven' phrasing by adding cloud-native/SOA/deployment/ops terminology and cross-domain venue targeting."
+  },
+
+  "search_scope_split": {
+    "enabled": true,
+    "strands": [
+      {
+        "id": "A",
+        "name": "LLM in microservice architecture",
+        "definition": "Studies where LLMs are used inside a distributed/event-driven/microservice architecture (e.g., as a component in a larger pipeline), with emphasis on integration, orchestration, observability, and runtime performance/reliability."
+      },
+      {
+        "id": "B",
+        "name": "LLM implemented as a microservice",
+        "definition": "Studies focusing on packaging/deploying an LLM as a standalone service (e.g., inference server, model gateway), including serving architecture, scaling, latency, cost, reliability, and operational concerns."
+      }
+    ],
+    "tagging": {
+      "field_name": "search_strand",
+      "expected_values": ["A", "B"],
+      "notes": "When exporting search results, tag each record with the strand that produced it; a record may be tagged with both strands if retrieved by both query sets (dedup keeps one record; keep a comma-separated list in notes if needed)."
+    }
+  },
+
+  "target_venues": {
+    "software_engineering": ["ICSE", "FSE", "ESEM", "MSR"],
+    "cloud_distributed_systems": ["SoCC", "EuroSys", "OSDI", "NSDI", "Middleware"],
+    "event_driven_streaming": ["DEBS", "ICDCS"],
+    "notes": "Used for manual venue searches (ACM DL/IEEE Xplore/DBLP) and as an auxiliary filter when supported by a database UI/API."
+  },
+  "unit_of_analysis": {
+    "primary_unit": "system_or_architecture_paper",
+    "definition": "A study that describes an implemented or proposed distributed/event-driven/microservice architecture for a real-time speech translation pipeline (at least two of ASR/MT/TTS) and provides architectural detail plus at least one evaluation or discussion of latency/scalability/robustness.",
+    "minimum_components": 2,
+    "components": [
+      "ASR",
+      "MT",
+      "TTS"
+    ]
+  },
+  "constructs": {
+    "architecture_paradigm": {
+      "canonical": "event-driven microservice architecture",
+      "synonyms": [
+        "event-driven architecture",
+        "EDA",
+        "microservice architecture",
+        "microservices",
+        "distributed system",
+        "distributed architecture",
+        "service-oriented architecture",
+        "SOA",
+        "service-oriented",
+        "message-driven",
+        "asynchronous messaging",
+        "stream processing",
+        "publish-subscribe",
+        "pub/sub",
+        "orchestration",
+        "choreography",
+        "workflow engine",
+        "saga pattern",
+        "cloud native",
+        "cloud-native",
+        "cloud-native architecture",
+        "pipeline architecture",
+        "system architecture",
+        "production deployment",
+        "deployment architecture",
+        "service mesh",
+        "observability"
+      ],
+      "subconstructs": {
+        "event_infrastructure": {
+          "canonical": "event bus / messaging backbone",
+          "synonyms": [
+            "message broker",
+            "event bus",
+            "message queue",
+            "message queueing",
+            "Kafka",
+            "Apache Kafka",
+            "Pulsar",
+            "Apache Pulsar",
+            "RabbitMQ",
+            "NATS",
+            "Redis Streams",
+            "streaming platform",
+            "event streaming",
+            "gRPC streaming",
+            "WebSocket",
+            "server-sent events",
+            "SSE"
+          ]
+        },
+        "reliability_patterns": {
+          "canonical": "robustness / fault tolerance patterns",
+          "synonyms": [
+            "fault tolerance",
+            "resilience",
+            "robustness",
+            "availability",
+            "high availability",
+            "HA",
+            "circuit breaker",
+            "bulkhead",
+            "retry",
+            "backoff",
+            "idempotency",
+            "dead-letter queue",
+            "DLQ",
+            "exactly-once",
+            "at-least-once",
+            "at-most-once",
+            "graceful degradation",
+            "fallback"
+          ]
+        },
+        "deployment_scaling": {
+          "canonical": "deployment and scaling",
+          "synonyms": [
+            "horizontal scaling",
+            "autoscaling",
+            "Kubernetes",
+            "k8s",
+            "container orchestration",
+            "Docker",
+            "edge deployment",
+            "cloud deployment",
+            "serverless",
+            "load balancing",
+            "production",
+            "SLO",
+            "SLA",
+            "tail latency",
+            "p95",
+            "p99"
+          ]
+        }
+      }
+    },
+    "pipeline_task": {
+      "canonical": "real-time speech translation pipeline",
+      "synonyms": [
+        "speech-to-speech translation",
+        "speech translation",
+        "spoken language translation",
+        "SLT",
+        "simultaneous translation",
+        "simultaneous speech translation",
+        "simultaneous interpretation",
+        "speech interpretation",
+        "interpreting",
+        "live translation",
+        "streaming translation",
+        "real-time translation",
+        "low-latency translation",
+        "online translation",
+        "speech-to-text translation",
+        "speech-to-text",
+        "ASR",
+        "automatic speech recognition",
+        "speech recognition",
+        "machine translation",
+        "MT",
+        "neural machine translation",
+        "NMT",
+        "text-to-speech",
+        "TTS",
+        "speech synthesis",
+        "speech-to-speech"
+      ],
+      "notes": "Inclusion requires a pipeline including at least two of ASR/MT/TTS; purely model-centric papers without system/architecture are excluded."
+    },
+    "performance_and_quality_outcomes": {
+      "canonical": "latency, scalability, robustness; secondary: quality",
+      "synonyms": [
+        "end-to-end latency",
+        "latency",
+        "response time",
+        "real-time",
+        "tail latency",
+        "p95",
+        "p99",
+        "throughput",
+        "concurrency",
+        "scalability",
+        "horizontal scalability",
+        "elasticity",
+        "robustness",
+        "availability",
+        "uptime",
+        "failure handling",
+        "reliability",
+        "resource utilization",
+        "CPU",
+        "GPU",
+        "memory",
+        "cost",
+        "WER",
+        "word error rate",
+        "BLEU",
+        "COMET",
+        "TER",
+        "human evaluation"
+      ]
+    }
+  },
+  "spider": {
+    "sample": {
+      "definition": "Studies describing distributed/event-driven microservice architectures for real-time speech translation pipelines.",
+      "keywords": [
+        "microservice",
+        "event-driven",
+        "distributed"
+      ]
+    },
+    "phenomenon_of_interest": {
+      "definition": "Architectural principles/patterns enabling low-latency integration of ASR/MT/TTS components.",
+      "keywords": [
+        "pipeline",
+        "orchestration",
+        "choreography",
+        "messaging"
+      ]
+    },
+    "design": {
+      "definition": "System design descriptions and empirical evaluations (benchmarks, load tests, fault-injection, comparative evaluations).",
+      "keywords": [
+        "architecture",
+        "benchmark",
+        "evaluation",
+        "load test",
+        "fault injection"
+      ]
+    },
+    "evaluation": {
+      "definition": "Metrics and methods for latency/throughput/scalability/availability and secondary quality metrics (WER/BLEU/COMET).",
+      "keywords": [
+        "latency",
+        "throughput",
+        "availability",
+        "scalability",
+        "WER",
+        "BLEU",
+        "COMET"
+      ]
+    },
+    "research_type": {
+      "definition": "Empirical system evaluations, engineering studies, and architecture descriptions with evaluative discussion.",
+      "keywords": [
+        "empirical",
+        "case study",
+        "experiment",
+        "systems paper",
+        "engineering"
+      ]
+    }
+  },
+  "date_range": {
+    "start": "2014-01-01",
+    "end": "2025-12-31",
+    "rationale": "Covers the modern deep-learning era and the widespread adoption of microservices/event-driven architectures."
+  },
+  "languages": [
+    "English"
+  ],
+  "document_types": {
+    "include": [
+      "journal_article",
+      "conference_paper",
+      "workshop_paper",
+      "preprint"
+    ],
+    "exclude": [
+      "blog_post",
+      "marketing_whitepaper_without_method",
+      "tutorial_without_evaluation",
+      "patent",
+      "slide_deck"
+    ]
+  },
+  "inclusion_criteria": [
+    "Published between 2014-01-01 and 2025-12-31.",
+    "English language.",
+    "Describes a distributed system, microservice architecture, or event-driven/message-driven architecture (explicitly stated or clearly evidenced by system decomposition + asynchronous communication).",
+    "Covers a speech translation pipeline that includes at least two of: ASR, machine translation, TTS.",
+    "Provides architectural/system details beyond model descriptions (e.g., component boundaries, communication patterns, deployment).",
+    "Discusses or evaluates at least one of: latency, scalability/throughput/concurrency, robustness/availability/fault tolerance (measurement details preferred but not strictly required if the discussion is concrete).",
+    "Peer-reviewed venues OR preprints with sufficient technical detail to support extraction (tag as preprint)."
+  ],
+  "exclusion_criteria": [
+    "Model-only papers (ASR/MT/TTS) that do not describe a distributed/system architecture or pipeline integration.",
+    "Monolithic end-to-end systems with no distributed/microservice/event-driven architecture described.",
+    "Papers without a concrete architecture/system description (e.g., purely conceptual opinion pieces without design specifics).",
+    "Papers that do not include at least two of ASR/MT/TTS in the described pipeline.",
+    "Non-English.",
+    "Outside the date range (before 2014 or after 2025).",
+    "Non-scholarly or non-research artifacts (blog posts, marketing materials, patents, tutorials without evaluation).",
+    "Duplicates (same study/record already included after deduplication)."
+  ],
+  "databases": [
+    {
+      "name": "OpenAlex",
+      "fields": [
+        "title",
+        "abstract",
+        "fulltext",
+        "concepts",
+        "publication_year"
+      ],
+      "syntax_notes": "OpenAlex supports keyword search via 'search=' and structured filters via 'filter=' (publication_year, type, etc.). Boolean is not fully expressive; use grouped keyword blocks and rely on filters for year/type."
+    },
+    {
+      "name": "Semantic Scholar",
+      "fields": [
+        "title",
+        "abstract",
+        "venue",
+        "year",
+        "fieldsOfStudy"
+      ],
+      "syntax_notes": "API/search supports query strings; boolean support varies by endpoint/client. Use multiple queries if necessary and log each."
+    },
+    {
+      "name": "arXiv",
+      "fields": [
+        "title",
+        "abstract",
+        "categories",
+        "submitted_date"
+      ],
+      "syntax_notes": "arXiv API supports fielded search with 'ti:', 'abs:' and boolean operators (AND/OR). Date filters may be applied post-retrieval if needed."
+    },
+    {
+      "name": "Crossref",
+      "fields": [
+        "query.bibliographic",
+        "title",
+        "abstract"
+      ],
+      "syntax_notes": "Crossref is best used for DOI-centric metadata expansion rather than high-recall discovery; use broad queries and filter by from-pub-date/until-pub-date and type where possible."
+    },
+    {
+      "name": "PubMed",
+      "fields": [
+        "Title/Abstract",
+        "MeSH Terms",
+        "Publication Date",
+        "Publication Type"
+      ],
+      "syntax_notes": "Optional secondary source; use [Title/Abstract] field tags and date filters [dp]. Only run if scoping suggests biomedical speech translation contexts." 
+    }
+  ],
+  "search_strings": {
+    "construct_blocks": {
+      "llm_terms": [
+        "large language model",
+        "large-language model",
+        "LLM",
+        "foundation model",
+        "generative AI",
+        "GenAI",
+        "GPT",
+        "ChatGPT",
+        "Llama",
+        "Mistral",
+        "Claude"
+      ],
+      "speech_translation": [
+        "speech translation",
+        "speech-to-speech translation",
+        "spoken language translation",
+        "SLT",
+        "simultaneous speech translation",
+        "simultaneous interpretation",
+        "real-time translation",
+        "live translation",
+        "streaming translation"
+      ],
+      "architecture_terms": [
+        "microservice",
+        "microservices",
+        "microservice architecture",
+        "event-driven",
+        "message-driven",
+        "asynchronous messaging",
+        "publish-subscribe",
+        "pub/sub",
+        "service-oriented",
+        "service-oriented architecture",
+        "SOA",
+        "cloud native",
+        "cloud-native",
+        "pipeline architecture",
+        "system architecture",
+        "distributed system",
+        "stream processing",
+        "message broker",
+        "Kafka",
+        "RabbitMQ",
+        "NATS",
+        "Pulsar"
+      ],
+      "ops_terms": [
+        "latency",
+        "low-latency",
+        "end-to-end",
+        "throughput",
+        "scalability",
+        "horizontal scaling",
+        "autoscaling",
+        "load balancing",
+        "orchestration",
+        "Kubernetes",
+        "k8s",
+        "service mesh",
+        "Istio",
+        "availability",
+        "robustness",
+        "resilience"
+      ]
+    },
+
+    "strand_specific_blocks": {
+      "A_llm_in_architecture": {
+        "anchor": ["llm_terms"],
+        "architecture": ["architecture_terms", "ops_terms"],
+        "notes": "Strand A prioritizes papers where LLMs are integrated into an existing microservice/event-driven system (composition/orchestration/EDA/ops)."
+      },
+      "B_llm_as_microservice": {
+        "anchor": ["llm_terms"],
+        "serving_terms": [
+          "inference server",
+          "model serving",
+          "serving",
+          "API gateway",
+          "model gateway",
+          "inference",
+          "online inference",
+          "request batching",
+          "continuous batching",
+          "KV cache",
+          "speculative decoding",
+          "token streaming",
+          "rate limiting",
+          "circuit breaker",
+          "autoscaling",
+          "Kubernetes",
+          "service mesh",
+          "gRPC",
+          "REST",
+          "OpenAI-compatible",
+          "vLLM",
+          "TGI",
+          "Triton",
+          "TensorRT-LLM",
+          "Ray Serve",
+          "KServe"
+        ],
+        "notes": "Strand B targets LLM deployment as a microservice (serving stack, scaling, latency/cost/reliability)."
+      }
+    },
+    "OpenAlex": {
+      "human_readable_boolean": "((speech_translation) AND (architecture_terms OR ops_terms) AND (latency OR scalability OR deployment))",
+      "api_notes": {
+        "filters": {
+          "from_publication_year": 2014,
+          "to_publication_year": 2025,
+          "language": "en",
+          "types": ["journal-article", "proceedings-article", "posted-content"]
+        },
+        "notes": "OpenAlex boolean is limited; use multiple simpler queries and merge/deduplicate. Keep the speech-translation anchor, broaden the architecture/ops block."
+      },
+      "query_plan": [
+        {
+          "query": "speech translation (microservice OR event-driven OR message-driven OR service-oriented OR cloud native OR system architecture)",
+          "year_range": {"start": 2014, "end": 2025}
+        },
+        {
+          "query": "speech-to-speech translation (kubernetes OR kafka OR rabbitmq OR orchestration OR autoscaling OR service mesh)",
+          "year_range": {"start": 2014, "end": 2025}
+        },
+        {
+          "query": "simultaneous interpretation (distributed system OR scalable system OR production deployment OR pipeline architecture)",
+          "year_range": {"start": 2014, "end": 2025}
+        }
+      ]
+    },
+
+    "OpenAlex_strands": {
+      "A": {
+        "human_readable_boolean": "(LLM terms) AND (microservice/event-driven/cloud-native/ops terms)",
+        "query_plan": [
+          {
+            "query": "(LLM OR \"large language model\" OR \"foundation model\" OR \"generative AI\") (microservice OR \"event-driven\" OR \"message-driven\" OR \"service-oriented\" OR SOA OR \"cloud native\" OR kubernetes OR \"service mesh\" OR observability)",
+            "year_range": {"start": 2014, "end": 2025}
+          },
+          {
+            "query": "(GPT OR Llama OR Mistral) (microservice OR distributed OR \"system architecture\" OR deployment) (latency OR scalability OR reliability)",
+            "year_range": {"start": 2014, "end": 2025}
+          }
+        ]
+      },
+      "B": {
+        "human_readable_boolean": "(LLM terms) AND (model serving/inference server/microservice + scaling/latency)",
+        "query_plan": [
+          {
+            "query": "(LLM OR \"large language model\" OR \"foundation model\") (\"model serving\" OR \"inference server\" OR \"model gateway\" OR \"OpenAI-compatible\" OR vLLM OR TGI OR Triton OR \"TensorRT-LLM\") (microservice OR API OR kubernetes OR autoscaling OR latency)",
+            "year_range": {"start": 2014, "end": 2025}
+          },
+          {
+            "query": "(LLM OR \"large language model\") (token streaming OR \"continuous batching\" OR \"KV cache\") (latency OR throughput) (service OR microservice)",
+            "year_range": {"start": 2014, "end": 2025}
+          }
+        ]
+      },
+      "notes": "Run these in addition to the speech-translation architecture searches when the thesis scope includes LLM-enabled platform architecture beyond speech translation. Tag exported records with search_strand=A or B." 
+    },
+    "Semantic Scholar": {
+      "human_readable_boolean": "((speech_translation) AND (architecture_terms OR ops_terms))",
+      "query_plan": [
+        {
+          "query": "(\"speech translation\" OR \"speech-to-speech\" OR \"spoken language translation\" OR SLT OR \"simultaneous interpretation\" OR \"streaming translation\") (microservice OR microservices OR \"event-driven\" OR \"message-driven\" OR \"service-oriented\" OR SOA OR \"cloud native\" OR \"system architecture\" OR \"pipeline architecture\")",
+          "year_range": {"start": 2014, "end": 2025}
+        },
+        {
+          "query": "(\"speech translation\" OR \"speech-to-speech\") (kubernetes OR k8s OR orchestration OR \"service mesh\" OR istio OR kafka OR rabbitmq OR nats) (latency OR throughput OR scalability OR availability)",
+          "year_range": {"start": 2014, "end": 2025}
+        }
+      ],
+      "notes": "Use multiple queries to improve recall; log each query separately and merge/deduplicate."
+    },
+
+    "SemanticScholar_strands": {
+      "A": {
+        "query_plan": [
+          {
+            "query": "(LLM OR \"large language model\" OR \"foundation model\" OR \"generative AI\") (microservice OR \"event-driven\" OR \"message-driven\" OR \"service-oriented\" OR SOA OR kubernetes OR \"service mesh\" OR observability) (latency OR scalability OR reliability)",
+            "year_range": {"start": 2014, "end": 2025}
+          }
+        ]
+      },
+      "B": {
+        "query_plan": [
+          {
+            "query": "(LLM OR \"large language model\") (\"model serving\" OR \"inference server\" OR \"model gateway\" OR vLLM OR TGI OR Triton OR \"TensorRT-LLM\" OR \"Ray Serve\" OR KServe) (microservice OR API OR kubernetes) (latency OR throughput OR autoscaling)",
+            "year_range": {"start": 2014, "end": 2025}
+          }
+        ]
+      }
+    },
+    "arXiv": {
+      "human_readable_boolean": "((speech_translation) AND (architecture_terms OR ops_terms))",
+      "query_plan": [
+        {
+          "api_query": "(ti:\"speech translation\" OR abs:\"speech translation\" OR ti:\"speech-to-speech\" OR abs:\"speech-to-speech\" OR ti:\"spoken language translation\" OR abs:\"spoken language translation\" OR ti:\"simultaneous interpretation\" OR abs:\"simultaneous interpretation\") AND (abs:microservice OR abs:\"event-driven\" OR abs:\"message-driven\" OR abs:\"service-oriented\" OR abs:\"cloud native\" OR abs:kubernetes OR abs:k8s OR abs:kafka OR abs:rabbitmq OR abs:\"service mesh\")",
+          "notes": "High-precision query anchored on speech translation + explicit architecture/infra terms."
+        },
+        {
+          "api_query": "(ti:\"speech translation\" OR abs:\"speech translation\" OR ti:\"speech-to-speech\" OR abs:\"speech-to-speech\" OR ti:\"simultaneous interpretation\" OR abs:\"simultaneous interpretation\") AND (abs:\"system architecture\" OR abs:\"pipeline architecture\" OR abs:deployment OR abs:production OR abs:scalability OR abs:orchestration)",
+          "notes": "Recall-oriented query for systems papers that discuss deployment/architecture without naming microservices explicitly. Expect more noise; rely on screening."
+        }
+      ],
+      "notes": "Filter by submitted date/year post-retrieval if required."
+    },
+
+    "arXiv_strands": {
+      "A": {
+        "query_plan": [
+          {
+            "api_query": "(ti:\"large language model\" OR abs:\"large language model\" OR ti:LLM OR abs:LLM OR ti:\"foundation model\" OR abs:\"foundation model\" OR abs:ChatGPT OR abs:GPT) AND (abs:microservice OR abs:\"event-driven\" OR abs:\"message-driven\" OR abs:\"service-oriented\" OR abs:SOA OR abs:kubernetes OR abs:k8s OR abs:\"service mesh\" OR abs:observability)",
+            "notes": "Strand A (LLM in microservice architecture)."
+          }
+        ]
+      },
+      "B": {
+        "query_plan": [
+          {
+            "api_query": "(ti:\"large language model\" OR abs:\"large language model\" OR abs:LLM OR abs:\"foundation model\") AND (abs:\"model serving\" OR abs:\"inference server\" OR abs:\"model gateway\" OR abs:vLLM OR abs:TGI OR abs:Triton OR abs:\"TensorRT-LLM\" OR abs:\"Ray Serve\" OR abs:KServe) AND (abs:microservice OR abs:API OR abs:kubernetes OR abs:autoscaling OR abs:latency)",
+            "notes": "Strand B (LLM implemented as a microservice / serving stack)."
+          }
+        ]
+      },
+      "notes": "Use alongside the speech-translation queries if the thesis scope includes LLM platform architecture generally."
+    },
+    "Crossref": {
+      "human_readable_boolean": "((speech_translation) AND (architecture_terms OR ops_terms))",
+      "api_notes": {
+        "filters": {
+          "from_pub_date": "2014-01-01",
+          "until_pub_date": "2025-12-31",
+          "type": ["journal-article", "proceedings-article"]
+        },
+        "notes": "Crossref discovery is noisy; run multiple focused queries and rely on screening + dedup."
+      },
+      "query_plan": [
+        {"query.bibliographic": "speech translation microservice"},
+        {"query.bibliographic": "speech translation event-driven"},
+        {"query.bibliographic": "speech translation cloud native kubernetes"},
+        {"query.bibliographic": "speech-to-speech translation system architecture"},
+        {"query.bibliographic": "simultaneous interpretation distributed system"}
+      ]
+    },
+
+    "Crossref_strands": {
+      "A": {
+        "query_plan": [
+          {"query.bibliographic": "large language model microservice architecture"},
+          {"query.bibliographic": "LLM event-driven architecture"},
+          {"query.bibliographic": "generative AI microservices observability"}
+        ]
+      },
+      "B": {
+        "query_plan": [
+          {"query.bibliographic": "large language model inference server kubernetes"},
+          {"query.bibliographic": "LLM model serving microservice"},
+          {"query.bibliographic": "vLLM serving throughput latency"}
+        ]
+      }
+    },
+    "PubMed": {
+      "human_readable_boolean": "((\"speech translation\"[Title/Abstract] OR \"spoken language translation\"[Title/Abstract] OR \"speech-to-speech\"[Title/Abstract] OR \"simultaneous interpretation\"[Title/Abstract]) AND (microservice*[Title/Abstract] OR \"event-driven\"[Title/Abstract] OR \"service-oriented\"[Title/Abstract] OR \"cloud native\"[Title/Abstract] OR kubernetes[Title/Abstract]) AND (latency[Title/Abstract] OR scalability[Title/Abstract] OR availability[Title/Abstract] OR robustness[Title/Abstract])) AND (\"2014/01/01\"[dp] : \"2025/12/31\"[dp])",
+      "notes": "Optional; only execute if scoping suggests biomedical/clinical speech translation relevance."
+    },
+    "manual_venue_search": {
+      "notes": "Run when INCLUDE=0 or when automated sources are dominated by model-only papers. Use venue filters to target systems/SE/cloud conferences.",
+      "sources": ["ACM Digital Library", "IEEE Xplore", "DBLP"],
+      "keywords": [
+        "(\"speech translation\" OR \"speech-to-speech\" OR \"simultaneous interpretation\") AND (architecture OR deployment OR distributed OR scalable OR cloud)",
+        "(\"speech translation\" OR \"spoken language translation\") AND (microservice OR \"event-driven\" OR kafka OR kubernetes OR \"service mesh\")"
+      ]
+    }
+  },
+  "screening_process": {
+    "stages": [
+      {
+        "name": "Identification",
+        "inputs": [
+          "search_logs/*",
+          "search_exports/*"
+        ],
+        "outputs": [
+          "search_report.md",
+          "search_exports/records.csv",
+          "search_exports/citations.bib",
+          "search_exports/citations.ris"
+        ]
+      },
+      {
+        "name": "Deduplication",
+        "inputs": [
+          "search_exports/records.csv"
+        ],
+        "outputs": [
+          "search_exports/dedup_summary.json",
+          "search_exports/records.csv (deduped)"
+        ]
+      },
+      {
+        "name": "Title/Abstract Screening (Level 1)",
+        "inputs": [
+          "search_exports/records.csv",
+          "protocol.json"
+        ],
+        "outputs": [
+          "screening/title_abstract_decisions.csv",
+          "screening/screening_report.md"
+        ]
+      },
+      {
+        "name": "Full-Text Screening (Level 2)",
+        "inputs": [
+          "screening/title_abstract_decisions.csv",
+          "search_exports/records.csv",
+          "protocol.json"
+        ],
+        "outputs": [
+          "analysis/full_text_decisions.csv"
+        ]
+      },
+      {
+        "name": "Data Extraction & Synthesis",
+        "inputs": [
+          "analysis/full_text_decisions.csv",
+          "search_exports/records.csv",
+          "protocol.json"
+        ],
+        "outputs": [
+          "analysis/data_extraction_matrix.json",
+          "analysis/synthesis_summary.md"
+        ]
+      }
+    ],
+    "conflict_resolution": {
+      "method": "single_reviewer_with_audit",
+      "details": "Default is single-reviewer decisions logged with reason codes; if a second reviewer is available, resolve conflicts by discussion and record the resolution in notes fields." 
+    }
+  },
+  "deduplication_method": {
+    "steps": [
+      "Exact DOI match",
+      "Normalized title + year match (casefold + punctuation stripped)",
+      "URL match",
+      "Fuzzy title match (high threshold) + same year window (±1)"
+    ],
+    "keep_rule": "Prefer records with DOI and abstract; otherwise prefer richer metadata.",
+    "audit": "Record dedup counts and rules in search_exports/dedup_summary.json"
+  },
+  "quality_appraisal": {
+    "approach": "hybrid_checklist",
+    "tools": [
+      "MMAT-inspired criteria for empirical studies",
+      "Architecture reporting checklist (custom)"
+    ],
+    "criteria": [
+      "Clear system boundary and components described",
+      "Communication pattern described (sync/async; event-driven details)",
+      "Evaluation setup described (workload, metrics, environment)",
+      "Latency metrics defined and measured in a reproducible way",
+      "Scalability claims supported by experiments or clear reasoning",
+      "Robustness/availability claims supported by failure-mode discussion or tests",
+      "Threats to validity / limitations stated"
+    ],
+    "rating_scale": "low|medium|high|unclear",
+    "how_used": "Use quality ratings to weight synthesis emphasis; do not exclude solely based on quality unless the paper lacks minimal architectural detail."
+  },
+  "data_extraction": {
+    "fields": [
+      "record_id",
+      "title",
+      "authors",
+      "year",
+      "venue",
+      "doi",
+      "urls",
+      "architecture_style",
+      "event_driven_patterns",
+      "orchestration_or_choreography",
+      "messaging_backbone",
+      "components_and_boundaries",
+      "deployment_context",
+      "scaling_approach",
+      "reliability_failure_handling",
+      "latency_metrics_and_setup",
+      "throughput_concurrency_metrics_and_setup",
+      "scalability_evaluation",
+      "availability_robustness_evaluation",
+      "datasets_and_benchmarks",
+      "quality_metrics",
+      "methodology",
+      "sample_size",
+      "key_findings",
+      "limitations",
+      "threats_to_validity",
+      "bias_risk",
+      "evidence"
+    ],
+    "normalization_rules": {
+      "latency": "Prefer end-to-end latency; record per-stage latency when available; store units explicitly.",
+      "scalability": "Record workload characteristics (RPS, concurrency, stream rate) and scaling dimension (pods/instances/nodes).",
+      "quality": "Record metric name, dataset, and direction (higher/lower is better)."
+    }
+  },
+  "synthesis_plan": {
+    "type": "thematic_mapping",
+    "primary_outputs": [
+      "pattern_to_outcome_map",
+      "themes",
+      "gaps"
+    ],
+    "method": "thematic synthesis over extracted architectural patterns, with mapping to reported outcomes/trade-offs.",
+    "meta_analysis_feasibility": {
+      "condition": "Only attempt quantitative synthesis if multiple studies report comparable latency or throughput metrics under sufficiently similar settings and provide variance or enough detail.",
+      "default": "narrative/thematic"
+    }
+  },
+  "prisma_alignment": {
+    "identification": {
+      "where_recorded": [
+        "search_logs/*",
+        "search_report.md"
+      ],
+      "counts_source": "per-source totals and retrieved counts"
+    },
+    "screening": {
+      "where_recorded": [
+        "screening/title_abstract_decisions.csv",
+        "screening/screening_report.md"
+      ],
+      "exclusion_reasons": "reason_code + reason_text"
+    },
+    "eligibility": {
+      "where_recorded": [
+        "analysis/full_text_decisions.csv"
+      ],
+      "notes": "Full-text exclusions use protocol-derived reason codes."
+    },
+    "included": {
+      "where_recorded": [
+        "analysis/data_extraction_matrix.json",
+        "analysis/synthesis_summary.md"
+      ]
+    }
+  }
+}

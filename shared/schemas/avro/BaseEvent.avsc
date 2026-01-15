@@ -1,0 +1,13 @@
+{
+  "type": "record",
+  "name": "BaseEvent",
+  "namespace": "ai.speech.shared.events",
+  "doc": "Common envelope for all MVP events.",
+  "fields": [
+    {"name": "event_id", "type": "string", "doc": "UUID for this event"},
+    {"name": "event_type", "type": "string", "doc": "Logical event type name"},
+    {"name": "correlation_id", "type": "string", "doc": "UUID shared across pipeline"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}, "doc": "Unix epoch ms"},
+    {"name": "source_service", "type": "string", "doc": "Originating service name"}
+  ]
+}

@@ -1,0 +1,13 @@
+\begin{thebibliography}{1}
+
+\bibitem{Cormen-al:01}
+Thomas~H. Cormen, Charles~E. Leiserson, Ronald~L. Rivest, and Clifford Stein.
+\newblock {\em Introduction to Algorithms}.
+\newblock The MIT Press, Cambridge, Massachusetts, second edition, 2001.
+
+\bibitem{Lindholm-Yellin:99}
+Tim Lindholm and Frank Yellin.
+\newblock {\em The {J}ava$^\mathit{TM}$ Virtual Machine Specification}.
+\newblock Addison-Wesley, 2nd edition, 1999.
+
+\end{thebibliography}
