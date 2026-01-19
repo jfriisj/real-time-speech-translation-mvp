@@ -107,13 +107,14 @@ So that I can understand the content.
 ---
 
 ## Release v0.2.1 - Traceability & Thesis Validation
-**Status**: Planned
+**Status**: Released
+**Released**: 2026-01-19
 
 **Strategic Goal**: Establish a traceability probe and reproducible latency measurement methodology for thesis validation without changing core services.
 
 ### Epic 1.4: End-to-End Traceability & Latency (Shared / Integration)
 **Priority**: P0
-**Status**: Planned
+**Status**: Delivered
 
 **User Story**:
 As a Researcher/Thesis Author,
@@ -128,11 +129,15 @@ So that I can validate the performance claims of the architecture.
 - Epics 1.1, 1.2, 1.3.
 
 **Acceptance Criteria**:
-- [ ] A simple CLI or script exists to inject audio and listen for the final event.
-- [ ] Logs/Events show timestamps at Ingress, ASR-Complete, and Translation-Complete.
-- [ ] End-to-end latency is calculated and visible.
-- [ ] 100 sequential requests complete without dropping the correlation chain.
+- [x] A simple CLI or script exists to inject audio and listen for the final event.
+- [x] Logs/Events show timestamps at Ingress, ASR-Complete, and Translation-Complete.
+- [x] End-to-end latency is calculated and visible.
+- [x] 100 sequential requests complete without dropping the correlation chain.
 
+**Status Notes**:
+- Baseline run (N=100) recorded 100/100 success, P50=1045ms, P90=1155.8ms, P99=1402.73ms and is documented in [docs/benchmarks/001-mvp-latency-baseline.md](docs/benchmarks/001-mvp-latency-baseline.md).
+- Release doc [agent-output/releases/v0.2.1.md](agent-output/releases/v0.2.1.md) records tagging, QA/UAT sign-offs, and benchmark publication.
+- Retrospective [agent-output/retrospectives/004-traceability-and-latency-retrospective.md](agent-output/retrospectives/004-traceability-and-latency-retrospective.md) captured lessons on warmup/cold-start handling and roadmap governance.
 ---
 
 ## Release v0.3.0 - Expand & Speak (MVP+)

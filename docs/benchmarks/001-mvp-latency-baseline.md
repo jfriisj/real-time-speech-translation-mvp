@@ -10,10 +10,10 @@
 - **OS**: Linux
 - **Kafka**: docker-compose.yml (local)
 - **Schema Registry**: docker-compose.yml (local)
-- **Notes**: Initial smoke run completed with 4/5 successful chains; full 100-run baseline pending.
+- **Notes**: Baseline run completed with 100/100 successful chains after a warmup phase.
 
 ## Run Configuration
-- **Command**: `python tests/e2e/measure_latency.py --count 5 --output latency_summary.json`
+- **Command**: `python tests/e2e/measure_latency.py --count 100 --output latency_summary.json`
 - **Warmup Discard**: 5 requests (effective discard = min(warmup, successes))
 - **Timeout**: 10s per request
 
@@ -21,22 +21,22 @@
 ```json
 {
   "meta": {
-    "timestamp": "2026-01-19T10:14:45.913737Z",
-    "run_id": "2d879916-41a2-4577-b144-bd3ec9b0e2eb",
-    "warmup_discarded": 4
+    "timestamp": "2026-01-19T10:29:45.296853Z",
+    "run_id": "9ffb6a9f-7907-410e-9c7d-82dc8980b286",
+    "warmup_discarded": 5
   },
   "counts": {
-    "total": 5,
-    "success": 4,
-    "failure": 1
+    "total": 100,
+    "success": 100,
+    "failure": 0
   },
   "latencies_ms": {
-    "p50": 0.0,
-    "p90": 0.0,
-    "p99": 0.0
+    "p50": 1045.0,
+    "p90": 1155.8000000000002,
+    "p99": 1402.7300000000018
   },
   "failures": {
-    "timeout": 1,
+    "timeout": 0,
     "broken_chain": 0
   }
 }
@@ -47,4 +47,4 @@
 - This does not include consumer poll wait time or internal service processing start time beyond event creation.
 
 ## Follow-up
-- Run the full N=100 campaign and replace this section with the official baseline metrics.
+- Confirm baseline against target environments if needed (GPU or different hardware).

@@ -180,9 +180,9 @@ def main() -> int:
 
     successes: list[float] = []
     failures = {"timeout": 0, "broken_chain": 0}
+    warmup_failures = {"timeout": 0, "broken_chain": 0}
 
-    for index in range(config.count):
-        correlation_id = f"traceability-{config.run_id}-{index:04d}"
+    def run_request(correlation_id: str, track_failures: dict[str, int]) -> float | None:
         payload = {
             "audio_bytes": wav_bytes,
             "audio_format": "wav",
@@ -218,28 +218,44 @@ def main() -> int:
 
         if t2 is None:
             if t1 is None:
-                failures["timeout"] += 1
-                print(f"[{index + 1}/{config.count}] Timeout waiting for ASR/Translation")
+                track_failures["timeout"] += 1
             else:
-                failures["broken_chain"] += 1
-                print(f"[{index + 1}/{config.count}] Broken chain (missing translation)")
+                track_failures["broken_chain"] += 1
+            return None
+
+        return float(t2 - t0)
+
+    for index in range(config.warmup_discard):
+        correlation_id = f"traceability-{config.run_id}-warmup-{index:04d}"
+        latency = run_request(correlation_id, warmup_failures)
+        if latency is None:
+            print(
+                f"[warmup {index + 1}/{config.warmup_discard}] Timeout/broken chain"
+            )
+        else:
+            print(
+                f"[warmup {index + 1}/{config.warmup_discard}] latency_total_ms={latency:.2f}"
+            )
+
+    for index in range(config.count):
+        correlation_id = f"traceability-{config.run_id}-{index:04d}"
+        latency_total = run_request(correlation_id, failures)
+        if latency_total is None:
+            print(f"[{index + 1}/{config.count}] Timeout waiting for ASR/Translation")
             continue
 
-        latency_total = float(t2 - t0)
         successes.append(latency_total)
         print(
             f"[{index + 1}/{config.count}] latency_total_ms={latency_total:.2f}"
         )
 
-    warmup_discard = min(config.warmup_discard, len(successes))
-    warmed = successes[warmup_discard:]
-    percentiles = _percentiles(warmed)
+    percentiles = _percentiles(successes)
 
     summary = {
         "meta": {
             "timestamp": _utc_timestamp(),
             "run_id": config.run_id,
-            "warmup_discarded": warmup_discard,
+            "warmup_discarded": config.warmup_discard,
         },
         "counts": {
             "total": config.count,
@@ -256,6 +272,12 @@ def main() -> int:
 
     print("\nSummary:")
     print(f"  Success: {summary['counts']['success']} / {summary['counts']['total']}")
+    if config.warmup_discard:
+        print(
+            "  Warmup failures: "
+            f"{warmup_failures['timeout']} timeout, "
+            f"{warmup_failures['broken_chain']} broken chain"
+        )
     print(
         "  P50/P90/P99 (ms): "
         f"{summary['latencies_ms']['p50']:.2f} / "

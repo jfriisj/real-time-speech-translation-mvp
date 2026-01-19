@@ -12,9 +12,12 @@
 | Date | Handoff | Request | Summary |
 |------|---------|---------|---------|
 | 2026-01-19 | Product Owner | Implement Plan 004 | Added traceability probe, dependencies, roadmap v0.2.1 entry, draft release doc, and benchmark baseline doc. Executed probe smoke run (count=5). |
+| 2026-01-19 | Product Owner | Address QA failures | Added explicit warmup phase to probe and completed N=100 run; updated benchmark baseline with official results. |
 
 ## Implementation Summary (what + how delivers value)
 Implemented the traceability probe and supporting governance artifacts to measure publication-delta latency from `AudioInputEvent` to `TextTranslatedEvent`. Added standardized JSON output, documented baseline results, and updated the roadmap/release doc to align with v0.2.1. This delivers the thesis-required observability without changing service behavior.
+
+Addressed QA failures by separating warmup requests from measured runs, ensuring stable percentiles, and completing the required N=100 campaign.
 
 ## Milestones Completed
 - [x] Milestone 0: Roadmap alignment (added v0.2.1 release entry, Epic 1.4 moved)
@@ -57,15 +60,14 @@ Implemented the traceability probe and supporting governance artifacts to measur
 | Command | Result | Notes |
 |---------|--------|-------|
 | `docker compose -f docker-compose.yml up -d` | ✅ Success | All services running (Kafka, SR, ASR, Translation) |
-| `python tests/e2e/measure_latency.py --count 5 --output latency_summary.json` | ⚠️ Partial | 4/5 successes, 1 timeout; percentiles were 0 due to warmup discarding all successes |
+| `python tests/e2e/measure_latency.py --count 5 --output latency_summary.json` | ✅ Success | 5/5 successes after warmup; percentiles computed |
+| `python tests/e2e/measure_latency.py --count 100 --output latency_summary.json` | ✅ Success | 100/100 successes; P50=1045ms, P90=1155.8ms, P99=1402.73ms |
 
 ## Code Quality / Governance Notes
 - QA/UAT prompt files at `~/.config/Code/User/prompts/qa.agent.md` and `~/.config/Code/User/prompts/uat.agent.md` were not accessible from the workspace tooling, so their checklists could not be applied directly.
 - TODO/FIXME scan hit large volumes inside `.venv/` and `.pytest_cache/`; no new TODO/FIXME markers were introduced in repo-owned source files for this change.
 
 ## Outstanding Items
-- Run full N=100 campaign to generate official baseline percentiles (current smoke run used count=5 and warmup discarded all successes).
-- Investigate first-request timeout (likely cold-start behavior); decide whether to increase warmup or timeout for the baseline.
 - Remove or relocate [latency_summary.json](latency_summary.json) if it should not be tracked long-term.
 
 ## Next Steps (QA then UAT)
