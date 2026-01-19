@@ -27,7 +27,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def create_app(settings: Settings) -> FastAPI:
-    app = FastAPI(title="Ingress Gateway", version="0.3.0-dev")
+    app = FastAPI(title="Ingress Gateway", version="0.3.0")
     app.state.settings = settings
     app.state.connection_limiter = ConnectionLimiter(settings.max_connections)
 
