@@ -1,6 +1,6 @@
 # Universal Speech Translation Platform - Product Roadmap
 
-**Last Updated**: 2026-01-15
+**Last Updated**: 2026-01-19
 **Roadmap Owner**: Roadmap Agent
 **Strategic Vision**: Deliver a scalable, event-driven platform for real-time speech translation that demonstrates low-latency orchestration of independent AI microservices. The focus is on architectural proof, measurable performance, and expandability through shared contracts, serving as a robust foundation for academic research and future commercial application.
 
@@ -11,6 +11,7 @@
 | 2026-01-15 19:30 | Epic 1.1 Delivered & AC Update | Updated status to Delivered; renamed AudioProcessingEvent to AudioInputEvent per Retrospective 001 findings. |
 | 2026-01-15 20:30 | Released v0.1.0 & Rescoped v0.2.0 | Release v0.1.0 completed (Infrastructure); moved Services to v0.2.0 to reflect iterative delivery pipeline. |
 | 2026-01-19 08:30 | Released v0.2.0 (Core Services) | Delivered Epic 1.2 (ASR) and Epic 1.3 (Translation) establishing the full event pipeline. |
+| 2026-01-19 15:30 | Added v0.2.1 (Traceability) | Created a patch release entry for Epic 1.4 measurement tooling and governance artifacts. |
 
 ---
 
@@ -102,6 +103,13 @@ So that I can understand the content.
 - 2026-01-19: Implementation exceeded MVP scope by integrating real Hugging Face model (CPU-optimized) instead of mock, validating better functional value.
 
 ---
+
+---
+
+## Release v0.2.1 - Traceability & Thesis Validation
+**Status**: Planned
+
+**Strategic Goal**: Establish a traceability probe and reproducible latency measurement methodology for thesis validation without changing core services.
 
 ### Epic 1.4: End-to-End Traceability & Latency (Shared / Integration)
 **Priority**: P0

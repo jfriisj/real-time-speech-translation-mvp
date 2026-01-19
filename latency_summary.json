@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "timestamp": "2026-01-19T10:14:45.913737Z",
+    "run_id": "2d879916-41a2-4577-b144-bd3ec9b0e2eb",
+    "warmup_discarded": 4
+  },
+  "counts": {
+    "total": 5,
+    "success": 4,
+    "failure": 1
+  },
+  "latencies_ms": {
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.0
+  },
+  "failures": {
+    "timeout": 1,
+    "broken_chain": 0
+  }
+}
