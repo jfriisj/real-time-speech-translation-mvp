@@ -1,14 +1,88 @@
-# Python artifacts
+# --- Python ---
 __pycache__/
 *.py[cod]
-
-# Packaging / build artifacts
-.venv/
+*$py.class
+*.so
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
 *.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-.env/
-.vscode
+# --- Installer logs ---
+pip-log.txt
+pip-delete-this-directory.txt
+
+# --- Environments ---
 .env
-.vscode/mcp.json
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Testing & Coverage ---
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+
+# --- Jupyter Notebooks ---
+.ipynb_checkpoints
+
+# --- IDEs & Editors ---
+.vscode/
+# NOTE: VS Code files are often user/machine-specific and may include secrets (e.g., MCP auth).
+# If you ever want to commit shared VS Code config, switch to an allowlist pattern.
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS Generated ---
+.DS_Store
+.DS_Store?
+._*
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# --- LaTeX Build Artifacts ---
+# Matches artifacts in 'Analysis-and-design-of-a-platform-for-real-time-speech-translation-'
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fls
+*.idx
+*.ind
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.fdb_latexmk
+
+# --- Project Specific ---
+shared/speech-lib/src/speech_lib/__pycache__/

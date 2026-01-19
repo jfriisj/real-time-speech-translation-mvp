@@ -2,5 +2,10 @@
     "terminal.integrated.shellIntegration.enabled": true,
     "chat.tools.terminal.autoApprove": {
         "/home/jonfriis/github/translation-engine/.venv/bin/python": true
-    }
+    },
+    "python.testing.pytestArgs": [
+        "services"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

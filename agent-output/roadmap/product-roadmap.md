@@ -10,6 +10,7 @@
 | 2026-01-15 10:00 | Initial Roadmap Creation | Defining Hard MVP scope based on Thesis MVP Plan |
 | 2026-01-15 19:30 | Epic 1.1 Delivered & AC Update | Updated status to Delivered; renamed AudioProcessingEvent to AudioInputEvent per Retrospective 001 findings. |
 | 2026-01-15 20:30 | Released v0.1.0 & Rescoped v0.2.0 | Release v0.1.0 completed (Infrastructure); moved Services to v0.2.0 to reflect iterative delivery pipeline. |
+| 2026-01-19 08:30 | Released v0.2.0 (Core Services) | Delivered Epic 1.2 (ASR) and Epic 1.3 (Translation) establishing the full event pipeline. |
 
 ---
 
@@ -47,12 +48,12 @@ So that microservices can communicate reliably without direct dependencies or in
 ---
 
 ## Release v0.2.0 - Core Services (The 'Walking Skeleton')
-**Target Date**: 2026-02-15
+**Released**: 2026-01-19
 **Strategic Goal**: Implement the core functional services (ASR, Translation) on top of the shared infrastructure to achieve end-to-end data flow.
 
 ### Epic 1.2: Audio-to-Text Ingestion (ASR Service)
 **Priority**: P0
-**Status**: Planned
+**Status**: Delivered
 
 **User Story**:
 As a User,
@@ -67,16 +68,16 @@ So that the system has raw material to translate.
 - Epic 1.1 (Shared Contracts).
 
 **Acceptance Criteria**:
-- [ ] ASR Service consumes `AudioInputEvent` (or accepts raw audio input for MVP demo).
-- [ ] ASR Service successfully produces `TextRecognizedEvent` to Kafka.
-- [ ] Output events contain correct `correlation_id` from input.
-- [ ] Basic error handling (e.g., empty audio) produces error logs/events.
+- [x] ASR Service consumes `AudioInputEvent` (or accepts raw audio input for MVP demo).
+- [x] ASR Service successfully produces `TextRecognizedEvent` to Kafka.
+- [x] Output events contain correct `correlation_id` from input.
+- [x] Basic error handling (e.g., empty audio) produces error logs/events.
 
 ---
 
 ### Epic 1.3: Text-to-Text Translation (Translation Service)
 **Priority**: P0
-**Status**: Planned
+**Status**: Delivered
 
 **User Story**:
 As a User,
@@ -92,10 +93,13 @@ So that I can understand the content.
 - Epic 1.2 (for end-to-end testing, though traceable independently).
 
 **Acceptance Criteria**:
-- [ ] Translation Service consumes `TextRecognizedEvent`.
-- [ ] Translation Service produces `TextTranslatedEvent`.
-- [ ] Translation logic supports at least one language pair (e.g., EN -> ES) reliably.
-- [ ] `correlation_id` is preserved.
+- [x] Translation Service consumes `TextRecognizedEvent`.
+- [x] Translation Service produces `TextTranslatedEvent`.
+- [x] Translation logic supports at least one language pair (e.g., EN -> ES) reliably.
+- [x] `correlation_id` is preserved.
+
+**Status Notes**:
+- 2026-01-19: Implementation exceeded MVP scope by integrating real Hugging Face model (CPU-optimized) instead of mock, validating better functional value.
 
 ---
 

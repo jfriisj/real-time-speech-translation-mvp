@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, Mapping
 
 from .serialization import deserialize_event
 
@@ -12,7 +12,11 @@ class KafkaConsumerWrapper:
 
     @classmethod
     def from_confluent(
-        cls, bootstrap_servers: str, group_id: str, topics: Iterable[str]
+        cls,
+        bootstrap_servers: str,
+        group_id: str,
+        topics: Iterable[str],
+        config: Mapping[str, Any] | None = None,
     ) -> "KafkaConsumerWrapper":
         try:
             from confluent_kafka import Consumer  # type: ignore
@@ -22,13 +26,15 @@ class KafkaConsumerWrapper:
                 "Install it or pass an existing consumer instance."
             ) from exc
 
-        consumer = Consumer(
-            {
-                "bootstrap.servers": bootstrap_servers,
-                "group.id": group_id,
-                "auto.offset.reset": "earliest",
-            }
-        )
+        consumer_config: Dict[str, Any] = {
+            "bootstrap.servers": bootstrap_servers,
+            "group.id": group_id,
+            "auto.offset.reset": "earliest",
+        }
+        if config:
+            consumer_config.update(dict(config))
+
+        consumer = Consumer(consumer_config)
         consumer.subscribe(list(topics))
         return cls(consumer=consumer)
 
@@ -37,3 +43,14 @@ class KafkaConsumerWrapper:
         if message is None or message.error():
             return None
         return deserialize_event(schema, message.value())
+
+    def poll_with_message(
+        self, schema: Dict[str, Any], timeout: float = 1.0
+    ) -> tuple[Dict[str, Any], Any] | None:
+        message = self.consumer.poll(timeout=timeout)
+        if message is None or message.error():
+            return None
+        return deserialize_event(schema, message.value()), message
+
+    def commit_message(self, message: Any) -> None:
+        self.consumer.commit(message=message, asynchronous=False)

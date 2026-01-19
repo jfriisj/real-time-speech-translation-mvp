@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "translation-service"
+version = "0.2.0"
+description = "Translation microservice for the speech translation MVP."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{name = "Speech Platform Team"}]
+dependencies = [
+  "confluent-kafka>=2.5.0",
+  "torch>=2.6.0",
+  "transformers>=4.36.0",
+  "sentencepiece>=0.2.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+markers = [
+  "integration: marks integration tests that require Docker/Kafka",
+]

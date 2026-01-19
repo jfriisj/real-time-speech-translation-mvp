@@ -63,6 +63,22 @@ services:
     networks:
       - speech_net
 
+  translation-service:
+    build:
+      context: .
+      dockerfile: services/translation/Dockerfile
+    container_name: speech-translation-service
+    depends_on:
+      - schema-registry
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      TARGET_LANGUAGE: es
+      SCHEMA_DIR: /app/shared/schemas/avro
+    networks:
+      - speech_net
+
 networks:
   speech_net:
     driver: bridge

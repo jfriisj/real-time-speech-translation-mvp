@@ -1,0 +1,170 @@
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+from typing import Any, Dict
+
+from speech_lib import (
+    BaseEvent,
+    KafkaConsumerWrapper,
+    KafkaProducerWrapper,
+    SchemaRegistryClient,
+    TOPIC_ASR_TEXT,
+    TOPIC_TRANSLATION_TEXT,
+    load_schema,
+)
+
+from .config import Settings
+from .translator import HuggingFaceTranslator, Translator
+
+
+LOGGER = logging.getLogger(__name__)
+
+
+def extract_translation_request(
+    *,
+    event: Dict[str, Any],
+    target_language: str,
+) -> tuple[str, str, str, str]:
+    correlation_id = str(event.get("correlation_id", "")).strip()
+    if not correlation_id:
+        raise ValueError("missing correlation_id")
+
+    payload = event.get("payload") or {}
+    input_text = str(payload.get("text", "")).strip()
+    if not input_text:
+        raise ValueError("missing payload.text")
+
+    source_language = str(payload.get("language") or "").strip() or "en"
+    effective_target = target_language.strip() or "es"
+    return correlation_id, input_text, source_language, effective_target
+
+
+def register_schemas(
+    registry: SchemaRegistryClient,
+    input_schema: Dict[str, Any],
+    output_schema: Dict[str, Any],
+) -> None:
+    registry.register_schema(f"{TOPIC_ASR_TEXT}-value", input_schema)
+    registry.register_schema(f"{TOPIC_TRANSLATION_TEXT}-value", output_schema)
+
+
+def build_output_event(
+    *,
+    correlation_id: str,
+    translated_text: str,
+    source_language: str,
+    target_language: str,
+) -> BaseEvent:
+    return BaseEvent(
+        event_type="TextTranslatedEvent",
+        correlation_id=correlation_id,
+        source_service="translation-service",
+        payload={
+            "text": translated_text,
+            "source_language": source_language,
+            "target_language": target_language,
+            "quality_score": None,
+        },
+    )
+
+
+def process_event(
+    *,
+    event: Dict[str, Any],
+    translator: Translator,
+    producer: KafkaProducerWrapper,
+    output_schema: Dict[str, Any],
+    target_language: str,
+) -> None:
+    correlation_id, input_text, source_language, effective_target = extract_translation_request(
+        event=event,
+        target_language=target_language,
+    )
+    translated_text = translator.translate(input_text, source_language, effective_target)
+    if not translated_text:
+        raise ValueError("translation result is empty")
+
+    output_event = build_output_event(
+        correlation_id=correlation_id,
+        translated_text=translated_text,
+        source_language=source_language,
+        target_language=effective_target,
+    )
+
+    producer.publish_event(TOPIC_TRANSLATION_TEXT, output_event, output_schema)
+    LOGGER.info("Published TextTranslatedEvent correlation_id=%s", correlation_id)
+
+
+def _resolve_schema_dir(schema_dir: Path) -> Path:
+    if schema_dir.exists():
+        return schema_dir
+    # Useful when running inside service folder locally
+    candidate = Path(__file__).resolve().parents[4] / "shared" / "schemas" / "avro"
+    return candidate
+
+
+def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
+
+    settings = Settings.from_env()
+    schema_dir = _resolve_schema_dir(settings.schema_dir)
+
+    input_schema = load_schema("TextRecognizedEvent.avsc", schema_dir=schema_dir)
+    output_schema = load_schema("TextTranslatedEvent.avsc", schema_dir=schema_dir)
+
+    registry = SchemaRegistryClient(settings.schema_registry_url)
+    register_schemas(registry, input_schema, output_schema)
+
+    consumer = KafkaConsumerWrapper.from_confluent(
+        settings.kafka_bootstrap_servers,
+        group_id=settings.consumer_group_id,
+        topics=[TOPIC_ASR_TEXT],
+        config={"enable.auto.commit": False},
+    )
+    producer = KafkaProducerWrapper.from_confluent(settings.kafka_bootstrap_servers)
+
+    translator: Translator = HuggingFaceTranslator(
+        model_name=settings.model_name,
+        max_new_tokens=settings.max_new_tokens,
+    )
+
+    LOGGER.info(
+        "Translation service started; consuming from %s target_language=%s model=%s",
+        TOPIC_ASR_TEXT,
+        settings.target_language,
+        settings.model_name,
+    )
+
+    try:
+        while True:
+            polled = consumer.poll_with_message(
+                input_schema, timeout=settings.poll_timeout_seconds
+            )
+            if polled is None:
+                continue
+
+            event, message = polled
+            try:
+                process_event(
+                    event=event,
+                    translator=translator,
+                    producer=producer,
+                    output_schema=output_schema,
+                    target_language=settings.target_language,
+                )
+            except ValueError as exc:
+                LOGGER.warning("Dropping event: %s", exc)
+            except Exception:  # pragma: no cover - safety net for runtime errors
+                LOGGER.exception("Unexpected error while processing event")
+            finally:
+                consumer.commit_message(message)
+    except KeyboardInterrupt:
+        LOGGER.info("Translation service shutting down")
+
+
+if __name__ == "__main__":
+    main()
