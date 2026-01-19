@@ -1,49 +1,58 @@
 %% System Architecture Diagram (Mermaid)
-%% Last Updated: 2026-01-15
+%% Last Updated: 2026-01-19
 
 flowchart TB
-  %% External
-  Client[External Producer / CLI]:::external
+    %% Added quotes around the text inside [] to handle parentheses safely
+    Client["External_Clients\n(Web/Mobile/CLI)"]:::external
 
-  %% Shared Infra
-  subgraph Infra[Shared Infrastructure]
-    Kafka[(Kafka)]:::infra
-    SR[(Schema Registry)]:::infra
-  end
+    subgraph Infra[Shared Infrastructure]
+      Kafka[(Kafka)]:::infra
+      SR[(Schema Registry)]:::infra
+    end
 
-  %% Shared Contract
-  Contract[Shared Contract Artifact\n(Avro .avsc + envelope\n+ optional generated bindings)]:::shared
+    %% Added quotes here
+    Contract["Shared Contract Artifact\n(Avro .avsc + envelope\n+ optional generated bindings)"]:::shared
 
-  %% Services
-  subgraph Services[Independent Microservices]
-    ASR[ASR Service\n(audio → text)]:::svc
-    TR[Translation Service\n(text → translated text)]:::svc
-    TTS[TTS Service (optional)\n(text → audio)]:::svc
-  end
+    %% Services
+    subgraph Services[Independent Microservices]
+      %% Added quotes to all these descriptions containing ()
+      GW["Ingress Gateway\n(WebSocket/gRPC)"]:::svc
+      VAD["VAD Service\n(silence removal)"]:::svc
+      ASR["ASR Service\n(audio → text)"]:::svc
+      TR["Translation Service\n(text → translated text)"]:::svc
+      TTS["TTS Service\n(IndexTTS-2)\n(text → audio)"]:::svc
+    end
 
-  %% Topics (logical)
-  Client -->|speech.audio.ingress\nAudioInputEvent (Avro)| Kafka
-  Kafka -->|speech.audio.ingress\nAudioInputEvent| ASR
-  ASR -->|speech.asr.text\nTextRecognizedEvent| Kafka
-  Kafka -->|speech.asr.text\nTextRecognizedEvent| TR
-  TR -->|speech.translation.text\nTextTranslatedEvent| Kafka
-  Kafka -->|speech.translation.text\nTextTranslatedEvent| Client
-  TR -.->|Future: TTSRequestEvent| Kafka
-  Kafka -.->|Future: TTSRequestEvent| TTS
+    %% Topics (logical)
+    Client -->|WebSocket/gRPC| GW
+    GW -->|"speech.audio.ingress\nAudioInputEvent (Avro)"| Kafka
+    Kafka -->|"speech.audio.ingress\nAudioInputEvent"| VAD
+    VAD -->|"speech.audio.speech_segment\nSpeechSegmentEvent"| Kafka
+    Kafka -->|"speech.audio.speech_segment\nSpeechSegmentEvent"| ASR
+    ASR -->|"speech.asr.text\nTextRecognizedEvent"| Kafka
+    Kafka -->|"speech.asr.text\nTextRecognizedEvent"| TR
+    TR -->|"speech.translation.text\nTextTranslatedEvent"| Kafka
+    Kafka -->|"speech.translation.text\nTextTranslatedEvent"| TTS
+    TTS -->|"speech.tts.audio\nAudioSynthesisEvent"| Kafka
+    Kafka -->|"speech.tts.audio\nAudioSynthesisEvent"| Client
 
-  %% Registry usage
-  ASR --- SR
-  TR --- SR
-  TTS -.-> SR
-  Client --- SR
+    %% Registry usage
+    ASR --- SR
+    TR --- SR
+    GW --- SR
+    VAD --- SR
+    TTS --- SR
+    Client --- SR
 
-  %% Contract usage
-  Contract --- ASR
-  Contract --- TR
-  Contract -.-> TTS
-  Contract --- Client
+    %% Contract usage
+    Contract --- ASR
+    Contract --- TR
+    Contract --- GW
+    Contract --- VAD
+    Contract --- TTS
+    Contract --- Client
 
-  classDef infra fill:#e3f2fd,stroke:#1565c0,color:#0d47a1;
-  classDef svc fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20;
-  classDef shared fill:#fff3e0,stroke:#ef6c00,color:#e65100;
-  classDef external fill:#eeeeee,stroke:#616161,color:#212121;
+    classDef infra fill:#e3f2fd,stroke:#1565c0,color:#0d47a1;
+    classDef svc fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20;
+    classDef shared fill:#fff3e0,stroke:#ef6c00,color:#e65100;
+    classDef external fill:#eeeeee,stroke:#616161,color:#212121;

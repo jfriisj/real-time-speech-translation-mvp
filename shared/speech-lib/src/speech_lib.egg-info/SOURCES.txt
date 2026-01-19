@@ -13,5 +13,6 @@ src/speech_lib.egg-info/SOURCES.txt
 src/speech_lib.egg-info/dependency_links.txt
 src/speech_lib.egg-info/requires.txt
 src/speech_lib.egg-info/top_level.txt
+tests/test_consumer.py
 tests/test_events.py
 tests/test_serialization.py

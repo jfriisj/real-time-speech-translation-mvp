@@ -79,6 +79,42 @@ services:
     networks:
       - speech_net
 
+  gateway-service:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    container_name: speech-gateway-service
+    depends_on:
+      - schema-registry
+      - kafka
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      SCHEMA_DIR: /app/shared/schemas/avro
+      GATEWAY_HOST: 0.0.0.0
+      GATEWAY_PORT: 8000
+      SAMPLE_RATE_HZ: 16000
+      AUDIO_FORMAT: wav
+      MAX_BUFFER_BYTES: 1572864
+      MAX_CHUNK_BYTES: 65536
+      MAX_CONNECTIONS: 10
+      IDLE_TIMEOUT_SECONDS: 10
+      MAX_SESSION_SECONDS: 60
+      MAX_MESSAGES_PER_SECOND: 200
+      ORIGIN_ALLOWLIST: ""
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    mem_limit: "512m"
+    cpus: "0.5"
+    networks:
+      - speech_net
+
 networks:
   speech_net:
     driver: bridge

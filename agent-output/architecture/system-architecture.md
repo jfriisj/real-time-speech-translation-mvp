@@ -1,6 +1,6 @@
 # System Architecture — Universal Speech Translation Platform
 
-**Last Updated**: 2026-01-15
+**Last Updated**: 2026-01-19
 
 ## Changelog
 
@@ -9,6 +9,7 @@
 | 2026-01-15 | Initial architecture baseline + decisions for Epic 1.1 | Establishes the Hard MVP backbone (Kafka + Schema Registry + shared contract) and constrains scope to avoid creep | Epic 1.1 (Shared Infrastructure & Contract Definition) |
 | 2026-01-15 | Pinned canonical `AudioInputEvent`, topic taxonomy, and SR governance notes | Removes naming drift; makes contract + registry behavior explicit for downstream epics | Epic 1.1 (post-delivery alignment) |
 | 2026-01-15 | Epic 1.2 pre-planning guardrails (topics, audio format, failure signaling, delivery semantics) | Prevents downstream integration drift between plans and the v0.1.0 infrastructure contract | Epic 1.2 (ASR Service) |
+| 2026-01-19 | Added v0.3.0 MVP+ extension guardrails (Gateway, VAD, TTS, speaker context) | Ensures planned pipeline additions do not break v0.2.x reproducibility and makes voice-cloning context propagation explicit | Release v0.3.0 (Epics 1.5–1.7) |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:
@@ -37,13 +38,26 @@ Deliver a **hard MVP** event-driven speech translation pipeline that is:
 ### Microservices (independent)
 - ASR Service: audio → text
 - Translation Service: text → translated text
-- Optional later: TTS Service: translated text → synthesized audio
+- Planned: Ingress Gateway: external streaming ingress (WebSocket/gRPC) → `AudioInputEvent`
+- Planned: VAD Service: silence removal / segmentation (`AudioInputEvent` → `SpeechSegmentEvent`)
+- Planned: TTS Service: translated text → synthesized audio (`TextTranslatedEvent` → `AudioSynthesisEvent`)
+
+### Planned supporting infrastructure (v0.3.0+)
+- MAY introduce an object store (e.g., MinIO/S3) only if speaker reference audio must be transported by URI rather than inline.
 
 ## Runtime Flows (Hard MVP)
 1. Producer publishes `AudioInputEvent` (topic: `speech.audio.ingress`) with a `correlation_id`.
 2. ASR consumes audio event and publishes `TextRecognizedEvent` preserving `correlation_id`.
 3. Translation consumes `TextRecognizedEvent` and publishes `TextTranslatedEvent` preserving `correlation_id`.
 4. Consumer/CLI prints final result (and later attaches latency metrics).
+
+## Runtime Flows (Planned MVP+ / v0.3.0)
+1. External devices connect to the **Ingress Gateway** (WebSocket/gRPC).
+2. Gateway publishes `AudioInputEvent` to `speech.audio.ingress` with `correlation_id`.
+3. **VAD Service** consumes `AudioInputEvent`, removes silence, and publishes `SpeechSegmentEvent`.
+4. **ASR Service** consumes `SpeechSegmentEvent` and publishes `TextRecognizedEvent`.
+5. **Translation Service** consumes `TextRecognizedEvent` and publishes `TextTranslatedEvent`.
+6. **TTS Service** consumes `TextTranslatedEvent` and publishes `AudioSynthesisEvent` (and/or an optional client-facing stream).
 
 ## Data Boundaries & Contracts
 - All inter-service data crosses boundaries as **Avro-encoded events**.
@@ -54,6 +68,18 @@ Deliver a **hard MVP** event-driven speech translation pipeline that is:
 - `speech.audio.ingress` → `AudioInputEvent`
 - `speech.asr.text` → `TextRecognizedEvent`
 - `speech.translation.text` → `TextTranslatedEvent`
+
+### Planned Topic Taxonomy (v0.3.0+)
+- `speech.audio.speech_segment` → `SpeechSegmentEvent`
+- `speech.tts.audio` → `AudioSynthesisEvent`
+
+### Speaker Context (Planned)
+Voice cloning requires a **speaker reference context** (reference audio clip and/or embedding) originating at ingress and usable at TTS.
+
+Architecture requirements:
+- Speaker context MUST be optional and MUST NOT be required for baseline TTS functionality.
+- Intermediate services (ASR, Translation) MUST treat speaker context as pass-through metadata.
+- Speaker context is treated as sensitive data; retention MUST be time-bounded (session-scoped) if stored.
 
 ## Dependencies
 - Kafka
@@ -128,6 +154,31 @@ Deliver a **hard MVP** event-driven speech translation pipeline that is:
 
 **Consequences**:
 - Any alternate topic names (e.g., `audio-input`, `text-recognized`) are treated as a plan defect unless an explicit architecture change is approved.
+
+### Decision: VAD introduces a new segmentation event (v0.3.0+)
+**Context**: v0.3.0 introduces a VAD stage to reduce downstream compute and latency. Changing the existing `AudioInputEvent` semantics or reusing `speech.audio.ingress` for both raw and segmented payloads risks breaking v0.2.x reproducibility.
+
+**Choice**:
+- Introduce a new event type `SpeechSegmentEvent` on a new topic `speech.audio.speech_segment`.
+- Preserve `AudioInputEvent` and `speech.audio.ingress` for ingress and v0.2.x compatibility.
+
+**Consequences**:
+- ASR will migrate to consume `SpeechSegmentEvent` for v0.3.0+, but legacy flow can remain for benchmarking and regression testing.
+
+### Decision: Speaker reference context propagation (v0.3.0+)
+**Context**: IndexTTS-2 voice cloning requires speaker reference context captured at ingress but consumed at the end of the pipeline.
+
+**Choice (guardrail)**:
+- Speaker context MUST be propagated either:
+	- Inline as a small optional reference clip/embedding in the event envelope (preferred for MVP+ simplicity), OR
+	- As an optional URI/ID referencing an external object store (only if inline propagation becomes a bottleneck).
+
+**Rationale**:
+- Prevents passing full raw audio across every stage while enabling voice cloning.
+- Keeps the architecture explicit about added dependencies and privacy implications.
+
+**Consequences**:
+- Requires schema evolution discipline (optional fields or new event types) and clear retention/cleanup rules if URIs are used.
 
 ### Decision: Supported audio format for MVP
 **Context**: Allowing multiple formats expands the decoding surface area and increases integration ambiguity.

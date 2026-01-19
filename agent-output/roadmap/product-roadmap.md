@@ -140,25 +140,87 @@ So that I can validate the performance claims of the architecture.
 - Retrospective [agent-output/retrospectives/004-traceability-and-latency-retrospective.md](agent-output/retrospectives/004-traceability-and-latency-retrospective.md) captured lessons on warmup/cold-start handling and roadmap governance.
 ---
 
-## Release v0.3.0 - Expand & Speak (MVP+)
+## Release v0.3.0 - Connectivity, Optimization & Speech (MVP+)
+**Status**: Planned
+
+**Strategic Goal**: Transform the "Walking Skeleton" into a "Usable Platform" by adding client connectivity, optimizing throughput via silence filtering, and completing the output loop with synthesis.
+
+### Epic 1.5: Ingress Gateway — Phase 1 (WebSocket)
+**Priority**: P1
+**Status**: Planned
+
+**User Story**:
+As a Client Developer (Web/Mobile),
+I want to stream audio via WebSocket to a single entry point,
+So that I can connect external devices (microphones, browsers) to the pipeline without direct Kafka access or local CLI scripts.
+
+**Scope Note**: Phase 1 delivers WebSocket ingress. gRPC support is deferred to a follow-up epic (post-v0.3.0) per technical analysis findings.
+
+**Business Value**:
+- **Usability**: Moves from "CLI-based demo" to "Real-world Platform".
+- **Security**: Decouples external clients from internal message bus.
+
+**Acceptance Criteria**:
+- [ ] Gateway Service exposes WebSocket endpoint for audio streaming.
+- [ ] Gateway produces `AudioInputEvent` to Kafka.
+- [ ] Supports multiple concurrent client connections.
+- [ ] Security controls enforced (DoS protection, container hardening, network isolation).
+
+**Deferred to Follow-up Epic**:
+- gRPC endpoint support (Epic 1.5b or Backlog item)
+
+---
+
+### Epic 1.6: Voice Activity Detection (VAD) Service
+**Priority**: P1
+**Status**: Planned
+
+**User Story**:
+As a System Architect,
+I want to filter out silence *before* the heavy ASR service,
+So that I don't waste GPU/CPU cycles transcribing background noise and latency is improved.
+
+**Business Value**:
+- **Performance**: Directly supports Thesis hypothesis on "efficiency".
+- **Cost**: Reduces token/compute usage on downstream models.
+- **Latency**: Smaller payloads = faster transit.
+
+**Dependencies**:
+- Placed *after* Gateway (Epic 1.5) and *before* ASR (Epic 1.2).
+
+**Acceptance Criteria**:
+- [ ] VAD Service consumes `AudioInputEvent` from Gateway.
+- [ ] VAD Service uses `onnx-community/silero-vad` model (ONNX runtime) for low-latency detection.
+- [ ] VAD Service detects speech segments.
+- [ ] VAD Service produces `SpeechSegmentEvent` (only containing speech).
+- [ ] ASR Service updated to consume `SpeechSegmentEvent` instead of raw `AudioInputEvent`.
+
+---
+
+### Epic 1.7: Text-to-Speech (TTS) with IndexTTS-2
+**Priority**: P1
 **Status**: Planned
 
 **User Story**:
 As a User,
-I want to hear the translated text spoken,
-So that I can consume the translation hands-free / naturally.
+I want to hear the translated text spoken naturally,
+So that I can consume the translation hands-free.
 
 **Business Value**:
 - **UX**: Completes the "Speech-to-Speech" loop.
-- **Architecture Proof**: Proves that adding a 3rd service is easy because of the Shared Contracts (Epic 1.1).
+- **Quality**: Utilizes `IndexTeam/IndexTTS-2` for high-quality synthesis.
+- **Innovation**: Leverages Zero-Shot capabilities (voice cloning) and emotional expression features inherent to IndexTTS-2.
 
 **Dependencies**:
 - Epic 1.3 (Translation output).
 
 **Acceptance Criteria**:
+- [ ] **Architecture**: data flow designed to propagate "Source Audio Sample" (or embedding) from Ingress -> TTS for cloning context.
 - [ ] TTS Service consumes `TextTranslatedEvent`.
-- [ ] TTS Service produces `AudioSynthesisEvent` (or serves audio file/stream).
-- [ ] Integrated into the E2E latency measurement (Epic 1.4 update).
+- [ ] TTS Service uses `IndexTeam/IndexTTS-2` model (Hugging Face).
+- [ ] TTS Service produces `AudioSynthesisEvent`.
+- [ ] Configurable "Reference Speaker" support (leveraging Zero-Shot capability).
+- [ ] Basic duration/speed control implemented.
 
 ---
 
@@ -170,6 +232,3 @@ So that I can consume the translation hands-free / naturally.
 
 ### Epic 3.1: Stream Processing (Real-time)
 *Switch from block-based processing to true streaming (gRPC or chunked Kafka events).*
-
-### Epic 3.2: API Gateway & Auth
-*Secure ingestion layer for public-facing usage.*
