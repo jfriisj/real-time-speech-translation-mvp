@@ -10,6 +10,7 @@
 |------|---------------|---------|---------|
 | 2026-01-19 | Planner | Test strategy for Plan 009 VAD | Authored QA strategy aligned to VAD acceptance criteria and architecture constraints. |
 | 2026-01-19 | Implementer | Implementation complete, ready for testing | Executed unit tests + Ruff gate; ran VAD → ASR → Translation smoke test; legacy pipeline regression still pending. |
+| 2026-01-19 | QA | Retest after plan revision sync | Re-ran Ruff gate, unit tests, and VAD pipeline smoke test; legacy Pipeline A regression + success-metric validation still pending. |
 
 ## Timeline
 - **Test Strategy Started**: 2026-01-19
@@ -81,13 +82,13 @@ pip install -e services/vad
 
 ### Comparison to Test Plan
 - **Tests Planned**: 6 (3 unit, 3 integration)
-- **Tests Implemented**: 3 unit
-- **Tests Missing**: Pipeline A regression, Pipeline B smoke, ordering verification
+- **Tests Implemented**: 5 (3 unit, 2 integration)
+- **Tests Missing**: Pipeline A regression
 - **Tests Added Beyond Plan**: None
 
 ## Test Execution Results
 ### Analyzer Verification Gate
-- **Ruff lint**: Pass (no issues) on VAD/ASR/speech-lib changes.
+- **Ruff lint**: Pass (no issues) on VAD/ASR/speech-lib changes plus unit tests and e2e smoke test.
 
 ### Unit Tests
 - **Command**: pytest shared/speech-lib/tests/test_events.py services/asr/tests/test_processing.py services/vad/tests/test_processing.py
