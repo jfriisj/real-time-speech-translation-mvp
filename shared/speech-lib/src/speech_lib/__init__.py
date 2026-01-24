@@ -2,12 +2,14 @@ from .constants import (
     AUDIO_PAYLOAD_MAX_BYTES,
     KAFKA_MESSAGE_MAX_BYTES,
     TOPIC_AUDIO_INGRESS,
+    TOPIC_SPEECH_SEGMENT,
     TOPIC_ASR_TEXT,
     TOPIC_TRANSLATION_TEXT,
 )
 from .events import (
     AudioInputPayload,
     BaseEvent,
+    SpeechSegmentPayload,
     TextRecognizedPayload,
     TextTranslatedPayload,
 )
@@ -21,10 +23,12 @@ __all__ = [
     "AUDIO_PAYLOAD_MAX_BYTES",
     "KAFKA_MESSAGE_MAX_BYTES",
     "TOPIC_AUDIO_INGRESS",
+    "TOPIC_SPEECH_SEGMENT",
     "TOPIC_ASR_TEXT",
     "TOPIC_TRANSLATION_TEXT",
     "AudioInputPayload",
     "BaseEvent",
+    "SpeechSegmentPayload",
     "TextRecognizedPayload",
     "TextTranslatedPayload",
     "correlation_context",

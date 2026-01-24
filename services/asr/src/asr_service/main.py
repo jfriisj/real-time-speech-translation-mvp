@@ -10,6 +10,7 @@ from speech_lib import (
     SchemaRegistryClient,
     TOPIC_ASR_TEXT,
     TOPIC_AUDIO_INGRESS,
+    TOPIC_SPEECH_SEGMENT,
     load_schema,
 )
 
@@ -21,9 +22,22 @@ from .transcriber import Transcriber
 LOGGER = logging.getLogger(__name__)
 
 
-def register_schemas(registry: SchemaRegistryClient, input_schema: Dict[str, Any], output_schema: Dict[str, Any]) -> None:
-    registry.register_schema(f"{TOPIC_AUDIO_INGRESS}-value", input_schema)
+def register_schemas(
+    registry: SchemaRegistryClient,
+    input_schema: Dict[str, Any],
+    output_schema: Dict[str, Any],
+    input_topic: str,
+) -> None:
+    registry.register_schema(f"{input_topic}-value", input_schema)
     registry.register_schema(f"{TOPIC_ASR_TEXT}-value", output_schema)
+
+
+def resolve_input_schema_name(input_topic: str) -> str:
+    if input_topic == TOPIC_AUDIO_INGRESS:
+        return "AudioInputEvent.avsc"
+    if input_topic == TOPIC_SPEECH_SEGMENT:
+        return "SpeechSegmentEvent.avsc"
+    raise ValueError(f"Unsupported ASR input topic: {input_topic}")
 
 
 def build_output_event(result: Dict[str, Any], correlation_id: str) -> BaseEvent:
@@ -65,28 +79,37 @@ def process_event(
         raise ValueError("transcription result is empty")
 
     producer.publish_event(TOPIC_ASR_TEXT, output_event, output_schema)
-    LOGGER.info("Published TextRecognizedEvent correlation_id=%s", correlation_id)
+    segment_index = payload.get("segment_index")
+    if segment_index is not None:
+        LOGGER.info(
+            "Published TextRecognizedEvent correlation_id=%s segment_index=%s",
+            correlation_id,
+            segment_index,
+        )
+    else:
+        LOGGER.info("Published TextRecognizedEvent correlation_id=%s", correlation_id)
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
     settings = Settings.from_env()
 
-    input_schema = load_schema("AudioInputEvent.avsc", schema_dir=settings.schema_dir)
+    input_schema_name = resolve_input_schema_name(settings.input_topic)
+    input_schema = load_schema(input_schema_name, schema_dir=settings.schema_dir)
     output_schema = load_schema("TextRecognizedEvent.avsc", schema_dir=settings.schema_dir)
 
     registry = SchemaRegistryClient(settings.schema_registry_url)
-    register_schemas(registry, input_schema, output_schema)
+    register_schemas(registry, input_schema, output_schema, settings.input_topic)
 
     consumer = KafkaConsumerWrapper.from_confluent(
         settings.kafka_bootstrap_servers,
         group_id=settings.consumer_group_id,
-        topics=[TOPIC_AUDIO_INGRESS],
+        topics=[settings.input_topic],
     )
     producer = KafkaProducerWrapper.from_confluent(settings.kafka_bootstrap_servers)
     transcriber = Transcriber(settings.model_name)
 
-    LOGGER.info("ASR service started; consuming from %s", TOPIC_AUDIO_INGRESS)
+    LOGGER.info("ASR service started; consuming from %s", settings.input_topic)
 
     try:
         while True:

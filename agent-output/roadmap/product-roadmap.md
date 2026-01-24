@@ -13,6 +13,7 @@
 | 2026-01-19 08:30 | Released v0.2.0 (Core Services) | Delivered Epic 1.2 (ASR) and Epic 1.3 (Translation) establishing the full event pipeline. |
 | 2026-01-19 15:30 | Added v0.2.1 (Traceability) | Created a patch release entry for Epic 1.4 measurement tooling and governance artifacts. |
 | 2026-01-19 16:00 | Sequencing Validation (PI-003) | Confirmed process improvements (Analyst Checks, Planner Stubs) do not affect v0.3.0 delivery timeline. |
+| 2026-01-19 17:00 | Released v0.3.0 (Ingress) | Delivered Epic 1.5 (Phase 1); Moved Epics 1.6 & 1.7 to new v0.4.0 Release to reflect iterative delivery. |
 
 ---
 
@@ -141,36 +142,42 @@ So that I can validate the performance claims of the architecture.
 - Retrospective [agent-output/retrospectives/004-traceability-and-latency-retrospective.md](agent-output/retrospectives/004-traceability-and-latency-retrospective.md) captured lessons on warmup/cold-start handling and roadmap governance.
 ---
 
-## Release v0.3.0 - Connectivity, Optimization & Speech (MVP+)
-**Status**: Planned
+## Release v0.3.0 - Ingress Gateway (Connectivity)
+**Status**: Released
+**Released**: 2026-01-19
 
-**Strategic Goal**: Transform the "Walking Skeleton" into a "Usable Platform" by adding client connectivity, optimizing throughput via silence filtering, and completing the output loop with synthesis.
+**Strategic Goal**: Transform the "Walking Skeleton" into a "Usable Platform" by adding client connectivity (WebSocket) to decouple external clients from Kafka.
 
 ### Epic 1.5: Ingress Gateway — Phase 1 (WebSocket)
 **Priority**: P1
-**Status**: Planned
+**Status**: Delivered
 
 **User Story**:
 As a Client Developer (Web/Mobile),
 I want to stream audio via WebSocket to a single entry point,
 So that I can connect external devices (microphones, browsers) to the pipeline without direct Kafka access or local CLI scripts.
 
-**Scope Note**: Phase 1 delivers WebSocket ingress. gRPC support is deferred to a follow-up epic (post-v0.3.0) per technical analysis findings.
+**Scope Note**: Phase 1 delivered WebSocket ingress. gRPC support deferred to Epic 1.5b.
 
 **Business Value**:
 - **Usability**: Moves from "CLI-based demo" to "Real-world Platform".
 - **Security**: Decouples external clients from internal message bus.
 
 **Acceptance Criteria**:
-- [ ] Gateway Service exposes WebSocket endpoint for audio streaming.
-- [ ] Gateway produces `AudioInputEvent` to Kafka.
-- [ ] Supports multiple concurrent client connections.
-- [ ] Security controls enforced (DoS protection, container hardening, network isolation).
+- [x] Gateway Service exposes WebSocket endpoint for audio streaming.
+- [x] Gateway produces `AudioInputEvent` to Kafka.
+- [x] Supports multiple concurrent client connections.
+- [x] Security controls enforced (DoS protection, container hardening, network isolation).
 
 **Deferred to Follow-up Epic**:
-- gRPC endpoint support (Epic 1.5b or Backlog item)
+- gRPC endpoint support (Epic 1.5b)
 
 ---
+
+## Release v0.4.0 - Optimization & Speech (MVP+)
+**Status**: Planned
+
+**Strategic Goal**: Optimize throughput via silence filtering and complete the output loop with synthesis.
 
 ### Epic 1.6: Voice Activity Detection (VAD) Service
 **Priority**: P1
@@ -233,3 +240,6 @@ So that I can consume the translation hands-free.
 
 ### Epic 3.1: Stream Processing (Real-time)
 *Switch from block-based processing to true streaming (gRPC or chunked Kafka events).*
+
+### Epic 1.5b: Ingress Gateway — Phase 2 (gRPC)
+*Add gRPC endpoint support to the Gateway service for high-performance inter-service or mobile client communication.*

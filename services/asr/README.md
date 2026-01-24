@@ -16,3 +16,4 @@ Install shared contract helpers first, then install the ASR service:
 - `MODEL_NAME` (default: `openai/whisper-tiny`)
 - `CONSUMER_GROUP_ID` (default: `asr-service`)
 - `SCHEMA_DIR` (default: `shared/schemas/avro`)
+- `ASR_INPUT_TOPIC` (default: `speech.audio.ingress`)

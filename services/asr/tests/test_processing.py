@@ -8,7 +8,9 @@ import wave
 import numpy as np
 import pytest
 
+from asr_service.main import resolve_input_schema_name
 from asr_service.processing import decode_wav, validate_audio_payload
+from speech_lib import TOPIC_AUDIO_INGRESS, TOPIC_SPEECH_SEGMENT
 from speech_lib.constants import AUDIO_PAYLOAD_MAX_BYTES
 
 
@@ -69,3 +71,11 @@ def test_decode_wav_returns_float32_audio() -> None:
     assert isinstance(audio, np.ndarray)
     assert sample_rate == 16000
     assert audio.dtype == np.float32
+
+
+def test_resolve_input_schema_name() -> None:
+    assert resolve_input_schema_name(TOPIC_AUDIO_INGRESS) == "AudioInputEvent.avsc"
+    assert resolve_input_schema_name(TOPIC_SPEECH_SEGMENT) == "SpeechSegmentEvent.avsc"
+
+    with pytest.raises(ValueError):
+        resolve_input_schema_name("speech.audio.unknown")

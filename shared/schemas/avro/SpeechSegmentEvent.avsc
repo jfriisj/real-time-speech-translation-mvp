@@ -1,0 +1,29 @@
+{
+  "type": "record",
+  "name": "SpeechSegmentEvent",
+  "namespace": "ai.speech.shared.events",
+  "doc": "VAD output event containing a single speech segment payload.",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "event_type", "type": "string"},
+    {"name": "correlation_id", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "source_service", "type": "string"},
+    {
+      "name": "payload",
+      "type": {
+        "type": "record",
+        "name": "SpeechSegmentPayload",
+        "fields": [
+          {"name": "segment_id", "type": "string"},
+          {"name": "segment_index", "type": "int"},
+          {"name": "start_ms", "type": "long"},
+          {"name": "end_ms", "type": "long"},
+          {"name": "audio_bytes", "type": "bytes"},
+          {"name": "sample_rate_hz", "type": "int"},
+          {"name": "audio_format", "type": "string", "doc": "wav"}
+        ]
+      }
+    }
+  ]
+}

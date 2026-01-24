@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vad-service"
+version = "0.4.0"
+description = "Voice activity detection microservice for the speech translation MVP."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "Speech Platform Team"}]
+dependencies = [
+  "confluent-kafka>=2.5.0",
+  "numpy>=1.26.0",
+  "soundfile>=0.12.1",
+  "librosa>=0.10.1",
+  "onnxruntime>=1.18.0",
+  "huggingface-hub>=0.22.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+markers = [
+  "integration: marks integration tests that require Docker/Kafka",
+]

@@ -60,6 +60,33 @@ services:
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       MODEL_NAME: openai/whisper-tiny
       SCHEMA_DIR: /app/shared/schemas/avro
+      ASR_INPUT_TOPIC: speech.audio.speech_segment
+    networks:
+      - speech_net
+
+  vad-service:
+    build:
+      context: .
+      dockerfile: services/vad/Dockerfile
+    container_name: speech-vad-service
+    depends_on:
+      - schema-registry
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      SCHEMA_DIR: /app/shared/schemas/avro
+      TARGET_SAMPLE_RATE_HZ: 16000
+      VAD_WINDOW_MS: 30
+      VAD_HOP_MS: 10
+      VAD_SPEECH_THRESHOLD: 0.5
+      VAD_ENERGY_THRESHOLD: 0.01
+      VAD_MIN_SPEECH_MS: 250
+      VAD_MIN_SILENCE_MS: 200
+      VAD_PADDING_MS: 100
+      VAD_USE_ONNX: "1"
+      VAD_MODEL_REPO: onnx-community/silero-vad
+      VAD_MODEL_FILENAME: silero_vad.onnx
     networks:
       - speech_net
 

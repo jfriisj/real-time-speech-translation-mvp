@@ -38,6 +38,33 @@ class TextTranslatedPayload:
 
 
 @dataclass(frozen=True)
+class SpeechSegmentPayload:
+    segment_id: str
+    segment_index: int
+    start_ms: int
+    end_ms: int
+    audio_bytes: bytes
+    sample_rate_hz: int
+    audio_format: str = "wav"
+
+    def validate(self) -> None:
+        if not self.segment_id:
+            raise ValueError("segment_id is required")
+        if self.segment_index < 0:
+            raise ValueError("segment_index must be non-negative")
+        if self.start_ms < 0 or self.end_ms <= self.start_ms:
+            raise ValueError("start_ms/end_ms are invalid")
+        if len(self.audio_bytes) > AUDIO_PAYLOAD_MAX_BYTES:
+            raise ValueError(
+                f"audio_bytes exceeds {AUDIO_PAYLOAD_MAX_BYTES} bytes (MVP limit)"
+            )
+        if self.audio_format != "wav":
+            raise ValueError("audio_format must be 'wav' for MVP")
+        if self.sample_rate_hz <= 0:
+            raise ValueError("sample_rate_hz must be positive")
+
+
+@dataclass(frozen=True)
 class BaseEvent:
     event_type: str
     correlation_id: str

@@ -9,7 +9,9 @@
 | 2026-01-15 | Initial architecture baseline + decisions for Epic 1.1 | Establishes the Hard MVP backbone (Kafka + Schema Registry + shared contract) and constrains scope to avoid creep | Epic 1.1 (Shared Infrastructure & Contract Definition) |
 | 2026-01-15 | Pinned canonical `AudioInputEvent`, topic taxonomy, and SR governance notes | Removes naming drift; makes contract + registry behavior explicit for downstream epics | Epic 1.1 (post-delivery alignment) |
 | 2026-01-15 | Epic 1.2 pre-planning guardrails (topics, audio format, failure signaling, delivery semantics) | Prevents downstream integration drift between plans and the v0.1.0 infrastructure contract | Epic 1.2 (ASR Service) |
-| 2026-01-19 | Added v0.3.0 MVP+ extension guardrails (Gateway, VAD, TTS, speaker context) | Ensures planned pipeline additions do not break v0.2.x reproducibility and makes voice-cloning context propagation explicit | Release v0.3.0 (Epics 1.5–1.7) |
+| 2026-01-19 | Added MVP+ extension guardrails (Gateway, VAD, TTS, speaker context) | Ensures planned pipeline additions do not break v0.2.x reproducibility and makes voice-cloning context propagation explicit | v0.3.0–v0.4.0 (Epics 1.5–1.7) |
+| 2026-01-19 | Epic 1.6 VAD pre-planning constraints (segmentation semantics + ordering) | Prevents non-deterministic ASR behavior and avoids schema/topic drift before planning | Epic 1.6 (VAD Service) |
+| 2026-01-19 | Added QA integration points + failure-mode checklist for VAD stage | Improves test coverage at service boundaries (SR/Kafka/VAD/ASR) and reduces regressions during v0.4.0 hardening | Plan 009 (VAD) |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:
@@ -164,6 +166,22 @@ Architecture requirements:
 
 **Consequences**:
 - ASR will migrate to consume `SpeechSegmentEvent` for v0.3.0+, but legacy flow can remain for benchmarking and regression testing.
+
+### Decision: `SpeechSegmentEvent` must be self-contained + ordered (Epic 1.6)
+**Context**: VAD emits multiple segments per request. Kafka ordering guarantees apply only within a partition. If segments reorder (or require the original full audio), downstream ASR behavior becomes non-deterministic and hard to test.
+
+**Choice**:
+- `SpeechSegmentEvent` payload MUST be self-contained (each segment is independently consumable by ASR without requiring the original full audio).
+- Segment events MUST preserve the original `correlation_id`.
+- Segment events MUST carry offsets relative to the original audio (e.g., `start_ms`, `end_ms`) and a `segment_index`.
+- Producers MUST key segment events by a stable per-request key (recommended: `correlation_id`) to keep ordering per request.
+
+**Alternatives**:
+- Reuse `AudioInputEvent` for segmented audio (rejected: breaks v0.2.x reproducibility and increases semantic ambiguity).
+- Run VAD inside ASR (rejected: couples policy and compute, limits independent scaling).
+
+**Consequences**:
+- Adds minimal schema requirements but substantially improves determinism, testability, and observability.
 
 ### Decision: Speaker reference context propagation (v0.3.0+)
 **Context**: IndexTTS-2 voice cloning requires speaker reference context captured at ingress but consumed at the end of the pipeline.

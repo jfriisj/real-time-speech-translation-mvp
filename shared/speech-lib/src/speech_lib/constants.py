@@ -1,6 +1,7 @@
 from pathlib import Path
 
 TOPIC_AUDIO_INGRESS = "speech.audio.ingress"
+TOPIC_SPEECH_SEGMENT = "speech.audio.speech_segment"
 TOPIC_ASR_TEXT = "speech.asr.text"
 TOPIC_TRANSLATION_TEXT = "speech.translation.text"
 

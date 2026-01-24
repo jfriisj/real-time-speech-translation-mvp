@@ -13,6 +13,7 @@ class Settings:
     consumer_group_id: str
     poll_timeout_seconds: float
     schema_dir: Path
+    input_topic: str
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -23,4 +24,5 @@ class Settings:
             consumer_group_id=os.getenv("CONSUMER_GROUP_ID", "asr-service"),
             poll_timeout_seconds=float(os.getenv("POLL_TIMEOUT_SECONDS", "1.0")),
             schema_dir=Path(os.getenv("SCHEMA_DIR", "shared/schemas/avro")),
+            input_topic=os.getenv("ASR_INPUT_TOPIC", "speech.audio.ingress"),
         )

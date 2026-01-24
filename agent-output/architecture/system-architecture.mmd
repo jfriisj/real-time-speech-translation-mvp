@@ -16,7 +16,7 @@ flowchart TB
     %% Services
     subgraph Services[Independent Microservices]
       %% Added quotes to all these descriptions containing ()
-      GW["Ingress Gateway\n(WebSocket/gRPC)"]:::svc
+      GW["Ingress Gateway\n(WebSocket Phase 1 / gRPC Phase 2)"]:::svc
       VAD["VAD Service\n(silence removal)"]:::svc
       ASR["ASR Service\n(audio → text)"]:::svc
       TR["Translation Service\n(text → translated text)"]:::svc
