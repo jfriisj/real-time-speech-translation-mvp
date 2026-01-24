@@ -60,7 +60,7 @@ services:
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       MODEL_NAME: openai/whisper-tiny
       SCHEMA_DIR: /app/shared/schemas/avro
-      ASR_INPUT_TOPIC: speech.audio.speech_segment
+      ASR_INPUT_TOPIC: speech.audio.ingress
     networks:
       - speech_net
 

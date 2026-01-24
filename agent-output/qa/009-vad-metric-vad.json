@@ -1,0 +1,82 @@
+{
+  "mode": "vad",
+  "meta": {
+    "dataset_seed": 20260119,
+    "samples": 10,
+    "total_seconds": 30.0,
+    "sample_rate_hz": 16000,
+    "silence_ratio": 0.4
+  },
+  "samples": [
+    {
+      "index": 0,
+      "reference_text": "sample 0 voice activity detection test",
+      "duration_seconds": 30.0,
+      "segment_seconds": 4.48,
+      "transcript": "Sample Neurovoice Activated Detection Sample Neurovoice Activated Detection"
+    },
+    {
+      "index": 1,
+      "reference_text": "sample 1 voice activity detection test",
+      "duration_seconds": 30.0,
+      "segment_seconds": 4.48,
+      "transcript": "sample one voice activity detection sample one voice activity detection"
+    },
+    {
+      "index": 2,
+      "reference_text": "sample 2 voice activity detection test",
+      "duration_seconds": 30.0,
+      "segment_seconds": 4.48,
+      "transcript": "sample 2 voice activity detection sample 2 voice activity detection......."
+    },
+    {
+      "index": 3,
+      "reference_text": "sample 3 voice activity detection test",
+      "duration_seconds": 30.0,
+      "segment_seconds": 4.48,
+      "transcript": "sample free voice activity detection sample free voice activity detection"
+    },
+    {
+      "index": 4,
+      "reference_text": "sample 4 voice activity detection test",
+      "duration_seconds": 30.0,
+      "segment_seconds": 4.48,
+      "transcript": "Sample 4 Voice Activities Detection Sample 4 Voice Activities Detection"
+    },
+    {
+      "index": 5,
+      "reference_text": "sample 5 voice activity detection test",
+      "duration_seconds": 30.0,
+      "segment_seconds": 4.48,
+      "transcript": "Sample 5 voice activity detection Sample 5 voice activity detection"
+    },
+    {
+      "index": 6,
+      "reference_text": "sample 6 voice activity detection test",
+      "duration_seconds": 30.0,
+      "segment_seconds": 4.48,
+      "transcript": "Sample 6 Voice Activity Detection Sample 6 Voice Activity Detection"
+    },
+    {
+      "index": 7,
+      "reference_text": "sample 7 voice activity detection test",
+      "duration_seconds": 30.0,
+      "segment_seconds": 4.46,
+      "transcript": "sample 7-voice activity attack sample 7-voice activity attack Thank you very much for watching this video and I'll see you in the next video."
+    },
+    {
+      "index": 8,
+      "reference_text": "sample 8 voice activity detection test",
+      "duration_seconds": 30.0,
+      "segment_seconds": 4.48,
+      "transcript": "Sample 8 Voice Activated Detection Sample 8 Voice Activated Detection"
+    },
+    {
+      "index": 9,
+      "reference_text": "sample 9 voice activity detection test",
+      "duration_seconds": 30.0,
+      "segment_seconds": 4.48,
+      "transcript": "sample 9 voice activity detection sample 9 voice activity detection"
+    }
+  ]
+}

@@ -58,7 +58,7 @@ Implemented Epic 1.6 by introducing a VAD microservice that consumes `AudioInput
 ## Code Quality Validation
 - [x] Ruff lint via analyzer on all changed Python files (no issues).
 - [x] Unit tests executed for speech-lib, ASR, and VAD processing.
-- [ ] Integration tests (pipeline smoke) pending.
+- [x] Integration tests executed (legacy pipeline + VAD pipeline smoke + success-metric validation).
 
 ## Value Statement Validation
 **Original**: Filter out silence before ASR to reduce compute waste and improve latency.
@@ -73,9 +73,13 @@ Implemented Epic 1.6 by introducing a VAD microservice that consumes `AudioInput
 | Command | Result | Notes |
 | --- | --- | --- |
 | `pytest shared/speech-lib/tests/test_events.py services/asr/tests/test_processing.py services/vad/tests/test_processing.py` | Passed | 6 tests passed. |
+| `/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/legacy_pipeline_smoke.py` | Passed | Legacy pipeline produced ASR + Translation outputs. |
+| `/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_pipeline_smoke.py` | Passed | VAD → ASR → Translation pipeline produced outputs. |
+| `/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_success_metric.py` | Passed | Duration reduction 72.9% (segments 6500 ms / original 24000 ms). |
 
 ## Outstanding Items
-- Integration smoke tests for Pipeline A/B (Ingress → VAD → ASR → Translation) not executed.
+- Transcript quality guardrail (WER ≤ 5pp) not validated due to lack of reference transcripts.
+- Ordering verification across multiple Kafka partitions not executed (single-node broker).
 - QA/UAT reports pending; QA docs are QA-owned and not modified in this implementation.
 - Validate ONNX model filename for `onnx-community/silero-vad` in the target environment; energy-based fallback logs warning if model load fails.
 

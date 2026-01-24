@@ -1,7 +1,7 @@
 # QA Report: Plan 009 Voice Activity Detection (VAD) Service
 
 **Plan Reference**: agent-output/planning/009-voice-activity-detection-plan.md
-**QA Status**: QA Failed
+**QA Status**: QA Complete
 **QA Specialist**: qa
 
 ## Changelog
@@ -11,14 +11,16 @@
 | 2026-01-19 | Planner | Test strategy for Plan 009 VAD | Authored QA strategy aligned to VAD acceptance criteria and architecture constraints. |
 | 2026-01-19 | Implementer | Implementation complete, ready for testing | Executed unit tests + Ruff gate; ran VAD → ASR → Translation smoke test; legacy pipeline regression still pending. |
 | 2026-01-19 | QA | Retest after plan revision sync | Re-ran Ruff gate, unit tests, and VAD pipeline smoke test; legacy Pipeline A regression + success-metric validation still pending. |
+| 2026-01-24 | QA | Coverage gap closure | Ran legacy Pipeline A smoke and success-metric validation; WER guardrail still pending. |
+| 2026-01-24 | QA | WER guardrail validation | Ran baseline/VAD success-metric comparison; WER guardrail satisfied and success metric confirmed. |
 
 ## Timeline
 - **Test Strategy Started**: 2026-01-19
 - **Test Strategy Completed**: 2026-01-19
 - **Implementation Received**: 2026-01-19
 - **Testing Started**: 2026-01-19
-- **Testing Completed**: 2026-01-19
-- **Final Status**: QA Failed
+- **Testing Completed**: 2026-01-24
+- **Final Status**: QA Complete
 
 ## Test Strategy (Pre-Implementation)
 Focus on end-to-end segmentation correctness, schema compliance, and ASR dual-mode consumption while preserving ordering guarantees via `correlation_id`.
@@ -76,14 +78,12 @@ pip install -e services/vad
 | services/asr/src/asr_service/main.py | `resolve_input_schema_name()` | services/asr/tests/test_processing.py | `test_resolve_input_schema_name` | COVERED |
 
 ### Coverage Gaps
-- Legacy Pipeline A regression test not executed (ASR default is VAD topic).
-- Ordering verification across Kafka partitions is untested (single-run smoke only).
-- Success metric validation (≥ 30% reduction) not executed.
+- Ordering verification across Kafka partitions is untested (single-node broker).
 
 ### Comparison to Test Plan
 - **Tests Planned**: 6 (3 unit, 3 integration)
-- **Tests Implemented**: 5 (3 unit, 2 integration)
-- **Tests Missing**: Pipeline A regression
+- **Tests Implemented**: 6 (3 unit, 3 integration)
+- **Tests Missing**: None
 - **Tests Added Beyond Plan**: None
 
 ## Test Execution Results
@@ -99,6 +99,21 @@ pip install -e services/vad
 - **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_pipeline_smoke.py
 - **Status**: PASS
 - **Output**: PASS: VAD -> ASR -> Translation pipeline produced outputs
+- **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/legacy_pipeline_smoke.py
+- **Status**: PASS
+- **Output**: PASS: Legacy pipeline produced ASR + Translation outputs
+- **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_success_metric.py
+- **Status**: PASS
+- **Output**: VAD duration reduction 72.9% (segments 6500 ms / original 24000 ms)
+- **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_success_metric.py --mode baseline --output agent-output/qa/009-vad-metric-baseline.json
+- **Status**: PASS
+- **Output**: Wrote baseline metrics to agent-output/qa/009-vad-metric-baseline.json
+- **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_success_metric.py --mode vad --output agent-output/qa/009-vad-metric-vad.json
+- **Status**: PASS
+- **Output**: Wrote VAD metrics to agent-output/qa/009-vad-metric-vad.json
+- **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_success_metric.py --mode compare --baseline-json agent-output/qa/009-vad-metric-baseline.json --vad-json agent-output/qa/009-vad-metric-vad.json --output agent-output/qa/009-vad-metric-summary.json
+- **Status**: PASS
+- **Output**: reduction_avg=0.8507; wer_delta_avg=0.0; PASS: success metric + WER guardrail
 
 ## QA Verdict
-**QA Failed** — Unit tests and VAD pipeline smoke passed, but legacy Pipeline A regression and success-metric validation are still missing.
+**QA Complete** — Functional pipelines, duration-reduction metric, and transcript quality guardrail (WER ≤ 5pp) validated.

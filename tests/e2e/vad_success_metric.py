@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 import argparse
+import audioop
+import json
+import subprocess
+import tempfile
+import time
+import wave
 from dataclasses import dataclass
 from io import BytesIO
-import json
 from pathlib import Path
-import subprocess
-import time
-import uuid
-import wave
+from shutil import which
+from uuid import uuid4
 
-import librosa
 import numpy as np
-import soundfile as sf
 
 from speech_lib import (
     BaseEvent,
@@ -27,7 +28,7 @@ from speech_lib import (
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class RunConfig:
     mode: str
     bootstrap_servers: str
@@ -45,6 +46,7 @@ class RunConfig:
     espeak_voice: str
     baseline_json: Path | None
     vad_json: Path | None
+    wer_guardrail_pp: float
 
 
 def _parse_args() -> RunConfig:
@@ -65,6 +67,7 @@ def _parse_args() -> RunConfig:
     parser.add_argument("--espeak-voice", type=str, default="en")
     parser.add_argument("--baseline-json", type=str, default="")
     parser.add_argument("--vad-json", type=str, default="")
+    parser.add_argument("--wer-guardrail-pp", type=float, default=0.05)
     args = parser.parse_args()
 
     schema_dir = Path(args.schema_dir) if args.schema_dir else None
@@ -88,6 +91,7 @@ def _parse_args() -> RunConfig:
         espeak_voice=args.espeak_voice,
         baseline_json=Path(args.baseline_json) if args.baseline_json else None,
         vad_json=Path(args.vad_json) if args.vad_json else None,
+        wer_guardrail_pp=args.wer_guardrail_pp,
     )
 
 
@@ -111,20 +115,49 @@ def _register_schemas(config: RunConfig) -> dict[str, dict]:
     }
 
 
+def _ensure_espeak() -> None:
+    if which("espeak") is None:
+        raise SystemExit("espeak not found. Install espeak to synthesize reference audio.")
+
+
+def _read_wav_mono(path: Path) -> tuple[np.ndarray, int]:
+    with wave.open(str(path), "rb") as handle:
+        channels = handle.getnchannels()
+        sample_width = handle.getsampwidth()
+        sample_rate = handle.getframerate()
+        frame_count = handle.getnframes()
+        frames = handle.readframes(frame_count)
+
+    if sample_width != 2:
+        raise ValueError("Expected 16-bit PCM WAV output from espeak")
+
+    audio = np.frombuffer(frames, dtype="<i2")
+    if channels > 1:
+        audio = audio.reshape(-1, channels).mean(axis=1).astype(np.int16)
+    return audio, sample_rate
+
+
+def _resample_int16(audio: np.ndarray, input_rate: int, target_rate: int) -> np.ndarray:
+    if input_rate == target_rate:
+        return audio
+    converted, _ = audioop.ratecv(audio.tobytes(), 2, 1, input_rate, target_rate, None)
+    return np.frombuffer(converted, dtype="<i2")
+
+
 def _synthesize_speech(text: str, voice: str, sample_rate_hz: int) -> np.ndarray:
-    temp_path = Path("/tmp") / f"vad_speech_{uuid.uuid4().hex}.wav"
+    _ensure_espeak()
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as handle:
+        temp_path = Path(handle.name)
     try:
         subprocess.run(
             ["espeak", f"-v{voice}", "-w", str(temp_path), text],
             check=True,
             capture_output=True,
         )
-        audio, rate = sf.read(str(temp_path), dtype="float32")
-        if audio.ndim > 1:
-            audio = np.mean(audio, axis=1)
+        audio, rate = _read_wav_mono(temp_path)
         if rate != sample_rate_hz:
-            audio = librosa.resample(audio, orig_sr=rate, target_sr=sample_rate_hz)
-        return audio
+            audio = _resample_int16(audio, rate, sample_rate_hz)
+        return audio.astype(np.float32) / 32768.0
     finally:
         if temp_path.exists():
             temp_path.unlink()
@@ -199,7 +232,7 @@ def _make_dataset(config: RunConfig) -> list[dict[str, object]]:
         samples.append(
             {
                 "index": idx,
-                "text": text,
+                "reference_text": text,
                 "audio_bytes": wav_bytes,
                 "duration_seconds": _duration_seconds(combined, config.sample_rate_hz),
             }
@@ -328,7 +361,7 @@ def _run_baseline(config: RunConfig) -> dict[str, object]:
 
     results = []
     for sample in dataset:
-        correlation_id = f"baseline-{config.dataset_seed}-{sample['index']}-{uuid.uuid4().hex}"
+        correlation_id = f"baseline-{config.dataset_seed}-{sample['index']}-{uuid4().hex}"
         event = BaseEvent(
             event_type="AudioInputEvent",
             correlation_id=correlation_id,
@@ -351,6 +384,7 @@ def _run_baseline(config: RunConfig) -> dict[str, object]:
         results.append(
             {
                 "index": sample["index"],
+                "reference_text": sample["reference_text"],
                 "duration_seconds": sample["duration_seconds"],
                 "transcript": text,
             }
@@ -363,6 +397,7 @@ def _run_baseline(config: RunConfig) -> dict[str, object]:
             "samples": config.samples,
             "total_seconds": config.total_seconds,
             "sample_rate_hz": config.sample_rate_hz,
+            "silence_ratio": config.silence_ratio,
         },
         "samples": results,
     }
@@ -387,7 +422,7 @@ def _run_vad(config: RunConfig) -> dict[str, object]:
     dataset = _make_dataset(config)
     results = []
     for sample in dataset:
-        correlation_id = f"vad-{config.dataset_seed}-{sample['index']}-{uuid.uuid4().hex}"
+        correlation_id = f"vad-{config.dataset_seed}-{sample['index']}-{uuid4().hex}"
         event = BaseEvent(
             event_type="AudioInputEvent",
             correlation_id=correlation_id,
@@ -412,6 +447,7 @@ def _run_vad(config: RunConfig) -> dict[str, object]:
         results.append(
             {
                 "index": sample["index"],
+                "reference_text": sample["reference_text"],
                 "duration_seconds": sample["duration_seconds"],
                 "segment_seconds": segment_seconds,
                 "transcript": transcript,
@@ -425,6 +461,7 @@ def _run_vad(config: RunConfig) -> dict[str, object]:
             "samples": config.samples,
             "total_seconds": config.total_seconds,
             "sample_rate_hz": config.sample_rate_hz,
+            "silence_ratio": config.silence_ratio,
         },
         "samples": results,
     }
@@ -438,37 +475,49 @@ def _compare(baseline_path: Path, vad_path: Path) -> dict[str, object]:
     vad_samples = {s["index"]: s for s in vad.get("samples", [])}
 
     reductions = []
-    wers = []
+    baseline_wers = []
+    vad_wers = []
+    wer_deltas = []
     skipped_wer = 0
 
     for index, base in baseline_samples.items():
         vad_sample = vad_samples.get(index)
         if not vad_sample:
             continue
+
         original = float(base.get("duration_seconds", 0.0))
         segment = float(vad_sample.get("segment_seconds", 0.0))
         if original > 0:
             reductions.append(1.0 - (segment / original))
 
-        ref_text = str(base.get("transcript") or "").strip()
-        hyp_text = str(vad_sample.get("transcript") or "").strip()
+        ref_text = str(base.get("reference_text") or vad_sample.get("reference_text") or "").strip()
         if not ref_text:
             skipped_wer += 1
             continue
-        wers.append(_word_error_rate(ref_text, hyp_text))
+
+        base_text = str(base.get("transcript") or "").strip()
+        vad_text = str(vad_sample.get("transcript") or "").strip()
+        base_wer = _word_error_rate(ref_text, base_text)
+        vad_wer = _word_error_rate(ref_text, vad_text)
+        baseline_wers.append(base_wer)
+        vad_wers.append(vad_wer)
+        wer_deltas.append(vad_wer - base_wer)
 
     avg_reduction = float(sum(reductions) / len(reductions)) if reductions else 0.0
-    avg_wer = float(sum(wers) / len(wers)) if wers else 0.0
+    avg_baseline_wer = float(sum(baseline_wers) / len(baseline_wers)) if baseline_wers else 0.0
+    avg_vad_wer = float(sum(vad_wers) / len(vad_wers)) if vad_wers else 0.0
+    avg_wer_delta = float(sum(wer_deltas) / len(wer_deltas)) if wer_deltas else 0.0
 
-    summary = {
+    return {
         "reduction_avg": avg_reduction,
         "reduction_min": float(min(reductions)) if reductions else 0.0,
         "reduction_max": float(max(reductions)) if reductions else 0.0,
-        "wer_avg": avg_wer,
-        "wer_samples": len(wers),
+        "wer_baseline_avg": avg_baseline_wer,
+        "wer_vad_avg": avg_vad_wer,
+        "wer_delta_avg": avg_wer_delta,
+        "wer_samples": len(wer_deltas),
         "wer_skipped": skipped_wer,
     }
-    return summary
 
 
 def main() -> int:
@@ -494,6 +543,19 @@ def main() -> int:
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))
     print(f"Wrote summary to {summary_path}")
+
+    if summary["reduction_avg"] < 0.30:
+        raise SystemExit("FAIL: reduction below 30% target")
+
+    if summary["wer_delta_avg"] > config.wer_guardrail_pp:
+        raise SystemExit(
+            "FAIL: WER guardrail exceeded (avg delta {:.3f} > {:.3f})".format(
+                summary["wer_delta_avg"],
+                config.wer_guardrail_pp,
+            )
+        )
+
+    print("PASS: success metric + WER guardrail")
     return 0
 
 
