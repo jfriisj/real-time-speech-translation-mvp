@@ -1,7 +1,7 @@
 # UAT Report: Plan 009 Voice Activity Detection (VAD) Service
 
 **Plan Reference**: `agent-output/planning/009-voice-activity-detection-plan.md`
-**Date**: 2026-01-24
+**Date**: 2026-01-25
 **UAT Agent**: Product Owner (UAT)
 
 ## Changelog
@@ -9,6 +9,7 @@
 | Date | Agent Handoff | Request | Summary |
 |------|---------------|---------|---------|
 | 2026-01-24 | QA | Validate business value after QA completion claim | UAT Complete - QA complete with WER guardrail validated; value delivered with duration reduction and quality preserved |
+| 2026-01-25 | QA | Re-validate after coverage + test rerun | UAT Complete - re-confirmed success metric + WER guardrail with latest QA evidence; value remains delivered |
 
 ## Value Statement Under Test
 As a System Architect, I want to filter out silence *before* the heavy ASR service, so that I don't waste GPU/CPU cycles transcribing background noise and latency is improved.
@@ -48,7 +49,7 @@ Value delivered. The compute-efficiency goal is supported by average 85.1% audio
 ## QA Integration
 **QA Report Reference**: `agent-output/qa/009-voice-activity-detection-qa.md`
 **QA Status**: QA Complete
-**QA Findings Alignment**: QA confirms success metric and WER guardrail validation completed; UAT aligns with this evidence.
+**QA Findings Alignment**: QA confirms success metric and WER guardrail validation completed; UAT aligns with this evidence after rerun.
 
 ## Technical Compliance
 - Plan deliverables: PASS (core pipeline + success metric + WER guardrail validated)

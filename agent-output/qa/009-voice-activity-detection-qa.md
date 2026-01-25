@@ -13,13 +13,14 @@
 | 2026-01-19 | QA | Retest after plan revision sync | Re-ran Ruff gate, unit tests, and VAD pipeline smoke test; legacy Pipeline A regression + success-metric validation still pending. |
 | 2026-01-24 | QA | Coverage gap closure | Ran legacy Pipeline A smoke and success-metric validation; WER guardrail still pending. |
 | 2026-01-24 | QA | WER guardrail validation | Ran baseline/VAD success-metric comparison; WER guardrail satisfied and success metric confirmed. |
+| 2026-01-25 | User | Implementation complete, verify coverage + execute tests | Installed pytest-cov, ran coverage for VAD service tests, and re-ran ASR unit tests. |
 
 ## Timeline
 - **Test Strategy Started**: 2026-01-19
 - **Test Strategy Completed**: 2026-01-19
 - **Implementation Received**: 2026-01-19
 - **Testing Started**: 2026-01-19
-- **Testing Completed**: 2026-01-24
+- **Testing Completed**: 2026-01-25
 - **Final Status**: QA Complete
 
 ## Test Strategy (Pre-Implementation)
@@ -28,6 +29,7 @@ Focus on end-to-end segmentation correctness, schema compliance, and ASR dual-mo
 ### Testing Infrastructure Requirements
 **Test Frameworks Needed**:
 - pytest (workspace default)
+- pytest-cov (for coverage reporting)
 
 **Testing Libraries Needed**:
 - confluent-kafka, numpy, librosa, soundfile, onnxruntime, huggingface-hub
@@ -43,6 +45,7 @@ Focus on end-to-end segmentation correctness, schema compliance, and ASR dual-mo
 pip install -r tests/requirements.txt
 pip install -e shared/speech-lib
 pip install -e services/vad
+pip install pytest-cov
 ```
 
 ### Required Unit Tests
@@ -88,30 +91,43 @@ pip install -e services/vad
 
 ## Test Execution Results
 ### Analyzer Verification Gate
-- **Ruff lint**: Pass (no issues) on VAD/ASR/speech-lib changes plus unit tests and e2e smoke test.
+- **Ruff lint**: Pass (no issues) on VAD/ASR/speech-lib changes.
+
+### Coverage
+- **Command**: `PYTHONPATH=services/vad/src:shared/speech-lib/src .venv/bin/python -m pytest --cov=vad_service --cov-report=term-missing shared/speech-lib/tests/test_events.py services/vad/tests/test_processing.py -q`
+- **Status**: PASS (coverage collected)
+- **Summary**: 35% total for `vad_service` modules; `processing.py` at 83% (missing branches include error paths and ONNX helper sections).
+- **Note**: Coverage for `main.py`, `config.py`, and `vad.py` remains 0% because they are not exercised by current unit tests.
 
 ### Unit Tests
-- **Command**: pytest shared/speech-lib/tests/test_events.py services/asr/tests/test_processing.py services/vad/tests/test_processing.py
+- **Command**: .venv/bin/python -m pytest services/asr/tests/test_processing.py -q
 - **Status**: PASS
-- **Output**: 6 tests passed.
+- **Output**: 6 passed.
+- **Command**: .venv/bin/python -m pytest services/asr/tests/test_processing.py -q (post-coverage)
+- **Status**: PASS
+- **Output**: 6 passed.
+- **Command**: PYTHONPATH=services/vad/src:shared/speech-lib/src .venv/bin/python -m pytest shared/speech-lib/tests/test_events.py services/vad/tests/test_processing.py -q
+- **Status**: PASS
+- **Output**: 7 passed.
+- **Note**: Editable install for `services/vad` failed due to `onnxruntime` wheel unavailable for Python 3.14; tests run via `PYTHONPATH` instead.
 
 ### Integration Tests
-- **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_pipeline_smoke.py
+- **Command**: docker compose up -d && docker compose up -d --build vad-service asr-service translation-service
+- **Status**: PASS
+- **Output**: Services running (Kafka, Schema Registry, VAD, ASR, Translation).
+- **Command**: .venv/bin/python tests/e2e/vad_pipeline_smoke.py
 - **Status**: PASS
 - **Output**: PASS: VAD -> ASR -> Translation pipeline produced outputs
-- **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/legacy_pipeline_smoke.py
+- **Command**: .venv/bin/python tests/e2e/legacy_pipeline_smoke.py
 - **Status**: PASS
 - **Output**: PASS: Legacy pipeline produced ASR + Translation outputs
-- **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_success_metric.py
-- **Status**: PASS
-- **Output**: VAD duration reduction 72.9% (segments 6500 ms / original 24000 ms)
-- **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_success_metric.py --mode baseline --output agent-output/qa/009-vad-metric-baseline.json
+- **Command**: .venv/bin/python tests/e2e/vad_success_metric.py --mode baseline --output agent-output/qa/009-vad-metric-baseline.json
 - **Status**: PASS
 - **Output**: Wrote baseline metrics to agent-output/qa/009-vad-metric-baseline.json
-- **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_success_metric.py --mode vad --output agent-output/qa/009-vad-metric-vad.json
+- **Command**: .venv/bin/python tests/e2e/vad_success_metric.py --mode vad --output agent-output/qa/009-vad-metric-vad.json
 - **Status**: PASS
 - **Output**: Wrote VAD metrics to agent-output/qa/009-vad-metric-vad.json
-- **Command**: /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/vad_success_metric.py --mode compare --baseline-json agent-output/qa/009-vad-metric-baseline.json --vad-json agent-output/qa/009-vad-metric-vad.json --output agent-output/qa/009-vad-metric-summary.json
+- **Command**: .venv/bin/python tests/e2e/vad_success_metric.py --mode compare --baseline-json agent-output/qa/009-vad-metric-baseline.json --vad-json agent-output/qa/009-vad-metric-vad.json --output agent-output/qa/009-vad-metric-summary.json
 - **Status**: PASS
 - **Output**: reduction_avg=0.8507; wer_delta_avg=0.0; PASS: success metric + WER guardrail
 
