@@ -13,6 +13,7 @@
 | 2026-01-19 | Epic 1.6 VAD pre-planning constraints (segmentation semantics + ordering) | Prevents non-deterministic ASR behavior and avoids schema/topic drift before planning | Epic 1.6 (VAD Service) |
 | 2026-01-19 | Added QA integration points + failure-mode checklist for VAD stage | Improves test coverage at service boundaries (SR/Kafka/VAD/ASR) and reduces regressions during v0.4.0 hardening | Plan 009 (VAD) |
 | 2026-01-25 | Epic 1.7 TTS pre-planning constraints (AudioSynthesisEvent payload strategy, object-store guardrails) | Prevents Kafka payload cap violations and clarifies how synthesized audio and speaker context are transported | Epic 1.7 (TTS Service) |
+| 2026-01-25 | Epic 1.7 TTS model pivot to Kokoro ONNX + pluggable synthesizer requirement | Stabilizes CPU/GPU runtime via ONNX and preserves future ability to swap to IndexTTS/Qwen without contract changes | Plan 010 (TTS) + Findings 013 |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:
@@ -44,6 +45,8 @@ Deliver a **hard MVP** event-driven speech translation pipeline that is:
 - Planned: Ingress Gateway: external streaming ingress (WebSocket/gRPC) → `AudioInputEvent`
 - Planned: VAD Service: silence removal / segmentation (`AudioInputEvent` → `SpeechSegmentEvent`)
 - Planned: TTS Service: translated text → synthesized audio (`TextTranslatedEvent` → `AudioSynthesisEvent`)
+	- Runtime: Kokoro-82M (ONNX) for CPU/GPU stability
+	- Architecture: pluggable synthesizer backend (factory) to allow future model swaps
 
 ### Planned supporting infrastructure (v0.3.0+)
 - MAY introduce an object store (e.g., MinIO/S3) if payloads must be transported by URI rather than inline (speaker reference context and/or synthesized audio output).
@@ -77,12 +80,16 @@ Deliver a **hard MVP** event-driven speech translation pipeline that is:
 - `speech.tts.audio` → `AudioSynthesisEvent`
 
 ### Speaker Context (Planned)
-Voice cloning requires a **speaker reference context** (reference audio clip and/or embedding) originating at ingress and usable at TTS.
+Speaker context is optional metadata originating at ingress and usable at TTS.
 
 Architecture requirements:
 - Speaker context MUST be optional and MUST NOT be required for baseline TTS functionality.
 - Intermediate services (ASR, Translation) MUST treat speaker context as pass-through metadata.
 - Speaker context is treated as sensitive data; retention MUST be time-bounded (session-scoped) if stored.
+
+Implementation note (v0.5.0):
+- The Kokoro ONNX baseline MAY use `speaker_id` to select a style/voice.
+- `speaker_reference_bytes` MUST still be propagated end-to-end for future backends (IndexTTS/Qwen) even if the baseline does not consume it.
 
 ## Dependencies
 - Kafka
@@ -213,6 +220,17 @@ Architecture requirements:
 **Consequences**:
 - If URI output is used, an object store introduces lifecycle/TTL and failure modes (missing/expired URIs) that must degrade gracefully.
 - Event schemas must remain backward-compatible by adding optional fields/unions.
+
+### Decision: TTS synthesizer runtime strategy (Epic 1.7)
+**Context**: The platform requires a stable runtime for inference on both CPU and GPU, and we want to preserve the option to swap TTS backends later without schema rewrites.
+
+**Choice**:
+- Implement the v0.5.0 TTS backend using **Kokoro-82M ONNX** (`onnx-community/Kokoro-82M-v1.0-ONNX`) on ONNX Runtime.
+- Require a **pluggable synthesizer interface** (factory-selected) so future iterations can switch to `IndexTeam/IndexTTS-2` or `Qwen3-TTS` without changing event contracts.
+
+**Consequences**:
+- ONNX Runtime becomes an explicit dependency for the TTS service.
+- Model/backend selection becomes a deployment/config decision; orchestration code must not import model-specific libraries directly.
 
 ### Decision: Supported audio format for MVP
 **Context**: Allowing multiple formats expands the decoding surface area and increases integration ambiguity.

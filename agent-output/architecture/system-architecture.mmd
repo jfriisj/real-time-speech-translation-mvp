@@ -1,5 +1,5 @@
 %% System Architecture Diagram (Mermaid)
-%% Last Updated: 2026-01-19
+%% Last Updated: 2026-01-25
 
 flowchart TB
     %% Added quotes around the text inside [] to handle parentheses safely
@@ -21,7 +21,7 @@ flowchart TB
       VAD["VAD Service\n(silence removal)"]:::svc
       ASR["ASR Service\n(audio → text)"]:::svc
       TR["Translation Service\n(text → translated text)"]:::svc
-      TTS["TTS Service\n(IndexTTS-2)\n(text → audio)"]:::svc
+      TTS["TTS Service\n(Kokoro-82M ONNX)\n(text → audio)"]:::svc
     end
 
     %% Topics (logical)
@@ -38,7 +38,7 @@ flowchart TB
     Kafka -->|"speech.tts.audio\nAudioSynthesisEvent"| Client
 
     %% Optional large-payload path (URIs carried in events)
-    GW -. "speaker_reference_uri (optional)" .-> Obj
+    %% Speaker context is carried inline (speaker_id / speaker_reference_bytes) in events for v0.5.0
     TTS -. "audio_uri (optional)" .-> Obj
 
     %% Registry usage
