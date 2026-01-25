@@ -10,6 +10,7 @@ Synthesizes speech from translated text and emits `AudioSynthesisEvent` on `spee
 - `TTS_MODEL_NAME`
 - `TTS_MODEL_DIR`
 - `TTS_MODEL_CACHE_DIR`
+- `HF_TOKEN`
 - `POLL_TIMEOUT_SECONDS`
 - `MINIO_ENDPOINT`
 - `MINIO_ACCESS_KEY`

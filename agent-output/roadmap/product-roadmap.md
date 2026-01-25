@@ -14,6 +14,7 @@
 | 2026-01-19 15:30 | Added v0.2.1 (Traceability) | Created a patch release entry for Epic 1.4 measurement tooling and governance artifacts. |
 | 2026-01-19 16:00 | Sequencing Validation (PI-003) | Confirmed process improvements (Analyst Checks, Planner Stubs) do not affect v0.3.0 delivery timeline. |
 | 2026-01-19 17:00 | Released v0.3.0 (Ingress) | Delivered Epic 1.5 (Phase 1); Moved Epics 1.6 & 1.7 to new v0.4.0 Release to reflect iterative delivery. |
+| 2026-01-25 10:00 | Pivoted Epic 1.7 to Kokoro ONNX | Changed TTS model strategy from IndexTTS-2 to Kokoro ONNX for runtime stability; mandated pluggable architecture for future swaps. |
 
 ---
 
@@ -212,7 +213,7 @@ So that I don't waste GPU/CPU cycles transcribing background noise and latency i
 
 **Strategic Goal**: Complete the output loop with synthesis.
 
-### Epic 1.7: Text-to-Speech (TTS) with IndexTTS-2
+### Epic 1.7: Text-to-Speech (TTS) (Stable Outcome)
 **Priority**: P1
 **Status**: Planned
 
@@ -223,8 +224,8 @@ So that I can consume the translation hands-free.
 
 **Business Value**:
 - **UX**: Completes the "Speech-to-Speech" loop.
-- **Quality**: Utilizes `IndexTeam/IndexTTS-2` for high-quality synthesis.
-- **Innovation**: Leverages Zero-Shot capabilities (voice cloning) and emotional expression features inherent to IndexTTS-2.
+- **Stability**: Uses `Kokoro-82M` (ONNX) to ensure reliable runtime on both CPU and GPU (Thesis Requirement).
+- **Extensibility**: Establishes a pluggable architecture (Factory Pattern) allowing future swaps to `IndexTTS-2` or `Qwen3-TTS` without service rewriting.
 
 **Dependencies**:
 - Epic 1.3 (Translation output).
@@ -232,9 +233,9 @@ So that I can consume the translation hands-free.
 **Acceptance Criteria**:
 - [ ] **Architecture**: data flow designed to propagate "Source Audio Sample" (or embedding) from Ingress -> TTS for cloning context.
 - [ ] TTS Service consumes `TextTranslatedEvent`.
-- [ ] TTS Service uses `IndexTeam/IndexTTS-2` model (Hugging Face).
+- [ ] TTS Service uses `onnx-community/Kokoro-82M-v1.0-ONNX` (or stable equivalent).
 - [ ] TTS Service produces `AudioSynthesisEvent`.
-- [ ] Configurable "Reference Speaker" support (leveraging Zero-Shot capability).
+- [ ] **Pluggability**: Synthesizer implementation accepts a config switch (Factory pattern) for future model support.
 - [ ] Basic duration/speed control implemented.
 
 ---

@@ -23,6 +23,9 @@ class Synthesizer:
     def synthesize(self, text: str, speaker_reference_bytes: bytes | None) -> Tuple[np.ndarray, int]:
         raise NotImplementedError
 
+    def warmup(self) -> None:
+        return None
+
 
 @lru_cache(maxsize=2)
 def _download_model_dir(model_name: str, cache_dir: str | None) -> Path:
@@ -61,6 +64,10 @@ class IndexTTS2Synthesizer(Synthesizer):
     model_name: str
     model_dir: str | None = None
     cache_dir: str | None = None
+
+    def warmup(self) -> None:
+        resolved_dir = self.model_dir or _download_model_dir(self.model_name, self.cache_dir)
+        _load_indextts(str(resolved_dir))
 
     def synthesize(self, text: str, speaker_reference_bytes: bytes | None) -> Tuple[np.ndarray, int]:
         cleaned = text.strip()

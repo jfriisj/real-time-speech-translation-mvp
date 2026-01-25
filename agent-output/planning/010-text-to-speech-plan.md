@@ -1,11 +1,11 @@
-# Plan 010: Text-to-Speech (TTS) Service (IndexTTS-2)
+# Plan 010: Text-to-Speech (TTS) Service (Kokoro ONNX)
 
 **Plan ID**: 010
 **Target Release**: v0.5.0
-**Epic Alignment**: Epic 1.7 Text-to-Speech (TTS) with IndexTTS-2
+**Epic Alignment**: Epic 1.7 Text-to-Speech (TTS) (Stable Outcome)
 **Architecture**: [Findings 011](agent-output/architecture/011-tts-indextts-2-architecture-findings.md) (APPROVED_WITH_CHANGES)
 **Process Improvement**: Includes mandatory "Measurement Method" (PI-009).
-**Status**: Revised (Addressing Critique 010 Rev 5 - Added Retention, Observability, Risks, Rollout)
+**Status**: Revised (Addressing Critique 010 Rev 5 & Analysis 011 - ONNX Pivot)
 
 ## Changelog
 
@@ -18,6 +18,7 @@
 | 2026-01-25 | Revision 4 | Added Schema Compatibility & Consumer Failure contracts per Analysis. Documented dataset provenance. |
 | 2026-01-25 | Revision 5 | Added Data Retention, Observability Contract, Risks, and Rollout Strategy. |
 | 2026-01-25 | Revision 6 | Added explicit Testing Infrastructure requirements (pytest, conftest mocks) based on implementation findings. |
+| 2026-01-25 | Revision 7 | Pivoted synthesizer to `onnx-community/Kokoro-82M-v1.0-ONNX` for runtime stability while enforcing a pluggable architecture for future model swaps (IndexTTS/Qwen). |
 
 ## Value Statement and Business Objective
 As a User, I want to hear the translated text spoken naturally, so that I can consume the translation hands-free.
@@ -46,15 +47,21 @@ As a User, I want to hear the translated text spoken naturally, so that I can co
 - **Method**: Manual playback of 5 generated samples.
 - **Criteria**: "Intellegible with no artifacts/clicking".
 
+## Roadmap Alignment
+**Plan Status**: Aligned with Epic 1.7 (Stable Outcome).
+**Model Selection**: `onnx-community/Kokoro-82M-v1.0-ONNX` (per Updated Roadmap).
+**Architecture Requirement**: This plan enforces a **Pluggable Synthesizer Architecture** (Factory Pattern) to satisfy the roadmap's extensibility requirement for future model swaps (IndexTTS/Qwen).
+
 ## Objective
-Implement the `tts-service` using `IndexTeam/IndexTTS-2` to synthesize speech from `TextTranslatedEvent`. Support "Dual-Mode Transport" (Inline vs URI) and propagate Speaker Context from Ingress to TTS across the pipeline.
+Implement the `tts-service` using `onnx-community/Kokoro-82M-v1.0-ONNX` to synthesize speech from `TextTranslatedEvent`. Support "Dual-Mode Transport" (Inline vs URI) and propagate Speaker Context from Ingress to TTS across the pipeline. Ensure the synthesizer implementation is pluggable to support future model migration.
 
 ## Architectural Contracts (Must be implemented)
 
 ### 1. Speaker Context Propagation
-- **Strategy**: Inline "Reference Clip" (Bytes).
+- **Strategy**: Inline "Reference Clip" (Bytes) & Speaker ID.
+- **Implementation**: The Kokoro backend will primarily use `speaker_id` to map to pre-defined Style Vectors (e.g., `af_bella`). `speaker_reference_bytes` passed for future cloning but ignored by the default Kokoro ONNX implementation.
 - **Origin**: Ingress (or VAD).
-- **Pass-through Requirement**: All intermediate services (ASR, Translation) **MUST** propagate `speaker_reference_bytes` and `speaker_id` unchanged in their output events if present in input.
+- **Pass-through Requirement**: All intermediate services (ASR, Translation) **MUST** propagate `speaker_reference_bytes` and `speaker_id` unchanged.
 - **Privacy**: Ephemeral processing only. DO NOT persist reference clips beyond the session scope.
 
 ### 2. Transport & Failure Semantics
@@ -72,135 +79,111 @@ Implement the `tts-service` using `IndexTeam/IndexTTS-2` to synthesize speech fr
 - **Scope**: Applied to objects stored in the `tts-audio` bucket (audio_uri payloads).
 - **Policy**: **Ephemeral (24 Hours)**.
 - **Mechanism**: MinIO Bucket Lifecycle Rule (Expiration).
-- **Rationale**: Audio is transient for immediate playback. Long-term storage is out of scope for MVP.
-- **Privacy Impact**: Voice references and synthesized output are automatically purged.
 
 ### 5. Observability Contract
 - **Log Level**: INFO
 - **Mandatory Fields**:
     - `correlation_id`: Must be present in every log entry.
-    - `input_char_count`: Length of input text.
+    - `model_name`: Log the active synthesizer model (e.g., "Kokoro-82M-ONNX").
     - `synthesis_latency_ms`: Time taken for model inference.
     - `payload_mode`: "INLINE" or "URI".
-    - `payload_size_bytes`: Size of the generated audio.
-- **Metrics**:
-    - `tts_latency_seconds_bucket` (Histogram).
-    - `tts_errors_total` (Counter, labelled by error_type).
 
 ## Context
 - **Roadmap**: Epic 1.7 (Speech-to-Speech loop completion).
 - **Architecture**:
     - **Transport**: Option D2 (Dual-mode).
-    - **Voice Cloning Strategy**: [Findings 006 Option A] Inline Reference Clip via Event Envelope.
+    - **Voice Strategy**: Style Vector Mapping (via `speaker_id`).
 
 ## Assumptions
 - MinIO infrastructure is available in the stack.
-- Broker message size limits are static configuration.
+- `onnxruntime` (or `onnxruntime-gpu`) is compatible with the base container image.
 
 ## Constraints
-- **WAV Only**: Output format MUST be `wav`.
+- **WAV Only**: Output format MUST be `wav` (24kHz for Kokoro).
 - **Shared Library Scope**: `speech-lib` MUST NOT contain network/storage client logic.
-- **Unit Test Isolation**: Unit tests MUST NOT require valid AWS/MinIO credentials or active Kafka brokers. External I/O must be mocked (e.g., via `unittest.mock` or `conftest.py` injection).
+- **Unit Test Isolation**: Mock `onnxruntime`, `boto3`, and other external I/O.
+- **Model Agnostic Pipeline**: The core service code (`main.py`, `consumer.py`) MUST NOT import model-specific libraries directly. Use a Factory/Interface abstraction.
 
 ## Testing Strategy
 ### Unit Testing
 - **Framework**: `pytest` with `pytest-cov`.
 - **Coverage Target**: >70% line coverage for business logic.
-- **Mocking Strategy**: Use `conftest.py` to inject mock modules for heavy or unavailable dependencies (e.g., `boto3`, `prometheus_client`) to allow testing logic without installing full prod dependencies or requiring credentials.
+- **Mocking Strategy**: Use `conftest.py` to inject mock modules for `onnxruntime`, `boto3`, `prometheus_client`.
 - **Key Modules**:
-  - `storage.py`: Test bucket operations and fallback logic (mocked).
-  - `synthesizer.py`: Test audio generation logic and numeric handling (e.g., NumPy array truthiness).
-  - `audio_helpers.py`: Test WAV conversion and duration calculation.
+  - `synthesizer_factory.py`: Test correct backend loading based on config.
+  - `synthesizer_kokoro.py`: Test phoneme conversion logic (mocking the actual inference).
 
 ### Integration Testing (QA Phase)
-- **Scope**: Validate interaction with MinIO and Kafka.
-- **Tools**: `docker-compose` or `testcontainers`.
-- **Scenarios**:
-  - Verify MinIO upload and URI generation for large payloads.
-  - Verify Kafka consumer reads from `text-translated` and producer writes to `tts-output`.
+- **Scope**: Validate interaction with MinIO and Kafka using Docker Compose.
 
 ## Plan Steps
 
 ### 1. Shared Infrastructure & Contract Updates
 **Objective**: Update schemas to support Dual-Mode transport and Speaker Context propagation.
 - [ ] Update `shared/schemas/avro/` to create `AudioSynthesisEvent.avsc`:
-    - **Fields**: `correlation_id`, `timestamp_ms`.
-    - **Audio Payload**: `audio_bytes` (union/null) OR `audio_uri` (union/null). Semantics: Exactly one MUST be populated.
+    - **Fields**: `correlation_id`, `timestamp_ms`, `model_name`.
+    - **Audio Payload**: `audio_bytes` / `audio_uri` (Mutually Exclusive Logic).
     - **Audio Metadata**: `duration_ms`, `sample_rate_hz`, `audio_format` (default "wav").
-    - **Consumer Context**: `content_type` (e.g., "audio/wav"), `speaker_id` (optional).
-- [ ] Update upstream schemas (`AudioInputEvent`, `TextRecognizedEvent`, `TextTranslatedEvent`) or Envelope:
-    - **Change**: Add `speaker_reference_bytes` and `speaker_id` fields as **Optional (Union with Null)**.
-    - **Semantics**: Define these as "Pass-through" fields for intermediate services.
-- [ ] Update `speech-lib`:
-    - Regenerate Python classes.
-    - Export `TOPIC_TTS_OUTPUT` constant.
+- [ ] Update upstream schemas (`AudioInputEvent`, `TextRecognizedEvent`, `TextTranslatedEvent`) to add optional `speaker_reference_bytes` and `speaker_id`.
+- [ ] Update `speech-lib`: Regenerate Python classes.
 
 ### 2. Infrastructure Services (MinIO)
 **Objective**: Ensure Object Store availability.
 - [ ] Provision MinIO service with default buckets (e.g., `tts-audio`).
-- [ ] Configure access credentials via environment variables.
+- [ ] Configure access credentials.
 
 ### 3. TTS Service Implementation
-**Objective**: Create the synthesis microservice.
+**Objective**: Create the synthesis microservice with ONNX backend.
 - [ ] Initialize `services/tts/` module.
+- [ ] **Dependency Management**:
+    - Update `pyproject.toml` to include: `onnxruntime` (or gpu variant contextually), `misaki` (for phonemes), `soundfile`.
+    - **Remove**: `indextts` dependency.
 - [ ] **Setup Testing Infrastructure**:
-    - Configure `pytest.ini` and `tests/conftest.py`.
-    - Implement module mocking (sys.modules injection) for `boto3` and `prometheus_client`.
-- [ ] Implement `TTS Model Integration`:
-    - Load `IndexTeam/IndexTTS-2` (Hugging Face).
-    - Ensure thread-safe synthesis.
-- [ ] Implement `Speaker Context Logic`:
-    - **Requirement**: Extract `speaker_reference_bytes` from input event.
-    - **Fallback**: If reference is missing/invalid, use default voice.
-- [ ] Implement `Dual-Mode Producer`:
-    - Key constraint: **Key messages by `correlation_id`**.
-    - **Requirement**: Compare output size against safe inline threshold.
-   Risks & Mitigations
-- **Risk: High Latency with Voice Cloning**: Voice cloning inference is significantly slower than standard TTS.
-    - **Mitigation**: Enforce aggressive timeouts and strict payload caps (~10s max synthesis). Fallback to standard voice if latency exceeds SLA.
+    - Configure `tests/conftest.py` to mock `onnxruntime.InferenceSession` and `misaki` tokenization.
+- [ ] **Implement Pluggable Synthesizer Architecture**:
+    - Define `Synthesizer` abstract base class (`synthesize(text, speaker_ref, speaker_id) -> audio`).
+    - Implement `SynthesizerFactory` that reads `TTS_MODEL_NAME` env var.
+- [ ] **Implement Kokoro ONNX Backend**:
+    - Implement `KokoroSynthesizer` class.
+    - **Voice Mapping**: Create a mapping of `speaker_id` -> `voices/*.bin` style vectors.
+    - **Pipeline**: Text -> `misaki` Phonemes -> Tokenizer -> `onnxruntime` Inference -> Audio.
+    - **Model Handling**: Auto-download `onnx-community/Kokoro-82M-v1.0-ONNX` model and voice assets on startup (warmup).
+- [ ] Implement `Dual-Mode Producer` (MinIO Upload + Kafka Produce).
+- [ ] Implement `Consumer` loop. Measurement logging.
+
+### 4. Integration & Deployment
+**Objective**: Wire up the full Speech-to-Speech loop.
+- [ ] Update `docker-compose.yml`.
+- [ ] **Pass-through Update**: Update ASR and Translation service consumers/producers to propagate `speaker_reference_bytes` and `speaker_id`.
+
+### 5. Version Management
+**Objective**: Prepare valid release artifacts.
+- [ ] Update `services/tts/pyproject.toml` version to `0.5.0`.
+- [ ] Update `CHANGELOG.md` reflecting Epic 1.7 delivery.
+
+## Validation (Acceptance Criteria)
+- [ ] TTS Service is running and healthy using Kokoro ONNX model.
+- [ ] Pluggable interface allows swapping model config (verified via code review/unit test).
+- [ ] Events are correctly keyed by `correlation_id`.
+- [ ] Large payloads > 1.5MB are delivered via MinIO URI.
+- [ ] Synthesis RTF is measured and logged.
+
+## Risks & Mitigations
+- **Risk: Model Resource Consumption**: Although ONNX is lighter, long-form synthesis can still spike CPU.
+    - **Mitigation**: Limit concurrency (single worker for MVP) and enforce max text length caps.
 - **Risk: MinIO Reliability**: Essential for large payloads; downtime breaks long-form synthesis.
-    - **Mitigation**: "Dual-Mode with Fallback". If upload fails, log error and drop (or fallback to inline if close to limit - though complex). For MVP: Log & Drop, ensure consumers handle retrieval failures gracefully.
-- **Risk: Schema Incompatibility**: New optional fields breaking strict consumers.
-    - **Mitigation**: Strict validation of `union/null` types. E2E tests validating backward compatibility.
-- **Risk: Model Resource Consumption**: IndexTTS-2 is heavy on CPU.
-    - **Mitigation**: Limit concurrency (single worker for MVP). Define resource limits in `docker-compose`.
+    - **Mitigation**: "Dual-Mode with Fallback". If upload fails, log error and drop.
+- **Risk: Voice Mapping Gaps**: If `speaker_id` is unknown, synthesis might fail.
+    - **Mitigation**: Implement robust fallback to a default voice style (e.g., `af_bella`) if the ID is missing or unmapped.
 
 ## Rollout & Rollback Strategy
 ### Rollout
 1.  **Infrastructure**: Deploy MinIO with Lifecycle Rules (24h).
 2.  **Schema**: Register new forward-compatible schema (Optional fields).
-3.  **Services**: Deploy `tts-service`. Restart ASR/Translation services (safe due to optional fields).
+3.  **Services**: Deploy `tts-service`. Restart ASR/Translation services.
 4.  **Traffic**: Enable full pipeline.
 
 ### Rollback
 - **Trigger**: P95 Synthesis Latency > 5s or Error Rate > 5%.
-- **Action**: Corrective forward-fix preferred (disable cloning flag).
-- **Full Revert**: Revert `tts-service` image. ASR/Translation can remain on new version (extra fields ignored by old consumer) or be reverted if necessary.
-- **Data**: No rollback needed for ephemeral MinIO data; buckets can be purged.
-
-##  - **Requirement**: If below threshold, emit inline (`audio_bytes`).
-    - **Requirement**: If above threshold, upload to Object Store (Service-owned logic) and emit URI (`audio_uri`).
-    - **Failure Handling**: Implement "Log and Fallback" policy for MinIO failures.
-- [ ] Implement `Consumer`:
-    - Subscribe to `speech.translation.text`.
-    - Handle standard decoding and error states.
-- [ ] **Measurement**: Log RTF and Latency metrics.
-
-### 4. Integration & Deployment
-**Objective**: Wire up the full Speech-to-Speech loop.
-- [ ] Update `docker-compose.yml`.
-- [ ] **Pass-through Update**: Update ASR and Translation service consumers/producers to propagate `speaker_reference_bytes` and `speaker_id` if present.
-
-### 5. Version Management
-**Objective**: Prepare valid release artifacts.
-- [ ] Update `package.json` to `v0.5.0-rc`.
-- [ ] Update `CHANGELOG.md` reflecting Epic 1.7 delivery.
-- [ ] Create/Update Release Notes for v0.5.0.
-
-## Validation (Acceptance Criteria)
-- [ ] TTS Service is running and healthy.
-- [ ] Events are correctly keyed by `correlation_id`.
-- [ ] Small payloads are delivered inline.
-- [ ] Large payloads > 1.5MB are delivered via MinIO URI.
-- [ ] Speaker Context (if provided) is consumed without error.
-- [ ] ASR/Translation services propagate speaker context unchanged.
+- **Action**: Corrective forward-fix preferred.
+- **Full Revert**: Revert `tts-service` image.

@@ -209,6 +209,11 @@ def main() -> None:
         model_dir=settings.tts_model_dir or None,
         cache_dir=settings.tts_model_cache_dir or None,
     )
+    warmup = getattr(synthesizer, "warmup", None)
+    if callable(warmup):
+        LOGGER.info("Warming up TTS model")
+        warmup()
+        LOGGER.info("TTS model warmup complete")
     storage = ObjectStorage(
         endpoint=settings.minio_endpoint,
         access_key=settings.minio_access_key,

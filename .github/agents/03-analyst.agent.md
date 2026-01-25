@@ -3,7 +3,7 @@ description: Research and analysis specialist for pre-implementation investigati
 name: 03 Analyst
 target: vscode
 argument-hint: Describe the technical question, API, or system behavior to investigate
-tools: ['vscode/vscodeAPI', 'execute/runNotebookCell', 'execute/getTerminalOutput', 'execute/runInTerminal', 'read', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'memory/*', 'todo']
+tools: ['vscode/vscodeAPI', 'execute/runNotebookCell', 'execute/getTerminalOutput', 'execute/runInTerminal', 'read', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'huggingface/*', 'memory/*', 'todo']
 model: GPT-5.1-Codex-Mini (Preview) (copilot)
 handoffs:
   - label: 02 Handoff to Planner (Analysis → Plan)

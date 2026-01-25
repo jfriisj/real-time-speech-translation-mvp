@@ -1,4 +1,118 @@
- # Value Statement and Business Objective
+# Analysis 010: Text-to-Speech (Kokoro pivot)
+
+**Plan Reference (if any)**: [agent-output/planning/010-text-to-speech-plan.md](agent-output/planning/010-text-to-speech-plan.md)
+**Status**: Draft
+
+## Changelog
+
+| Date | Agent Handoff | Request | Summary |
+|------|---------------|---------|---------|
+| 2026-01-25 | Analyst | Investigate Kokoro pivot unknowns | Surveyed existing TTS service wiring and surfaced the knowledge gaps blocking the Kokoro-82M refactor. |
+
+## Objective
+Document the technical unknowns that must be resolved before replacing the IndexTTS-2 pipeline with `hexgrad/Kokoro-82M` so that the plan can be executed with confidence that latency, size, and voice-mapping expectations are realistic.
+
+## Context
+- Relevant modules: `services/tts/src/tts_service/synthesizer.py` (model loader), `main.py` (settings + Kafka loop), `services/tts/pyproject.toml` (dependencies), `docker-compose.yml` (runtime env/config).
+- Current constraint: plan metrics target $RTF < 0.5$ and Latency P50 < 1,000 ms, while code today gears toward an 800+ MB IndexTTS-2 model that trips over timeouts.
+- Pending pivot: replace `indextts` usage with a lightweight Kokoro implementation while keeping dual-mode payload handling/MinIO logic intact.
+
+## Methodology
+- Reviewed `synthesizer.py` and `main.py` to understand how the model is loaded, consumed, and connected to Kafka events.
+- Inspected `pyproject.toml` and `docker-compose.yml` to enumerate current dependencies and live configuration flags (e.g., `TTS_MODEL_NAME`, `HF_TOKEN`).
+- Cross-referenced plan requirements (speaker context pass-through, observability contract, dual-mode transport) against the implementation that currently enforces `IndexTTS` exclusively.
+
+## Findings
+
+### Facts
+- The synthesizer layer is hardwired to `IndexTeam/IndexTTS-2`, will raise `ValueError` if `TTS_MODEL_NAME` differs, and depends on the `indextts` package plus waveform prompt handling via `soundfile`.
+- `main.py` instantiates `IndexTTS2Synthesizer`, warms it up once, and never exposes a pluggable interface; the service also enforces `correlation_id`-keyed Kafka output and dual-mode (inline vs URI) publishing with MinIO fallback.
+- The current dependency set (see `pyproject.toml`) lacks the Kokoro-specific packages (`kokoro`, `phonemizer`, etc.) that the revised plan explicitly mentions.
+
+### Hypotheses
+- The Kokoro pipeline will require a different call pattern (text → phonemes → waveform) and needs explicit voice/style names; we must confirm what dependency (`kokoro` vs huggingface `transformers` pipelines) and configuration knobs are required to replicate the existing `synthesize(text, bytes)` signature.
+- Speaker context mapping ($speaker_id$ → Kokoro style) is undefined today; the plan implies mapping to voices such as `af_bella`, but we do not yet know the canonical list of supported styles or how to supply them to the inferred API.
+- Kokoro-82M still needs weight download; the service currently relies on `HF_TOKEN`, but we need to confirm that the new repo `hexgrad/Kokoro-82M` honors the same token semantics and whether caching/warmup requirements differ (e.g., local checkpoints, CPU-only operations).
+
+## Recommendations
+- Before locking the Kokoro plan, prototype the `kokoro` inference path (or read its documentation) to understand: initialization time, CPU/memory footprint, how to select style/voice, and whether it natively produces PCM suitable for the dual-mode pipeline.
+- Capture the canonical voice/style IDs in a shared config map so the plan can specify what `speaker_id`s map to (e.g., `af_bella` default) and include fallback behavior when the mapping is missing.
+- Expand the plan with a short spike that measures Kokoro-82M inference latency on the target hardware (warming up once and timing a representative phrase) to validate the $RTF$ and Latency targets before committing to the new synthesizer.
+
+## Open Questions
+- Which Python package actually hosts the Kokoro inference API (plain `kokoro`, `hexgrad`, or a custom wrapper) and what arguments does it expect for selecting styles? We need a reference usage snippet.
+- Does Kokoro-82M support the same speaker prompt strategy (audio-in, zero-shot) that IndexTTS-2 offered, or must we rely solely on `speaker_id` style keys for now?
+- Are there additional license, download, or HF token requirements for `hexgrad/Kokoro-82M` beyond the existing `HF_TOKEN` flow? If the model requires gating, plan needs to capture that dependency.
+- Will the current `minio` dual-mode logic require adjustments if Kokoro produces longer audio (e.g., larger file sizes) even for short sentences, affecting when we switch to URI mode?
+
+## Handoff
+The synthesizer and main loop currently enforce IndexTTS-2. Swapping to Kokoro-82M requires (1) replacing `indextts` dependency with the correct Kokoro package, (2) understanding voice/style mapping for `speaker_id`, and (3) validating the new model meets the RTF and latency goals on CPU.
+
+## Handoff to Implementer
+**From**: Analyst
+**Artifact**: agent-output/analysis/010-text-to-speech-analysis.md
+**Status**: Draft
+**Key Context**:
+- The service is tightly bound to `IndexTeam/IndexTTS-2` and `indextts`; the plan’s Kokoro pivot demands a pluggable synthesizer that can accept `speaker_id` style hints while keeping the existing dual-mode logic.
+- Dependencies/metrics in `pyproject.toml` and `docker-compose.yml` must be realigned (new packages, `TTS_MODEL_NAME`, `HF_TOKEN` usage).
+**Recommended Action**: Research the Kokoro inference API and voice/style signals, prototype a `KokoroSynthesizer`, and document any new runtime requirements (license, warmup, voice mapping) so the plan can be finalized.# Analysis 010: Text-to-Speech (Kokoro pivot)
+
+**Plan Reference (if any)**: [agent-output/planning/010-text-to-speech-plan.md](agent-output/planning/010-text-to-speech-plan.md)
+**Status**: Draft
+
+## Changelog
+
+| Date | Agent Handoff | Request | Summary |
+|------|---------------|---------|---------|
+| 2026-01-25 | Analyst | Investigate Kokoro pivot unknowns | Surveyed existing TTS service wiring and surfaced the knowledge gaps blocking the Kokoro-82M refactor. |
+
+## Objective
+Document the technical unknowns that must be resolved before replacing the IndexTTS-2 pipeline with `hexgrad/Kokoro-82M` so that the plan can be executed with confidence that latency, size, and voice-mapping expectations are realistic.
+
+## Context
+- Relevant modules: `services/tts/src/tts_service/synthesizer.py` (model loader), `main.py` (settings + Kafka loop), `services/tts/pyproject.toml` (dependencies), `docker-compose.yml` (runtime env/config).
+- Current constraint: plan metrics target $RTF < 0.5$ and Latency P50 < 1,000 ms, while code today gears toward an 800+ MB IndexTTS-2 model that trips over timeouts.
+- Pending pivot: replace `indextts` usage with a lightweight Kokoro implementation while keeping dual-mode payload handling/MinIO logic intact.
+
+## Methodology
+- Reviewed `synthesizer.py` and `main.py` to understand how the model is loaded, consumed, and connected to Kafka events.
+- Inspected `pyproject.toml` and `docker-compose.yml` to enumerate current dependencies and live configuration flags (e.g., `TTS_MODEL_NAME`, `HF_TOKEN`).
+- Cross-referenced plan requirements (speaker context pass-through, Observability contract, dual-mode transport) against the implementation that currently enforces `IndexTTS` exclusively.
+
+## Findings
+
+### Facts
+- The synthesizer layer is hardwired to `IndexTeam/IndexTTS-2`, will raise `ValueError` if `TTS_MODEL_NAME` differs, and depends on the `indextts` package plus waveform prompt handling via `soundfile`.
+- `main.py` instantiates `IndexTTS2Synthesizer`, warms it up once, and never exposes a pluggable interface; the service also enforces `correlation_id`-keyed Kafka output and dual-mode (inline vs URI) publishing with MinIO fallback.
+- The current dependency set (see `pyproject.toml`) lacks the Kokoro-specific packages (`kokoro`, `phonemizer`, etc.) that the revised plan explicitly mentions.
+
+### Hypotheses
+- The Kokoro pipeline will require a different call pattern (text → phonemes → waveform) and needs explicit voice/style names; we must confirm what dependency (`kokoro` vs huggingface `transformers` pipelines) and configuration knobs are required to replicate the existing `synthesize(text, bytes)` signature.
+- Speaker context mapping ($speaker_id$ → Kokoro style) is undefined today; the plan implies mapping to voices such as `af_bella`, but we do not yet know the canonical list of supported styles or how to supply them to the inferred API.
+- Kokoro-82M still needs weight download; the service currently relies on `HF_TOKEN`, but we need to confirm that the new repo `hexgrad/Kokoro-82M` honors the same token semantics and whether caching/warmup requirements differ (e.g., local checkpoints, CPU-only operations).
+
+## Recommendations
+- Before locking the Kokoro plan, prototype the `kokoro` inference path (or read its documentation) to understand: initialization time, CPU/memory footprint, how to select style/voice, and whether it natively produces PCM suitable for the dual-mode pipeline.
+- Capture the canonical voice/style IDs in a shared config map so the plan can specify what `speaker_id`s map to (e.g., `af_bella` default) and include fallback behavior when the mapping is missing.
+- Expand the plan with a short spike that measures Kokoro-82M inference latency on the target hardware (warming up once and timing a representative phrase) to validate the $RTF$ and Latency targets before committing to the new synthesizer.
+
+## Open Questions
+- Which Python package actually hosts the Kokoro inference API (plain `kokoro`, `hexgrad`, or a custom wrapper) and what arguments does it expect for selecting styles? We need a reference usage snippet.
+- Does Kokoro-82M support the same speaker prompt strategy (audio-in, zero-shot) that IndexTTS-2 offered, or must we rely solely on `speaker_id` style keys for now?
+- Are there additional license, download, or HF token requirements for `hexgrad/Kokoro-82M` beyond the existing `HF_TOKEN` flow? If the model requires gating, plan needs to capture that dependency.
+- Will the current `minio` dual-mode logic require adjustments if Kokoro produces longer audio (e.g., larger file sizes) even for short sentences, affecting when we switch to URI mode?
+
+## Handoff
+The synthesizer and main loop currently enforce IndexTTS-2. Swapping to Kokoro-82M requires (1) replacing `indextts` dependency with the correct Kokoro package, (2) understanding voice/style mapping for `speaker_id`, and (3) validating the new model meets the RTF and latency goals on CPU.
+
+## Handoff to Implementer
+**From**: Analyst
+**Artifact**: agent-output/analysis/010-text-to-speech-analysis.md
+**Status**: Draft
+**Key Context**:
+- The service is tightly bound to `IndexTeam/IndexTTS-2` and `indextts`; the plan’s Kokoro pivot demands a pluggable synthesizer that can accept `speaker_id` style hints while keeping the existing dual-mode logic.
+- Dependencies/metrics in `pyproject.toml` and `docker-compose.yml` must be realigned (new packages, `TTS_MODEL_NAME`, `HF_TOKEN` usage).
+**Recommended Action**: Research the Kokoro inference API and voice/style signals, prototype a `KokoroSynthesizer`, and document any new runtime requirements (license, warmup, voice mapping) so the plan can be finalized. # Value Statement and Business Objective
  The Text-to-Speech Epic 1.7 plan is delivering a `tts-service` that speaks translated text naturally for a hands-free speech-to-speech loop. The implementation must surface measurable proof (RTF, latency, payload mode) while honoring dual-mode transport, speaker context propagation, and contract guardrails.
 
  ## Changelog
