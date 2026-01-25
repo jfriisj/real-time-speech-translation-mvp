@@ -114,6 +114,7 @@ Prefer small, focused scopes delivering value quickly.
 - **Plan header with changelog**: Plan ID, Target Release, Epic Alignment, Status. Changelog: date, agent handoff, request, summary. Related Analysis/Architecture refs.
 - **Start with "Value Statement and Business Objective"**: Outcome-focused user story format.
 - **Measurable success criteria when possible**: Quantifiable metrics enable UAT validation (e.g., "≥1000 chars retrieved memory", "reduce time 10min→<2min"). Don't force quantification for qualitative value (UX, clarity, confidence).
+- **Performance Plans**: MUST include "Success Metric Measurement Method" section (dataset definition, calculation formula, guardrails).
 - **Concise section headings**: Value Statement, Objective, Assumptions, Plan, Testing Strategy, Validation, Risks.
 - **"Testing Strategy" section**: Expected test types (unit/integration/e2e), coverage expectations, critical scenarios at high level. NO specific test cases.
 - Ordered lists for steps. Reference file paths, commands explicitly.

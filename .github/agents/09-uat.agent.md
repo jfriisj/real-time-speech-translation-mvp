@@ -166,6 +166,7 @@ Part of structured workflow: planner → analyst → critic → architect → im
 - Reviews implementer output AFTER QA completes ("QA Complete" required first)
 - Independently validates objective alignment: read plan → assess code → review QA skeptically
 - Creates UAT document in `agent-output/uat/`; implementation incomplete until "UAT Complete"
+- **Evidence**: Consume machine-readable QA artifacts (JSON) as primary evidence where available.
 - References QA skeptically: QA passing ≠ objective met
 - References original plan as source of truth for value statement
 - May reference analyst findings if plan referenced analysis

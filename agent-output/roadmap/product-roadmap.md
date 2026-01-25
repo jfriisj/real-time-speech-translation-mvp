@@ -175,13 +175,14 @@ So that I can connect external devices (microphones, browsers) to the pipeline w
 ---
 
 ## Release v0.4.0 - Optimization & Speech (MVP+)
-**Status**: Planned
+**Status**: Released
+**Released**: 2026-01-25
 
 **Strategic Goal**: Optimize throughput via silence filtering and complete the output loop with synthesis.
 
 ### Epic 1.6: Voice Activity Detection (VAD) Service
 **Priority**: P1
-**Status**: Planned
+**Status**: Delivered
 
 **User Story**:
 As a System Architect,
@@ -197,11 +198,11 @@ So that I don't waste GPU/CPU cycles transcribing background noise and latency i
 - Placed *after* Gateway (Epic 1.5) and *before* ASR (Epic 1.2).
 
 **Acceptance Criteria**:
-- [ ] VAD Service consumes `AudioInputEvent` from Gateway.
-- [ ] VAD Service uses `onnx-community/silero-vad` model (ONNX runtime) for low-latency detection.
-- [ ] VAD Service detects speech segments.
-- [ ] VAD Service produces `SpeechSegmentEvent` (only containing speech).
-- [ ] ASR Service updated to consume `SpeechSegmentEvent` instead of raw `AudioInputEvent`.
+- [x] VAD Service consumes `AudioInputEvent` from Gateway.
+- [x] VAD Service uses `onnx-community/silero-vad` model (ONNX runtime) for low-latency detection.
+- [x] VAD Service detects speech segments.
+- [x] VAD Service produces `SpeechSegmentEvent` (only containing speech).
+- [x] ASR Service updated to consume `SpeechSegmentEvent` instead of raw `AudioInputEvent`.
 
 ---
 

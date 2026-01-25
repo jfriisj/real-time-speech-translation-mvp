@@ -1,6 +1,6 @@
 # System Architecture — Universal Speech Translation Platform
 
-**Last Updated**: 2026-01-19
+**Last Updated**: 2026-01-25
 
 ## Changelog
 
@@ -12,6 +12,7 @@
 | 2026-01-19 | Added MVP+ extension guardrails (Gateway, VAD, TTS, speaker context) | Ensures planned pipeline additions do not break v0.2.x reproducibility and makes voice-cloning context propagation explicit | v0.3.0–v0.4.0 (Epics 1.5–1.7) |
 | 2026-01-19 | Epic 1.6 VAD pre-planning constraints (segmentation semantics + ordering) | Prevents non-deterministic ASR behavior and avoids schema/topic drift before planning | Epic 1.6 (VAD Service) |
 | 2026-01-19 | Added QA integration points + failure-mode checklist for VAD stage | Improves test coverage at service boundaries (SR/Kafka/VAD/ASR) and reduces regressions during v0.4.0 hardening | Plan 009 (VAD) |
+| 2026-01-25 | Epic 1.7 TTS pre-planning constraints (AudioSynthesisEvent payload strategy, object-store guardrails) | Prevents Kafka payload cap violations and clarifies how synthesized audio and speaker context are transported | Epic 1.7 (TTS Service) |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:
@@ -45,7 +46,7 @@ Deliver a **hard MVP** event-driven speech translation pipeline that is:
 - Planned: TTS Service: translated text → synthesized audio (`TextTranslatedEvent` → `AudioSynthesisEvent`)
 
 ### Planned supporting infrastructure (v0.3.0+)
-- MAY introduce an object store (e.g., MinIO/S3) only if speaker reference audio must be transported by URI rather than inline.
+- MAY introduce an object store (e.g., MinIO/S3) if payloads must be transported by URI rather than inline (speaker reference context and/or synthesized audio output).
 
 ## Runtime Flows (Hard MVP)
 1. Producer publishes `AudioInputEvent` (topic: `speech.audio.ingress`) with a `correlation_id`.
@@ -197,6 +198,21 @@ Architecture requirements:
 
 **Consequences**:
 - Requires schema evolution discipline (optional fields or new event types) and clear retention/cleanup rules if URIs are used.
+
+### Decision: TTS audio output transport strategy (Epic 1.7)
+**Context**: Kafka payload caps (2 MiB broker, 1.5 MiB inline payload cap) make it easy for synthesized audio to exceed limits depending on format and duration.
+
+**Choice (guardrail)**:
+- The platform MUST support a TTS output strategy that cannot violate the Kafka payload invariants.
+- Preferred approach: `AudioSynthesisEvent` supports either inline `audio_bytes` OR an external `audio_uri` (exactly one set).
+
+**Alternatives**:
+- Inline-only output with aggressive max-duration caps (acceptable for very short demos, but fragile).
+- Always-URI output (adds storage dependency even for small payloads).
+
+**Consequences**:
+- If URI output is used, an object store introduces lifecycle/TTL and failure modes (missing/expired URIs) that must degrade gracefully.
+- Event schemas must remain backward-compatible by adding optional fields/unions.
 
 ### Decision: Supported audio format for MVP
 **Context**: Allowing multiple formats expands the decoding surface area and increases integration ambiguity.

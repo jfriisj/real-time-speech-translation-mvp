@@ -47,7 +47,7 @@ Constraints:
 - No creating features/bugs (implementer's role).
 - No UAT/QA (must complete before DevOps).
 - Release docs in `agent-output/releases/` are exclusive domain.
-- When updating release docs, read the ENTIRE file first to avoid duplicating headers/sections.
+- Release Doc Updates: Prefer reading the full file and re-creating it (`create_file`) over partial text replacements, to prevent duplication errors.
 
 Reusable Skills (optional):
 
