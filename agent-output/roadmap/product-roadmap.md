@@ -215,7 +215,7 @@ So that I don't waste GPU/CPU cycles transcribing background noise and latency i
 
 ### Epic 1.7: Text-to-Speech (TTS) (Stable Outcome)
 **Priority**: P1
-**Status**: Planned
+**Status**: In Progress
 
 **User Story**:
 As a User,
@@ -231,12 +231,15 @@ So that I can consume the translation hands-free.
 - Epic 1.3 (Translation output).
 
 **Acceptance Criteria**:
-- [ ] **Architecture**: data flow designed to propagate "Source Audio Sample" (or embedding) from Ingress -> TTS for cloning context.
+- [x] **Architecture**: data flow designed to propagate "Source Audio Sample" (or embedding) from Ingress -> TTS for cloning context.
 - [ ] TTS Service consumes `TextTranslatedEvent`.
 - [ ] TTS Service uses `onnx-community/Kokoro-82M-v1.0-ONNX` (or stable equivalent).
 - [ ] TTS Service produces `AudioSynthesisEvent`.
-- [ ] **Pluggability**: Synthesizer implementation accepts a config switch (Factory pattern) for future model support.
+- [x] **Pluggability**: Synthesizer implementation accepts a config switch (Factory pattern) for future model support.
 - [ ] Basic duration/speed control implemented.
+
+**Status Notes**:
+- 2026-01-25: Plan 010 finalized (Rev 8). Implementation started; Kokoro ONNX scaffolded; Schemas updated.
 
 ---
 

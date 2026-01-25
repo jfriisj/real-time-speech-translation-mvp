@@ -80,6 +80,7 @@ class AudioSynthesisPayload:
     sample_rate_hz: int
     audio_format: str = "wav"
     content_type: str = "audio/wav"
+    model_name: Optional[str] = None
     speaker_id: Optional[str] = None
 
     def validate(self) -> None:

@@ -46,3 +46,41 @@ if "boto3" not in sys.modules:
 
     fake_boto3.client = _fake_client  # type: ignore[attr-defined]
     sys.modules["boto3"] = fake_boto3
+
+if "onnxruntime" not in sys.modules:
+    fake_ort = ModuleType("onnxruntime")
+    
+    class _FakeSession:
+        def __init__(self, path, providers=None, **kwargs):
+            pass
+            
+        def run(self, output_names, input_feed, **kwargs):
+            # return dummy audio float array (1, N)
+            import numpy as np
+            return [np.zeros((1, 24000), dtype=np.float32)] 
+            
+        def get_inputs(self):
+            return []
+
+    fake_ort.InferenceSession = _FakeSession # type: ignore[attr-defined]
+    sys.modules["onnxruntime"] = fake_ort
+
+if "confluent_kafka" not in sys.modules:
+    fake_kafka = ModuleType("confluent_kafka")
+    
+    class _FakeProducer:
+        def __init__(self, config): pass
+        def produce(self, topic, value, key=None, headers=None, on_delivery=None): pass
+        def poll(self, timeout): pass
+        def flush(self): pass
+        
+    class _FakeConsumer:
+        def __init__(self, config): pass
+        def subscribe(self, topics): pass
+        def poll(self, timeout): return None
+        def close(self): pass
+
+    fake_kafka.Producer = _FakeProducer # type: ignore[attr-defined]
+    fake_kafka.Consumer = _FakeConsumer # type: ignore[attr-defined]
+    sys.modules["confluent_kafka"] = fake_kafka
+

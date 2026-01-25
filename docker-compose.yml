@@ -152,8 +152,8 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       SCHEMA_DIR: /app/shared/schemas/avro
-      TTS_MODEL_NAME: IndexTeam/IndexTTS-2
-      TTS_MODEL_CACHE_DIR: /tmp/tts-cache
+      TTS_MODEL_NAME: kokoro-82m-onnx
+      TTS_MODEL_CACHE_DIR: /app/model_cache
       HF_TOKEN: ${HF_TOKEN:-}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin

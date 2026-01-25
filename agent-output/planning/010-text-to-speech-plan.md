@@ -5,7 +5,7 @@
 **Epic Alignment**: Epic 1.7 Text-to-Speech (TTS) (Stable Outcome)
 **Architecture**: [Findings 011](agent-output/architecture/011-tts-indextts-2-architecture-findings.md) (APPROVED_WITH_CHANGES)
 **Process Improvement**: Includes mandatory "Measurement Method" (PI-009).
-**Status**: Revised (Addressing Critique 010 Rev 5 & Analysis 011 - ONNX Pivot)
+**Status**: Implementation In Progress (Rev 9 - Updated Checklists)
 
 ## Changelog
 
@@ -19,9 +19,11 @@
 | 2026-01-25 | Revision 5 | Added Data Retention, Observability Contract, Risks, and Rollout Strategy. |
 | 2026-01-25 | Revision 6 | Added explicit Testing Infrastructure requirements (pytest, conftest mocks) based on implementation findings. |
 | 2026-01-25 | Revision 7 | Pivoted synthesizer to `onnx-community/Kokoro-82M-v1.0-ONNX` for runtime stability while enforcing a pluggable architecture for future model swaps (IndexTTS/Qwen). |
+| 2026-01-25 | Revision 8 | Incorporated Findings 013: layered boundary, schema safety for model_name, pinned factory contract/providers, max-text caps, and asset caching. |
+| 2026-01-25 | Revision 9 | Marked implementation steps `[x]` as scaffolding and schema updates are complete. |
 
 ## Value Statement and Business Objective
-As a User, I want to hear the translated text spoken naturally, so that I can consume the translation hands-free.
+As a User, I want to hear the translated text spoken naturally, So that I can consume the translation hands-free.
 
 **Measure of Success**:
 - **Real-Time Factor (RTF)** < 1.0 (Synthesis time < Audio Duration).
@@ -72,13 +74,14 @@ Implement the `tts-service` using `onnx-community/Kokoro-82M-v1.0-ONNX` to synth
 
 ### 3. Schema Evolution & Compatibility
 - **Compatibility Mode**: All schema updates MUST respect `BACKWARD` (or `BACKWARD_TRANSITIVE`) compatibility in Schema Registry.
-- **Optionality**: All new fields (`speaker_reference_bytes`, `speaker_id`, `audio_uri`, etc.) MUST be defined as **Union with Null** (optional).
+- **Optionality**: All new fields (`speaker_reference_bytes`, `speaker_id`, `audio_uri`, `model_name`) MUST be defined as **Union with Null** (optional).
 - **Impact**: Existing consumers MUST be able to read new events without crashing (ignoring new fields).
 
 ### 4. Data Retention & Lifecycle
 - **Scope**: Applied to objects stored in the `tts-audio` bucket (audio_uri payloads).
 - **Policy**: **Ephemeral (24 Hours)**.
 - **Mechanism**: MinIO Bucket Lifecycle Rule (Expiration).
+- **Asset Caching**: Model weights and voice files MUST be cached in a deterministic path (e.g., `/app/model_cache`) to ensure measurable cold-starts.
 
 ### 5. Observability Contract
 - **Log Level**: INFO
@@ -87,6 +90,11 @@ Implement the `tts-service` using `onnx-community/Kokoro-82M-v1.0-ONNX` to synth
     - `model_name`: Log the active synthesizer model (e.g., "Kokoro-82M-ONNX").
     - `synthesis_latency_ms`: Time taken for model inference.
     - `payload_mode`: "INLINE" or "URI".
+
+### 6. Operational Constraints
+- **Layering**: Service MUST be structured into strict layers: Orchestration (Kafka), Synthesizer Backend (ONNX), Storage Adapter. No business logic in Orchestration.
+- **Input Cap**: Input text MUST be truncated or rejected if > 500 characters to prevent runaway processing/latency.
+- **Providers**: Explicitly configure `onnxruntime` for CPU or GPU via `ONNX_PROVIDER` env var (default: `CPUExecutionProvider`).
 
 ## Context
 - **Roadmap**: Epic 1.7 (Speech-to-Speech loop completion).
@@ -120,41 +128,42 @@ Implement the `tts-service` using `onnx-community/Kokoro-82M-v1.0-ONNX` to synth
 
 ### 1. Shared Infrastructure & Contract Updates
 **Objective**: Update schemas to support Dual-Mode transport and Speaker Context propagation.
-- [ ] Update `shared/schemas/avro/` to create `AudioSynthesisEvent.avsc`:
+- [x] Update `shared/schemas/avro/` to create `AudioSynthesisEvent.avsc`:
     - **Fields**: `correlation_id`, `timestamp_ms`, `model_name`.
     - **Audio Payload**: `audio_bytes` / `audio_uri` (Mutually Exclusive Logic).
     - **Audio Metadata**: `duration_ms`, `sample_rate_hz`, `audio_format` (default "wav").
-- [ ] Update upstream schemas (`AudioInputEvent`, `TextRecognizedEvent`, `TextTranslatedEvent`) to add optional `speaker_reference_bytes` and `speaker_id`.
-- [ ] Update `speech-lib`: Regenerate Python classes.
+- [x] Update upstream schemas (`AudioInputEvent`, `TextRecognizedEvent`, `TextTranslatedEvent`) to add optional `speaker_reference_bytes` and `speaker_id`.
+- [x] Update `speech-lib`: Regenerate Python classes.
 
 ### 2. Infrastructure Services (MinIO)
 **Objective**: Ensure Object Store availability.
-- [ ] Provision MinIO service with default buckets (e.g., `tts-audio`).
-- [ ] Configure access credentials.
+- [x] Provision MinIO service with default buckets (e.g., `tts-audio`).
+- [x] Configure access credentials.
 
 ### 3. TTS Service Implementation
 **Objective**: Create the synthesis microservice with ONNX backend.
-- [ ] Initialize `services/tts/` module.
-- [ ] **Dependency Management**:
+- [x] Initialize `services/tts/` module.
+- [x] **Dependency Management**:
     - Update `pyproject.toml` to include: `onnxruntime` (or gpu variant contextually), `misaki` (for phonemes), `soundfile`.
     - **Remove**: `indextts` dependency.
-- [ ] **Setup Testing Infrastructure**:
+- [x] **Setup Testing Infrastructure**:
     - Configure `tests/conftest.py` to mock `onnxruntime.InferenceSession` and `misaki` tokenization.
-- [ ] **Implement Pluggable Synthesizer Architecture**:
-    - Define `Synthesizer` abstract base class (`synthesize(text, speaker_ref, speaker_id) -> audio`).
+- [x] **Implement Pluggable Synthesizer Architecture**:
+    - Define `Synthesizer` abstract base class:
+        - Signature: `synthesize(text, speaker_ref, speaker_id) -> (audio_bytes, sample_rate, duration_ms)`.
     - Implement `SynthesizerFactory` that reads `TTS_MODEL_NAME` env var.
-- [ ] **Implement Kokoro ONNX Backend**:
+- [x] **Implement Kokoro ONNX Backend**:
     - Implement `KokoroSynthesizer` class.
     - **Voice Mapping**: Create a mapping of `speaker_id` -> `voices/*.bin` style vectors.
     - **Pipeline**: Text -> `misaki` Phonemes -> Tokenizer -> `onnxruntime` Inference -> Audio.
-    - **Model Handling**: Auto-download `onnx-community/Kokoro-82M-v1.0-ONNX` model and voice assets on startup (warmup).
-- [ ] Implement `Dual-Mode Producer` (MinIO Upload + Kafka Produce).
-- [ ] Implement `Consumer` loop. Measurement logging.
+    - **Model Handling**: Auto-download `onnx-community/Kokoro-82M-v1.0-ONNX` model and voice assets on startup to `/app/model_cache`.
+- [x] Implement `Dual-Mode Producer` (MinIO Upload + Kafka Produce).
+- [x] Implement `Consumer` loop. Measurement logging.
 
 ### 4. Integration & Deployment
 **Objective**: Wire up the full Speech-to-Speech loop.
-- [ ] Update `docker-compose.yml`.
-- [ ] **Pass-through Update**: Update ASR and Translation service consumers/producers to propagate `speaker_reference_bytes` and `speaker_id`.
+- [x] Update `docker-compose.yml`.
+- [x] **Pass-through Update**: Update ASR and Translation service consumers/producers to propagate `speaker_reference_bytes` and `speaker_id`.
 
 ### 5. Version Management
 **Objective**: Prepare valid release artifacts.

@@ -33,7 +33,7 @@ class Settings:
             consumer_group_id=os.getenv("CONSUMER_GROUP_ID", "tts-service"),
             poll_timeout_seconds=float(os.getenv("POLL_TIMEOUT_SECONDS", "1.0")),
             schema_dir=Path(os.getenv("SCHEMA_DIR", "shared/schemas/avro")),
-            model_name=os.getenv("TTS_MODEL_NAME", "IndexTeam/IndexTTS-2"),
+            model_name=os.getenv("TTS_MODEL_NAME", "kokoro-82m-onnx"),
             inline_payload_max_bytes=int(
                 os.getenv("INLINE_PAYLOAD_MAX_BYTES", str(int(1.5 * 1024 * 1024)))
             ),

@@ -19,10 +19,10 @@ from speech_lib import (
     load_schema,
 )
 
-from .audio import encode_wav_bytes
 from .config import Settings
 from .storage import ObjectStorage
-from .synthesizer import INDEX_TTS_MODEL_ID, IndexTTS2Synthesizer, Synthesizer
+from .synthesizer_factory import SynthesizerFactory
+from .synthesizer_interface import Synthesizer
 
 
 LOGGER = logging.getLogger(__name__)
@@ -63,6 +63,7 @@ def build_output_event(
     duration_ms: int,
     sample_rate_hz: int,
     speaker_id: str | None,
+    model_name: str | None,
 ) -> BaseEvent:
     return BaseEvent(
         event_type="AudioSynthesisEvent",
@@ -76,6 +77,7 @@ def build_output_event(
             "audio_format": "wav",
             "content_type": "audio/wav",
             "speaker_id": speaker_id,
+            "model_name": model_name,
         },
     )
 
@@ -111,16 +113,15 @@ def process_event(
     producer: KafkaProducerWrapper,
     output_schema: Dict[str, Any],
     inline_max_bytes: int,
+    model_name: str | None,
 ) -> None:
     correlation_id, text, speaker_reference_bytes, speaker_id = _extract_request(event)
 
     start_time = perf_counter()
-    audio, sample_rate_hz = synthesizer.synthesize(text, speaker_reference_bytes)
+    # Updated signature: synthesize(text, ref_bytes, speaker_id) -> (bytes, sample_rate, duration)
+    wav_bytes, sample_rate_hz, duration_ms = synthesizer.synthesize(text, speaker_reference_bytes, speaker_id)
     synthesis_seconds = perf_counter() - start_time
     TTS_LATENCY_SECONDS.observe(synthesis_seconds)
-
-    wav_bytes = encode_wav_bytes(audio, sample_rate_hz)
-    duration_ms = int(len(audio) / sample_rate_hz * 1000)
 
     payload_mode = "INLINE"
     audio_bytes: bytes | None = None
@@ -148,6 +149,16 @@ def process_event(
             return
 
     output_event = build_output_event(
+        correlation_id=correlation_id,
+        audio_bytes=audio_bytes,
+        audio_uri=audio_uri,
+        duration_ms=duration_ms,
+        sample_rate_hz=sample_rate_hz,
+        speaker_id=speaker_id,
+        model_name=model_name
+    )
+
+    producer.publish_event(
         correlation_id=correlation_id,
         audio_bytes=audio_bytes,
         audio_uri=audio_uri,
@@ -201,19 +212,14 @@ def main() -> None:
     )
     producer = KafkaProducerWrapper.from_confluent(settings.kafka_bootstrap_servers)
 
-    if settings.model_name != INDEX_TTS_MODEL_ID:
-        raise ValueError(f"TTS_MODEL_NAME must be {INDEX_TTS_MODEL_ID}")
-
-    synthesizer: Synthesizer = IndexTTS2Synthesizer(
-        model_name=settings.model_name,
-        model_dir=settings.tts_model_dir or None,
-        cache_dir=settings.tts_model_cache_dir or None,
-    )
-    warmup = getattr(synthesizer, "warmup", None)
-    if callable(warmup):
+    synthesizer: Synthesizer = SynthesizerFactory.create()
+    
+    # Optional warmup if supported
+    if hasattr(synthesizer, "warmup") and callable(synthesizer.warmup):
         LOGGER.info("Warming up TTS model")
-        warmup()
+        synthesizer.warmup()
         LOGGER.info("TTS model warmup complete")
+
     storage = ObjectStorage(
         endpoint=settings.minio_endpoint,
         access_key=settings.minio_access_key,
@@ -250,8 +256,7 @@ def main() -> None:
                     storage=storage,
                     producer=producer,
                     output_schema=output_schema,
-                    inline_max_bytes=settings.inline_payload_max_bytes,
-                )
+                    inline_max_bytes=settings.inline_payload_max_bytes,                    model_name=settings.model_name                )
             except ValueError as exc:
                 TTS_ERRORS_TOTAL.labels("validation").inc()
                 LOGGER.warning("Dropping event correlation_id=%s reason=%s", event.get("correlation_id"), exc)
