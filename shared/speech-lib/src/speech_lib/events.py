@@ -14,6 +14,8 @@ class AudioInputPayload:
     audio_format: str
     sample_rate_hz: int
     language_hint: Optional[str] = None
+    speaker_reference_bytes: Optional[bytes] = None
+    speaker_id: Optional[str] = None
 
     def validate(self) -> None:
         if len(self.audio_bytes) > AUDIO_PAYLOAD_MAX_BYTES:
@@ -27,6 +29,8 @@ class TextRecognizedPayload:
     text: str
     language: str
     confidence: float
+    speaker_reference_bytes: Optional[bytes] = None
+    speaker_id: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -35,6 +39,8 @@ class TextTranslatedPayload:
     source_language: str
     target_language: str
     quality_score: Optional[float] = None
+    speaker_reference_bytes: Optional[bytes] = None
+    speaker_id: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -46,6 +52,8 @@ class SpeechSegmentPayload:
     audio_bytes: bytes
     sample_rate_hz: int
     audio_format: str = "wav"
+    speaker_reference_bytes: Optional[bytes] = None
+    speaker_id: Optional[str] = None
 
     def validate(self) -> None:
         if not self.segment_id:
@@ -62,6 +70,33 @@ class SpeechSegmentPayload:
             raise ValueError("audio_format must be 'wav' for MVP")
         if self.sample_rate_hz <= 0:
             raise ValueError("sample_rate_hz must be positive")
+
+
+@dataclass(frozen=True)
+class AudioSynthesisPayload:
+    audio_bytes: Optional[bytes]
+    audio_uri: Optional[str]
+    duration_ms: int
+    sample_rate_hz: int
+    audio_format: str = "wav"
+    content_type: str = "audio/wav"
+    speaker_id: Optional[str] = None
+
+    def validate(self) -> None:
+        has_bytes = isinstance(self.audio_bytes, (bytes, bytearray)) and bool(self.audio_bytes)
+        has_uri = isinstance(self.audio_uri, str) and bool(self.audio_uri.strip())
+        if has_bytes == has_uri:
+            raise ValueError("exactly one of audio_bytes or audio_uri must be set")
+        if has_bytes and len(self.audio_bytes or b"") > AUDIO_PAYLOAD_MAX_BYTES:
+            raise ValueError(
+                f"audio_bytes exceeds {AUDIO_PAYLOAD_MAX_BYTES} bytes (MVP limit)"
+            )
+        if self.audio_format != "wav":
+            raise ValueError("audio_format must be 'wav' for MVP")
+        if self.sample_rate_hz <= 0:
+            raise ValueError("sample_rate_hz must be positive")
+        if self.duration_ms <= 0:
+            raise ValueError("duration_ms must be positive")
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,10 @@
+{
+  "Rules": [
+    {
+      "ID": "expire-tts-audio",
+      "Status": "Enabled",
+      "Expiration": {"Days": 1},
+      "Filter": {"Prefix": ""}
+    }
+  ]
+}

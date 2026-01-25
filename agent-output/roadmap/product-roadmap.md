@@ -174,11 +174,11 @@ So that I can connect external devices (microphones, browsers) to the pipeline w
 
 ---
 
-## Release v0.4.0 - Optimization & Speech (MVP+)
+## Release v0.4.0 - Optimization (MVP+)
 **Status**: Released
 **Released**: 2026-01-25
 
-**Strategic Goal**: Optimize throughput via silence filtering and complete the output loop with synthesis.
+**Strategic Goal**: Optimize throughput via silence filtering.
 
 ### Epic 1.6: Voice Activity Detection (VAD) Service
 **Priority**: P1
@@ -205,6 +205,12 @@ So that I don't waste GPU/CPU cycles transcribing background noise and latency i
 - [x] ASR Service updated to consume `SpeechSegmentEvent` instead of raw `AudioInputEvent`.
 
 ---
+
+## Release v0.5.0 - Synthesis (MVP+)
+**Status**: Planned
+**Target Release**: Upcoming
+
+**Strategic Goal**: Complete the output loop with synthesis.
 
 ### Epic 1.7: Text-to-Speech (TTS) with IndexTTS-2
 **Priority**: P1

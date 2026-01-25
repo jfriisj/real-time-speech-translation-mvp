@@ -25,7 +25,7 @@ def extract_translation_request(
     *,
     event: Dict[str, Any],
     target_language: str,
-) -> tuple[str, str, str, str]:
+) -> tuple[str, str, str, str, bytes | None, str | None]:
     correlation_id = str(event.get("correlation_id", "")).strip()
     if not correlation_id:
         raise ValueError("missing correlation_id")
@@ -37,7 +37,16 @@ def extract_translation_request(
 
     source_language = str(payload.get("language") or "").strip() or "en"
     effective_target = target_language.strip() or "es"
-    return correlation_id, input_text, source_language, effective_target
+    speaker_reference_bytes = payload.get("speaker_reference_bytes")
+    speaker_id = payload.get("speaker_id")
+    return (
+        correlation_id,
+        input_text,
+        source_language,
+        effective_target,
+        speaker_reference_bytes if isinstance(speaker_reference_bytes, (bytes, bytearray)) else None,
+        str(speaker_id).strip() if speaker_id else None,
+    )
 
 
 def register_schemas(
@@ -55,6 +64,8 @@ def build_output_event(
     translated_text: str,
     source_language: str,
     target_language: str,
+    speaker_reference_bytes: bytes | None,
+    speaker_id: str | None,
 ) -> BaseEvent:
     return BaseEvent(
         event_type="TextTranslatedEvent",
@@ -65,6 +76,8 @@ def build_output_event(
             "source_language": source_language,
             "target_language": target_language,
             "quality_score": None,
+            "speaker_reference_bytes": speaker_reference_bytes,
+            "speaker_id": speaker_id,
         },
     )
 
@@ -77,7 +90,14 @@ def process_event(
     output_schema: Dict[str, Any],
     target_language: str,
 ) -> None:
-    correlation_id, input_text, source_language, effective_target = extract_translation_request(
+    (
+        correlation_id,
+        input_text,
+        source_language,
+        effective_target,
+        speaker_reference_bytes,
+        speaker_id,
+    ) = extract_translation_request(
         event=event,
         target_language=target_language,
     )
@@ -90,6 +110,8 @@ def process_event(
         translated_text=translated_text,
         source_language=source_language,
         target_language=effective_target,
+        speaker_reference_bytes=speaker_reference_bytes,
+        speaker_id=speaker_id,
     )
 
     producer.publish_event(TOPIC_TRANSLATION_TEXT, output_event, output_schema)

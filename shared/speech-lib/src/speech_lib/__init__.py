@@ -5,9 +5,11 @@ from .constants import (
     TOPIC_SPEECH_SEGMENT,
     TOPIC_ASR_TEXT,
     TOPIC_TRANSLATION_TEXT,
+    TOPIC_TTS_OUTPUT,
 )
 from .events import (
     AudioInputPayload,
+    AudioSynthesisPayload,
     BaseEvent,
     SpeechSegmentPayload,
     TextRecognizedPayload,
@@ -26,7 +28,9 @@ __all__ = [
     "TOPIC_SPEECH_SEGMENT",
     "TOPIC_ASR_TEXT",
     "TOPIC_TRANSLATION_TEXT",
+    "TOPIC_TTS_OUTPUT",
     "AudioInputPayload",
+    "AudioSynthesisPayload",
     "BaseEvent",
     "SpeechSegmentPayload",
     "TextRecognizedPayload",

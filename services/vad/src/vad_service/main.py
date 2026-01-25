@@ -73,6 +73,8 @@ def process_event(
 
     payload = event.get("payload") or {}
     audio_bytes, sample_rate_hz, audio_format = validate_audio_payload(payload)
+    speaker_reference_bytes = payload.get("speaker_reference_bytes")
+    speaker_id = payload.get("speaker_id")
     audio, actual_rate = decode_wav(audio_bytes, sample_rate_hz)
     audio, effective_rate = resample_audio(audio, actual_rate, settings.target_sample_rate_hz)
 
@@ -120,6 +122,10 @@ def process_event(
                 "audio_bytes": segment.audio_bytes,
                 "sample_rate_hz": effective_rate,
                 "audio_format": audio_format,
+                "speaker_reference_bytes": speaker_reference_bytes
+                if isinstance(speaker_reference_bytes, (bytes, bytearray))
+                else None,
+                "speaker_id": str(speaker_id).strip() if speaker_id else None,
             },
         )
 

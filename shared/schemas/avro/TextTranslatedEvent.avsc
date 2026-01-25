@@ -18,7 +18,9 @@
           {"name": "text", "type": "string"},
           {"name": "source_language", "type": "string"},
           {"name": "target_language", "type": "string"},
-          {"name": "quality_score", "type": ["null", "float"], "default": null}
+          {"name": "quality_score", "type": ["null", "float"], "default": null},
+          {"name": "speaker_reference_bytes", "type": ["null", "bytes"], "default": null},
+          {"name": "speaker_id", "type": ["null", "string"], "default": null}
         ]
       }
     }

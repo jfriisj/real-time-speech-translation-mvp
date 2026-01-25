@@ -41,7 +41,8 @@ Produce implementation-ready plans translating roadmap epics into actionable, ve
 ## Core Responsibilities
 
 1. Read roadmap/architecture BEFORE planning. Understand strategic epic outcomes, architectural constraints.
-2. Validate alignment with Master Product Objective. Ensure plan supports master value statement.
+2. Read `.github/chatmodes/planner.chatmode.md` BEFORE planning. Use it as the repo-local checklist/rubric.
+3. Validate alignment with Master Product Objective. Ensure plan supports master value statement.
 3. Reference roadmap epic. Deliver outcome-focused epic.
 4. Reference architecture guidance (Section 10). Consult approach, modules, integration points, design constraints.
 5. Identify release version from roadmap epic (e.g., v0.2.2). Include in plan metadata.
@@ -96,7 +97,8 @@ Prefer small, focused scopes delivering value quickly.
 
 ## Process
 
-1. Start with "Value Statement and Business Objective": "As a [user/customer/agent], I want to [objective], so that [value]"
+1. Read `.github/chatmodes/planner.chatmode.md` and use it as the plan preflight checklist.
+2. Start with "Value Statement and Business Objective": "As a [user/customer/agent], I want to [objective], so that [value]"
 2. **Roadmap Alignment Check**: Explicitly compare Plan Acceptance Criteria against Roadmap. If terms/names differ (e.g., "AudioInput" vs "AudioProcessing"), you MUST either:
    - Update the Plan to match the Roadmap (preferred), OR
    - Explicitly flag the Deviation for User Approval.

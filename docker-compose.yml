@@ -47,6 +47,39 @@ services:
     networks:
       - speech_net
 
+  minio:
+    image: minio/minio:latest
+    container_name: speech-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    networks:
+      - speech_net
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: speech-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      for i in $(seq 1 20); do
+        mc alias set local http://minio:9000 minioadmin minioadmin && break;
+        echo 'waiting for minio...';
+        sleep 2;
+      done &&
+      mc mb -p local/tts-audio || true &&
+      mc ilm import local/tts-audio < /lifecycle.json
+      "
+    volumes:
+      - ./services/tts/minio-lifecycle.json:/lifecycle.json:ro
+    networks:
+      - speech_net
+
   asr-service:
     build:
       context: .
@@ -103,6 +136,30 @@ services:
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       TARGET_LANGUAGE: es
       SCHEMA_DIR: /app/shared/schemas/avro
+    networks:
+      - speech_net
+
+  tts-service:
+    build:
+      context: .
+      dockerfile: services/tts/Dockerfile
+    container_name: speech-tts-service
+    depends_on:
+      - schema-registry
+      - kafka
+      - minio
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      SCHEMA_DIR: /app/shared/schemas/avro
+      TTS_MODEL_NAME: IndexTeam/IndexTTS-2
+      TTS_MODEL_CACHE_DIR: /tmp/tts-cache
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: tts-audio
+      MINIO_SECURE: "0"
+      INLINE_PAYLOAD_MAX_BYTES: ${INLINE_PAYLOAD_MAX_BYTES:-1572864}
     networks:
       - speech_net
 

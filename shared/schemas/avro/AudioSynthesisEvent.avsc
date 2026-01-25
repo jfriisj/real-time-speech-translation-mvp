@@ -1,0 +1,29 @@
+{
+  "type": "record",
+  "name": "AudioSynthesisEvent",
+  "namespace": "ai.speech.shared.events",
+  "doc": "TTS output event (inline audio bytes or object-store URI).",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "event_type", "type": "string"},
+    {"name": "correlation_id", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "source_service", "type": "string"},
+    {
+      "name": "payload",
+      "type": {
+        "type": "record",
+        "name": "AudioSynthesisPayload",
+        "fields": [
+          {"name": "audio_bytes", "type": ["null", "bytes"], "default": null},
+          {"name": "audio_uri", "type": ["null", "string"], "default": null},
+          {"name": "duration_ms", "type": "long"},
+          {"name": "sample_rate_hz", "type": "int"},
+          {"name": "audio_format", "type": "string", "default": "wav"},
+          {"name": "content_type", "type": "string", "default": "audio/wav"},
+          {"name": "speaker_id", "type": ["null", "string"], "default": null}
+        ]
+      }
+    }
+  ]
+}

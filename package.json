@@ -1,0 +1,6 @@
+{
+  "name": "real-time-speech-translation-mvp",
+  "version": "0.5.0-rc",
+  "private": true,
+  "description": "Event-driven real-time speech translation MVP"
+}

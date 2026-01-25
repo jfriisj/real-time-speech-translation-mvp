@@ -1,6 +1,11 @@
 from speech_lib.constants import AUDIO_PAYLOAD_MAX_BYTES
 from speech_lib.correlation import correlation_context, get_correlation_id
-from speech_lib.events import AudioInputPayload, BaseEvent, SpeechSegmentPayload
+from speech_lib.events import (
+    AudioInputPayload,
+    AudioSynthesisPayload,
+    BaseEvent,
+    SpeechSegmentPayload,
+)
 
 
 def test_audio_payload_size_limit():
@@ -72,3 +77,27 @@ def test_correlation_context_sets_and_resets():
         assert get_correlation_id() == "corr-xyz"
 
     assert get_correlation_id() is None
+
+
+def test_audio_synthesis_payload_requires_exactly_one_source() -> None:
+    payload = AudioSynthesisPayload(
+        audio_bytes=b"\x00\x01",
+        audio_uri=None,
+        duration_ms=1000,
+        sample_rate_hz=16000,
+    )
+    payload.validate()
+
+    invalid_payload = AudioSynthesisPayload(
+        audio_bytes=b"\x00",
+        audio_uri="s3://bucket/key",
+        duration_ms=1000,
+        sample_rate_hz=16000,
+    )
+
+    try:
+        invalid_payload.validate()
+    except ValueError:
+        assert True
+    else:  # pragma: no cover
+        assert False, "Expected ValueError when both audio_bytes and audio_uri are set"

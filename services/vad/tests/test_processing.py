@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from io import BytesIO
 import math
+from pathlib import Path
 import struct
 import wave
 
+from vad_service.main import process_event
+from vad_service.config import Settings
 from vad_service.processing import (
     build_segments,
     decode_wav,
@@ -112,3 +115,57 @@ def test_build_segments_skips_silence_only() -> None:
     )
 
     assert segments == []
+
+
+class _RecordingProducer:
+    def __init__(self) -> None:
+        self.published: list[tuple[str, object, dict, str | None]] = []
+
+    def publish_event(self, topic: str, event: object, schema: dict, key: str | None = None) -> None:
+        self.published.append((topic, event, schema, key))
+
+
+def test_process_event_passes_speaker_context() -> None:
+    wav_bytes = _make_composite_wav_bytes()
+    settings = Settings(
+        kafka_bootstrap_servers="localhost:9092",
+        schema_registry_url="http://localhost:8081",
+        consumer_group_id="vad-test",
+        poll_timeout_seconds=0.1,
+        schema_dir=Path("shared/schemas/avro"),
+        target_sample_rate_hz=16000,
+        window_ms=30,
+        hop_ms=10,
+        speech_threshold=0.5,
+        energy_threshold=0.01,
+        min_speech_ms=50,
+        min_silence_ms=50,
+        padding_ms=0,
+        use_onnx=False,
+        model_repo="",
+        model_filename="",
+    )
+    producer = _RecordingProducer()
+
+    process_event(
+        event={
+            "correlation_id": "corr-1",
+            "payload": {
+                "audio_bytes": wav_bytes,
+                "audio_format": "wav",
+                "sample_rate_hz": 16000,
+                "speaker_reference_bytes": b"\x01",
+                "speaker_id": "speaker-1",
+            },
+        },
+        producer=producer,
+        output_schema={},
+        settings=settings,
+        vad_model=None,
+    )
+
+    assert producer.published
+    _topic, event, _schema, _key = producer.published[0]
+    payload = event.to_dict()["payload"]
+    assert payload["speaker_reference_bytes"] == b"\x01"
+    assert payload["speaker_id"] == "speaker-1"

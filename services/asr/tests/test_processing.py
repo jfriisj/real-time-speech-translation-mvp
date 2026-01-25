@@ -8,7 +8,7 @@ import wave
 import numpy as np
 import pytest
 
-from asr_service.main import resolve_input_schema_name
+from asr_service.main import build_output_event, resolve_input_schema_name
 from asr_service.processing import decode_wav, validate_audio_payload
 from speech_lib import TOPIC_AUDIO_INGRESS, TOPIC_SPEECH_SEGMENT
 from speech_lib.constants import AUDIO_PAYLOAD_MAX_BYTES
@@ -79,3 +79,15 @@ def test_resolve_input_schema_name() -> None:
 
     with pytest.raises(ValueError):
         resolve_input_schema_name("speech.audio.unknown")
+
+
+def test_build_output_event_includes_speaker_context() -> None:
+    event = build_output_event(
+        {"text": "hello", "language": "en", "confidence": 0.9},
+        "corr-1",
+        b"\x10\x20",
+        "speaker-1",
+    )
+    data = event.to_dict()
+    assert data["payload"]["speaker_reference_bytes"] == b"\x10\x20"
+    assert data["payload"]["speaker_id"] == "speaker-1"

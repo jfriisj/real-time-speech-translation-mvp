@@ -17,7 +17,9 @@
         "fields": [
           {"name": "text", "type": "string"},
           {"name": "language", "type": "string"},
-          {"name": "confidence", "type": "float"}
+          {"name": "confidence", "type": "float"},
+          {"name": "speaker_reference_bytes", "type": ["null", "bytes"], "default": null},
+          {"name": "speaker_id", "type": ["null", "string"], "default": null}
         ]
       }
     }

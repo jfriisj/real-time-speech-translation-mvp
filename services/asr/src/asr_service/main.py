@@ -40,7 +40,12 @@ def resolve_input_schema_name(input_topic: str) -> str:
     raise ValueError(f"Unsupported ASR input topic: {input_topic}")
 
 
-def build_output_event(result: Dict[str, Any], correlation_id: str) -> BaseEvent:
+def build_output_event(
+    result: Dict[str, Any],
+    correlation_id: str,
+    speaker_reference_bytes: bytes | None,
+    speaker_id: str | None,
+) -> BaseEvent:
     text = str(result.get("text", "")).strip()
     language = result.get("language") or "en"
     confidence = result.get("confidence", 1.0)
@@ -57,6 +62,8 @@ def build_output_event(result: Dict[str, Any], correlation_id: str) -> BaseEvent
             "text": text,
             "language": language,
             "confidence": confidence_value,
+            "speaker_reference_bytes": speaker_reference_bytes,
+            "speaker_id": speaker_id,
         },
     )
 
@@ -69,12 +76,21 @@ def process_event(
 ) -> None:
     correlation_id = str(event.get("correlation_id", ""))
     payload = event.get("payload") or {}
+    speaker_reference_bytes = payload.get("speaker_reference_bytes")
+    speaker_id = payload.get("speaker_id")
 
     audio_bytes, sample_rate_hz = validate_audio_payload(payload)
     audio, effective_rate = decode_wav(audio_bytes, sample_rate_hz)
 
     result = transcriber.transcribe(audio, effective_rate)
-    output_event = build_output_event(result, correlation_id)
+    output_event = build_output_event(
+        result,
+        correlation_id,
+        speaker_reference_bytes
+        if isinstance(speaker_reference_bytes, (bytes, bytearray))
+        else None,
+        str(speaker_id).strip() if speaker_id else None,
+    )
     if not output_event.payload["text"]:
         raise ValueError("transcription result is empty")
 

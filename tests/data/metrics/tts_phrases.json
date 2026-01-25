@@ -1,0 +1,17 @@
+[
+  {"id": "en-short-01", "language": "en", "category": "short", "text": "Hello world."},
+  {"id": "en-short-02", "language": "en", "category": "short", "text": "Good morning."},
+  {"id": "en-short-03", "language": "en", "category": "short", "text": "Thank you."},
+  {"id": "en-short-04", "language": "en", "category": "short", "text": "See you soon."},
+  {"id": "en-short-05", "language": "en", "category": "short", "text": "Yes, please."},
+  {"id": "en-medium-01", "language": "en", "category": "medium", "text": "The quick brown fox jumps over the lazy dog."},
+  {"id": "en-medium-02", "language": "en", "category": "medium", "text": "Please confirm the pickup time and the destination address."},
+  {"id": "en-medium-03", "language": "en", "category": "medium", "text": "We should review the agenda before the meeting starts."},
+  {"id": "en-medium-04", "language": "en", "category": "medium", "text": "I will send the report once the data is verified."},
+  {"id": "en-medium-05", "language": "en", "category": "medium", "text": "After the update, restart the application to apply changes."},
+  {"id": "es-long-01", "language": "es", "category": "long", "text": "Cuando llegues al aeropuerto, sigue las señales hacia la salida principal y llama al taxi que hemos reservado para ti."},
+  {"id": "es-long-02", "language": "es", "category": "long", "text": "La conferencia comenzó con una introducción detallada sobre los objetivos del proyecto y terminó con una sesión de preguntas y respuestas."},
+  {"id": "es-long-03", "language": "es", "category": "long", "text": "Aunque el clima cambió varias veces durante el día, el equipo logró completar la grabación sin retrasos significativos."},
+  {"id": "es-long-04", "language": "es", "category": "long", "text": "Si necesitas más información sobre los resultados, por favor revisa el documento adjunto y avísame si hay dudas."},
+  {"id": "es-long-05", "language": "es", "category": "long", "text": "El sistema debe mantenerse estable incluso cuando hay múltiples solicitudes concurrentes y la red presenta latencia variable."}
+]

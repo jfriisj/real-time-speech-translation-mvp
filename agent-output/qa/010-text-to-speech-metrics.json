@@ -1,0 +1,23 @@
+{
+  "plan_id": "010",
+  "feature": "text-to-speech",
+  "qa_status": "QA Failed",
+  "unit_tests": {
+    "passed": 14,
+    "failed": 0
+  },
+  "coverage": {
+    "attempted": true,
+    "succeeded": true,
+    "note": "Coverage run via runTests (coverage mode); main.py coverage 81.31% (77/93 statements; branches 10/14)."
+  },
+  "ruff": {
+    "issues": 0
+  },
+  "vulture": {
+    "high_confidence_items": 0
+  },
+  "integration_tests": {
+    "executed": false
+  }
+}

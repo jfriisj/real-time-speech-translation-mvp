@@ -32,6 +32,8 @@ def test_build_output_event_has_required_fields() -> None:
         translated_text="[ES] hello",
         source_language="en",
         target_language="es",
+        speaker_reference_bytes=b"\x01\x02",
+        speaker_id="speaker-1",
     )
     data = event.to_dict()
     assert data["event_type"] == "TextTranslatedEvent"
@@ -39,10 +41,19 @@ def test_build_output_event_has_required_fields() -> None:
     assert data["payload"]["text"] == "[ES] hello"
     assert data["payload"]["source_language"] == "en"
     assert data["payload"]["target_language"] == "es"
+    assert data["payload"]["speaker_reference_bytes"] == b"\x01\x02"
+    assert data["payload"]["speaker_id"] == "speaker-1"
 
 
 def test_extract_translation_request_defaults_missing_source_language() -> None:
-    correlation_id, text, source_language, target_language = extract_translation_request(
+    (
+        correlation_id,
+        text,
+        source_language,
+        target_language,
+        speaker_reference_bytes,
+        speaker_id,
+    ) = extract_translation_request(
         event={
             "correlation_id": "corr-2",
             "payload": {"text": "hello", "language": ""},
@@ -54,6 +65,8 @@ def test_extract_translation_request_defaults_missing_source_language() -> None:
     assert text == "hello"
     assert source_language == "en"
     assert target_language == "es"
+    assert speaker_reference_bytes is None
+    assert speaker_id is None
 
 
 def test_process_event_requires_correlation_id() -> None:
@@ -79,7 +92,12 @@ def test_process_event_publishes_translated_event() -> None:
     process_event(
         event={
             "correlation_id": "corr-4",
-            "payload": {"text": "hello", "language": "en"},
+            "payload": {
+                "text": "hello",
+                "language": "en",
+                "speaker_reference_bytes": b"\x10",
+                "speaker_id": "speaker-4",
+            },
         },
         translator=translator,
         producer=producer,
@@ -94,6 +112,8 @@ def test_process_event_publishes_translated_event() -> None:
     assert payload["text"] == "hola"
     assert payload["source_language"] == "en"
     assert payload["target_language"] == "es"
+    assert payload["speaker_reference_bytes"] == b"\x10"
+    assert payload["speaker_id"] == "speaker-4"
 
 
 def test_process_event_raises_on_empty_translation() -> None:
