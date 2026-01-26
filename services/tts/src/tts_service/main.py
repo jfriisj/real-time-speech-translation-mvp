@@ -155,16 +155,7 @@ def process_event(
         duration_ms=duration_ms,
         sample_rate_hz=sample_rate_hz,
         speaker_id=speaker_id,
-        model_name=model_name
-    )
-
-    producer.publish_event(
-        correlation_id=correlation_id,
-        audio_bytes=audio_bytes,
-        audio_uri=audio_uri,
-        duration_ms=duration_ms,
-        sample_rate_hz=sample_rate_hz,
-        speaker_id=speaker_id,
+        model_name=model_name,
     )
 
     producer.publish_event(
@@ -256,7 +247,9 @@ def main() -> None:
                     storage=storage,
                     producer=producer,
                     output_schema=output_schema,
-                    inline_max_bytes=settings.inline_payload_max_bytes,                    model_name=settings.model_name                )
+                    inline_max_bytes=settings.inline_payload_max_bytes,
+                    model_name=settings.model_name,
+                )
             except ValueError as exc:
                 TTS_ERRORS_TOTAL.labels("validation").inc()
                 LOGGER.warning("Dropping event correlation_id=%s reason=%s", event.get("correlation_id"), exc)

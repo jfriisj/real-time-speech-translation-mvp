@@ -1,11 +1,11 @@
 # Plan Critique 010: Text-to-Speech (TTS) Service (Kokoro ONNX)
 
 **Artifact**: agent-output/planning/010-text-to-speech-plan.md
-**Related Analysis**: agent-output/analysis/011-onnx-tts-model-selection-analysis.md, agent-output/analysis/008-tts-voice-context-unknowns-analysis.md
+**Related Analysis**: agent-output/analysis/010-text-to-speech-analysis.md
 **Related Architecture (master)**: agent-output/architecture/system-architecture.md
-**Related Findings**: agent-output/architecture/013-tts-kokoro-onnx-architecture-findings.md
-**Date**: 2026-01-25
-**Status**: APPROVED_WITH_CHANGES (Revision 9)
+**Related Findings**: agent-output/architecture/011-tts-indextts-2-architecture-findings.md, agent-output/architecture/013-tts-kokoro-onnx-architecture-findings.md
+**Date**: 2026-01-26
+**Status**: APPROVED_WITH_CHANGES (Plan Revision 10)
 
 This critique follows the rubric in `.github/chatmodes/planner.chatmode.md` (plans describe **WHAT/WHY**, include explicit contract gates, avoid QA/test-case content, avoid implementation “HOW”).
 
@@ -13,104 +13,107 @@ This critique follows the rubric in `.github/chatmodes/planner.chatmode.md` (pla
 
 | Date | Handoff/Request | Summary |
 |------|------------------|---------|
-| 2026-01-25 | User requested critique | Updated critique for Plan 010 Revision 9 (Kokoro ONNX pivot), including roadmap alignment, contract gate coverage, and scope/risks. |
+| 2026-01-25 | User requested critique | Created critique for Plan 010 Revision 9 (Kokoro ONNX pivot), focusing on roadmap alignment, contract gates, scope, and risks. |
+| 2026-01-26 | User requested updated critique | Updated critique for Plan 010 Revision 10 to reflect Analysis 010’s “integration + real inference” blockers and current architectural alignment. |
 
 ## Value Statement Assessment
-The value statement is aligned with Epic 1.7 wording (“hands-free consumption”) and is user-centric.
+The value statement matches the roadmap user story for Epic 1.7 (“hear translated text spoken naturally … hands-free”). It is clear and user-centric.
 
-Clarity note: the statement contains minor formatting drift (capitalized “So that …” and punctuation), but the intent is unambiguous.
+Clarity nit: the sentence casing/formatting is slightly inconsistent (“So that …”), but not ambiguous.
 
 ## Overview
-Plan 010 (Rev 9) is largely complete and aligned with the Kokoro ONNX pivot:
-- The **core outcomes** are clear (speak translated text; close the speech-to-speech loop).
-- The **architectural contracts** are explicitly stated (speaker context pass-through, dual-mode output transport, schema evolution, retention/TTL, observability fields).
-- The plan includes measurable success metrics (RTF and latency) consistent with thesis validation goals.
+Plan 010 (Rev 10) is directionally strong and materially improved versus Rev 9 because it now explicitly calls out the two blockers identified in Analysis 010:
+- “Real Kokoro inference” (replacing the current mocked/noise output) is represented as a remaining work item.
+- Integration validation for the large-payload `audio_uri` path is represented as a remaining work item.
 
-However, there are several alignment and clarity gaps that reduce the plan’s usefulness as a stable “source of truth” for Epic 1.7 outcomes.
+The plan’s contract decision gates are mostly present (speaker context propagation, transport/failure semantics, schema compatibility, retention, observability), and the success metric measurement method is included.
+
+Remaining issues are primarily about (1) artifact alignment/traceability, (2) scope hygiene (plan vs QA vs implementation tracker), and (3) a small set of missing “pinned decisions” required by the roadmap/architecture (notably CPU/GPU deployment profile and the roadmap’s “speed control” AC).
 
 ## Architectural Alignment
 **Strong alignment (✅)**
-- Matches Findings 013 directionally: event-driven boundary, dual-mode payload strategy, schema optionality, and pluggable synthesizer requirement.
+- Matches Findings 011 on D2 dual-mode transport, `correlation_id` keying, and WAV invariants.
+- Matches Findings 013 on layered boundary (orchestration vs synthesizer vs storage), pluggable synthesizer contract, and schema optionality (`model_name`, `audio_uri`, speaker fields).
 
-**Gaps (⚠️)**
-- The plan header still cites an older findings reference (Findings 011) rather than the active Kokoro findings (Findings 013). This creates audit confusion.
-- Findings 013 requires explicit CPU vs GPU packaging/deployment profiles; the plan gestures at provider selection but does not fully “pin” the delivery profile.
+**Gaps / drift (⚠️)**
+- The plan header cites Findings 011 as the architecture reference while the Kokoro ONNX pivot’s controlling findings are in Findings 013. Keeping 011 is fine as historical context, but the “active” constraint set should be explicit to avoid audit confusion.
+- Findings 013 requires an explicit decision on CPU-only vs GPU-enabled packaging/deployment profiles. Rev 10 mentions providers via env var but does not pin the deliverable profile(s).
 
 ## Scope Assessment
-The scope is coherent for Epic 1.7 *if* it stays tightly constrained to “produce `AudioSynthesisEvent` from `TextTranslatedEvent`” with a stable backend.
+The scope is coherent for v0.5.0 if it remains constrained to:
+- Consume `TextTranslatedEvent` → produce `AudioSynthesisEvent`.
+- Provide dual-mode audio delivery (inline bytes vs MinIO URI) and preserve correlation.
 
-Risk of scope creep remains because the plan blends:
-- outcome contracts (good),
-- execution tracking (`[x]` checklists), and
-- QA/testing strategy details.
+The plan still mixes three categories that are better kept separate:
+- Stable contract/outcome commitments (good and necessary).
+- Execution tracking (checkbox completion).
+- QA strategy/tooling/cov targets.
 
-This mixture makes it harder to tell what is required for the epic vs what is implementation work-in-progress.
+This reduces clarity for non-implementers (PM/QA/UAT/release) and increases drift risk over time.
 
-## Technical Debt / Long-Term Risks
-- **Contract drift**: If provider selection, speed/duration control, and audio payload limits aren’t explicitly pinned as outcomes, implementations may vary and make benchmarking / demo reproducibility weaker.
-- **Privacy leakage risk**: speaker reference bytes are treated as sensitive, but the plan does not explicitly prohibit logging them or including them in error payloads.
-- **Operational ambiguity**: CPU/GPU expectations are part of the epic’s “stable runtime” value; ambiguity here will become a recurring deployment/debug tax.
+## Technical Debt Risks
+- **Contract drift risk**: “provider selection” and “speed control” are partly implied but not pinned; late additions can force schema changes or config churn.
+- **Privacy leakage risk**: speaker/audio bytes are sensitive; the plan states retention expectations but does not explicitly prohibit logging raw bytes.
+- **Operational ambiguity**: the epic’s roadmap value includes “stable CPU/GPU runtime”. Without a pinned deployment profile, this can become a recurring integration tax.
 
 ## Findings
 
 ### Critical
 
-1) **Architecture reference drift in plan header**
+1) **Architecture reference ambiguity (Findings 011 vs Findings 013)**
 - **Status**: OPEN
-- **Description**: Plan 010 (Rev 9) header still references Findings 011, but the controlling decision artifact for the Kokoro ONNX pivot is Findings 013.
-- **Impact**: Confuses readers about which constraints are authoritative; weakens traceability for thesis/release documentation.
-- **Recommendation**: Update the plan header references to point to Findings 013 as the active findings for this epic.
+- **Description**: Plan header still points to Findings 011 as the architecture reference, while Findings 013 is the Kokoro ONNX pivot’s controlling architecture artifact.
+- **Impact**: Weakens traceability for v0.5.0 release evidence and creates ambiguity about which constraints are authoritative.
+- **Recommendation**: Make Findings 013 the primary architecture reference and keep Findings 011 as “historical context” (if desired).
 
-2) **Epic acceptance criteria are not fully mapped into plan deliverables**
+2) **Roadmap Epic AC gap: “Basic duration/speed control” not pinned**
 - **Status**: OPEN
-- **Description**: The roadmap’s Epic 1.7 acceptance criteria include “Basic duration/speed control implemented.” Plan 010 mentions measurement and payload strategy but does not clearly define what “duration/speed control” means at the contract level (e.g., fixed default speed only, optional field, or explicitly out-of-scope).
-- **Impact**: Implementation teams can meet the plan while still failing the epic outcome; also risks adding late, ad-hoc changes to schemas/APIs.
-- **Recommendation**: Add an explicit “Epic AC mapping” section (one-to-one bullets) and clarify what minimal duration/speed control is considered “done” for v0.5.0.
+- **Description**: The roadmap’s Epic 1.7 acceptance criteria include “Basic duration/speed control implemented.” Plan Rev 10 does not define what “speed control” means for v0.5.0 as an outcome (fixed default, configuration, or contract field).
+- **Impact**: The plan can be “done” while the epic remains “not done”, creating late-cycle churn and/or schema changes.
+- **Recommendation**: Add a short “Roadmap AC mapping” section and explicitly define the minimal acceptable “speed control” behavior for v0.5.0.
 
-3) **CPU/GPU stability outcome is under-specified (provider + packaging decision gate)**
+3) **CPU/GPU deployment profile decision not explicit**
 - **Status**: OPEN
-- **Description**: Findings 013 requires explicit provider selection and discourages “try both at runtime” ambiguity. The plan mentions an env-var provider toggle, but does not pin whether v0.5.0 ships (a) CPU-only image, (b) GPU image, or (c) two distinct deployment profiles.
-- **Impact**: You can’t validate the “stable CPU/GPU runtime” business value without a pinned deployment profile; increases risk of runtime failures during demo/benchmarking.
-- **Recommendation**: Explicitly state the supported deployment profile(s) for v0.5.0 and how that satisfies the epic’s stability claim.
+- **Description**: Findings 013 requires explicitly pinning whether v0.5.0 ships CPU-only, GPU-enabled, or distinct deployment profiles. Rev 10 mentions provider configuration but not the packaging/runtime profile.
+- **Impact**: Hard to validate the epic’s “stability on CPU and GPU” value; higher risk of runtime failures during demos/benchmarks.
+- **Recommendation**: Explicitly state the supported deployment profile(s) for v0.5.0 (and which are out of scope if only one is supported).
 
 ### Medium
 
-4) **Plan includes QA/test strategy content (rubric violation)**
+4) **Plan contains QA strategy details (rubric drift)**
 - **Status**: OPEN
-- **Description**: The plan contains a dedicated Testing Strategy section with tooling, coverage targets, and integration testing guidance. Repo rubric says QA details should live in `agent-output/qa/` and plans should stay at WHAT/WHY + contract gates.
-- **Impact**: Duplicates QA ownership, increases drift risk, and weakens the plan as a stable contract artifact.
-- **Recommendation**: Keep only minimal “testing infrastructure constraints” (e.g., mocks required, external I/O isolation) and move the rest to the QA doc.
+- **Description**: The plan includes tooling/coverage targets and testing strategy content. Repo rubric expects QA ownership to live in `agent-output/qa/` while the plan stays on outcomes/contracts.
+- **Impact**: Duplicate sources of truth; higher chance QA and plan drift out of sync.
+- **Recommendation**: Reduce Testing Strategy to only non-negotiable constraints (e.g., “external I/O must be mockable”) and move the rest to the QA doc.
 
-5) **Execution tracking (`[x]` checklists) reduces clarity of intended scope**
-- **Status**: OPEN
-- **Description**: Plan steps are marked `[x]` “complete,” while epic acceptance criteria remain unchecked. This makes it unclear whether the epic is functionally complete or only scaffolded.
-- **Impact**: Stakeholders can misread progress; future revisions become harder to review because the plan blends planning and status reporting.
-- **Recommendation**: Split “Plan” (stable scope/contract) from “Implementation tracker” (progress checklist) or move the `[x]` tracking to an implementation/QA artifact.
+5) **Implementation tracker checkboxes reduce the plan’s clarity as a stable contract**
+- **Status**: PARTIALLY_ADDRESSED
+- **Description**: Rev 10 improves this by explicitly labeling “scaffold” vs “real inference”, but the plan still mixes “what we must deliver” and “what is done today.”
+- **Impact**: Stakeholders can misread scaffolded work as functional completeness.
+- **Recommendation**: Either separate “Plan” vs “Implementation tracker”, or clearly label checklists as non-authoritative status reporting.
 
-6) **Privacy/retention contract is directionally good but missing an explicit logging redaction rule**
+6) **Observability contract missing byte-redaction rule**
 - **Status**: OPEN
-- **Description**: The plan states speaker reference clips must not be persisted beyond session scope, but does not explicitly state “must not be logged” for speaker reference bytes or synthesized audio bytes.
-- **Impact**: Accidental leakage into logs is a common failure mode; harder to claim privacy-conscious handling.
-- **Recommendation**: Add an explicit “no bytes in logs” constraint for `speaker_reference_bytes` and `audio_bytes`.
+- **Description**: The plan mandates correlation/model/latency fields but does not explicitly forbid logging `speaker_reference_bytes` or `audio_bytes`.
+- **Impact**: Accidental leakage into logs is a common failure mode; increases privacy and storage risk.
+- **Recommendation**: Add a single explicit constraint: no raw audio bytes in logs.
 
 ### Low
 
-7) **Minor doc clarity/typos and naming drift**
+7) **Minor wording/typo and config naming consistency**
 - **Status**: OPEN
-- **Description**: Minor issues like “Intellegible” spelling and inconsistent timestamp naming (plan references `timestamp_ms` while the platform uses `timestamp` with timestamp-millis).
-- **Impact**: Low, but it adds friction during implementation and review.
-- **Recommendation**: Cleanup pass for typos and field naming consistency.
+- **Description**: “Intellegible” spelling; provider env var naming in the plan (`ONNX_PROVIDER`) should be consistent and unambiguous.
+- **Impact**: Low severity but creates friction and confusion.
+- **Recommendation**: Cleanup pass for typos and naming consistency.
 
 ## Questions
-1) For v0.5.0, is “speed control” a fixed default (no API/contract) or a configurable parameter? If configurable, where is it specified (event field, env var, or internal config)?
-2) Do we intend to ship one container image (CPU) and treat GPU as a future enhancement, or do we need two explicit deployment profiles to satisfy the epic’s stability statement?
-3) Are there explicit guardrails for maximum output duration (beyond input text length), to prevent payload/latency blowups?
+1) For v0.5.0, is “speed control” intended as a fixed default (no contract surface), an env var, or an event field?
+2) Do we intend to validate CPU-only in v0.5.0 and defer GPU, or do we need two explicit deployment profiles to satisfy the roadmap’s stability claim?
+3) Is there an explicit maximum expected output duration (beyond input text length cap) to keep payload/latency predictable?
 
 ## Risk Assessment
 - **Overall**: Medium
-- **Primary risk drivers**: provider/profile ambiguity, incomplete mapping to epic AC (speed control), and plan/rubric drift (QA content + execution tracking).
+- **Primary risk drivers**: missing pinned decisions (speed control, CPU/GPU profile), plan/QA separation drift, and privacy/observability redaction ambiguity.
 
-## Recommendation
-**APPROVE_WITH_CHANGES** for documentation quality and epic alignment.
-
-Implementation can continue, but if the plan is intended to be an auditable artifact for v0.5.0 delivery, the Critical items should be addressed so the plan cleanly maps to the updated epic outcomes and Findings 013.
+## Recommendations
+Maintain **APPROVED_WITH_CHANGES**. Rev 10 is close, but the Critical items should be addressed for the plan to be a clean, auditable v0.5.0 artifact aligned with the roadmap and Findings 013.

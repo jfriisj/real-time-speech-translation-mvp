@@ -1,97 +1,109 @@
-# Implementation 010: Text-to-Speech (TTS) Service
+# Implementation 010: Text-to-Speech (TTS) Service (Kokoro ONNX)
 
 ## Plan Reference
 agent-output/planning/010-text-to-speech-plan.md
 
 ## Date
-2026-01-25
+2026-01-26
 
 ## Changelog
 
 | Date | Handoff/Request | Summary |
 |------|------------------|---------|
-| 2026-01-25 | Implement plan | Implemented TTS service, schema updates, MinIO integration, and pass-through speaker context across pipeline. |
-| 2026-01-25 | Refresh report | Confirmed alignment with Plan 010 Revision 6; no new code changes in this update. |
-| 2026-01-25 | Resolve implementation unknowns | Added presigned MinIO URLs, integration smoke test, release artifacts, and compose fixes. |
-| 2026-01-25 | Enforce IndexTTS-2 | Replaced HF pipeline with IndexTTS2 runtime, enforced IndexTeam/IndexTTS-2 usage, and updated container deps. |
-| 2026-01-25 | Warmup + smoke attempt | Added TTS model warmup, fixed IndexTTS2 test stub, reran unit tests, and attempted smoke test (timeout during model download). |
+| 2026-01-25 | Implementation report refresh | Updated report to reflect Kokoro ONNX pivot and current implementation state. |
+| 2026-01-26 | Implementation report update | Refreshed report for Plan 010 Rev 10 readiness; no code changes in this session. |
 
 ## Implementation Summary (what + how delivers value)
-- Replaced the generic transformers pipeline with IndexTTS2’s official runtime (`indextts.infer_v2.IndexTTS2`) to satisfy the requirement to use IndexTeam/IndexTTS-2.
-- Enforced IndexTTS-2 usage in the TTS service startup and Compose configuration, preventing unsupported model swaps.
-- Added IndexTTS-2 model download + prompt handling logic to honor speaker reference inputs while providing a safe default prompt fallback.
-- Added a TTS warmup hook to download and load the IndexTTS-2 model before Kafka consumption, preventing long poll stalls on first request.
-- Updated the container build to install IndexTTS2 dependencies and the upstream package from GitHub.
+- Replaced IndexTTS-specific runtime wiring with a pluggable `Synthesizer` interface and factory selected via `TTS_MODEL_NAME` for model swaps.
+- Implemented a Kokoro ONNX backend scaffold that downloads the ONNX graph and voices assets, initializes ONNX Runtime, and produces WAV bytes for `AudioSynthesisEvent`.
+- Updated TTS output contract to include optional `model_name` in [shared/schemas/avro/AudioSynthesisEvent.avsc](shared/schemas/avro/AudioSynthesisEvent.avsc) and [shared/speech-lib/src/speech_lib/events.py](shared/speech-lib/src/speech_lib/events.py).
+- Updated Compose and container dependencies to remove IndexTTS/Torch stack and add `onnxruntime`, `misaki`, and `soundfile` for Kokoro ONNX.
+ - **Current session**: no code changes; report updated to reflect Plan 010 Rev 10 readiness and critique constraints.
 
 ## Milestones Completed
-- [x] Shared schema updates + new `AudioSynthesisEvent`.
-- [x] Speaker context pass-through in ASR/Translation/VAD.
-- [x] TTS service implementation with dual-mode transport and MinIO integration.
-- [x] MinIO lifecycle rule for 24h retention.
-- [x] Tests for new logic and payload semantics.
+- [x] Shared schema updates (`AudioSynthesisEvent` + `model_name` optional field).
+- [x] TTS service wired to pluggable synthesizer factory.
+- [x] Kokoro ONNX synthesizer scaffold and model asset download.
+- [x] MinIO lifecycle rule present for 24h retention.
+- [x] Compose config updated for Kokoro ONNX cache path.
+- [ ] Version management artifacts (CHANGELOG, release notes) updated for v0.5.0.
 
 ## Files Modified
 | Path | Changes | Lines |
 |------|---------|-------|
-| docker-compose.yml | Enforced IndexTTS-2 + cache settings + HF_TOKEN passthrough | +3/-1 |
-| services/tts/Dockerfile | Install IndexTTS2 deps + package | +7/-1 |
-| services/tts/pyproject.toml | Added IndexTTS2 dependencies | +10 |
-| services/tts/src/tts_service/synthesizer.py | Implemented IndexTTS2 runtime + warmup hook | +70/-53 |
-| services/tts/src/tts_service/main.py | Enforced IndexTTS-2 + warmup before consume | +13/-1 |
-| services/tts/src/tts_service/config.py | Added model dir/cache settings | +4 |
-| services/tts/tests/test_synthesizer.py | Updated tests for IndexTTS2 stub | +31/-46 |
-| services/tts/tests/test_main.py | Patched IndexTTS2 synthesizer | +1 |
-| services/tts/README.md | Documented model dir/cache env vars + HF_TOKEN | +3 |
+| docker-compose.yml | Updated TTS model name + cache path for Kokoro ONNX | n/a (diff unavailable in report session) |
+| services/tts/Dockerfile | Removed IndexTTS deps; install ONNX stack; add model cache dir | n/a |
+| services/tts/pyproject.toml | Remove IndexTTS/torch deps; add onnxruntime + misaki | n/a |
+| services/tts/src/tts_service/config.py | Default `TTS_MODEL_NAME` set to Kokoro | n/a |
+| services/tts/src/tts_service/main.py | Factory-based synthesizer, emit `model_name` | n/a |
+| services/tts/tests/conftest.py | Mock ONNX runtime + Kafka for tests | n/a |
+| shared/schemas/avro/AudioSynthesisEvent.avsc | Add `model_name` optional field | n/a |
+| shared/speech-lib/src/speech_lib/events.py | Add `model_name` to `AudioSynthesisPayload` | n/a |
+| agent-output/roadmap/product-roadmap.md | Epic 1.7 status + AC updates | n/a |
+| agent-output/planning/010-text-to-speech-plan.md | Rev 10 adjustments + checklist updates | n/a |
+| agent-output/critiques/010-text-to-speech-plan-critique.md | Updated critique for Plan Rev 10 | n/a |
 
 ## Files Created
 | Path | Purpose |
 |------|---------|
-| tests/e2e/tts_pipeline_smoke.py | End-to-end TTS pipeline smoke test (inline/URI) |
-| package.json | Root-level version metadata (v0.5.0-rc) |
-| CHANGELOG.md | Root changelog entry for v0.5.0-rc |
-| agent-output/releases/v0.5.0.md | Draft release notes for v0.5.0 |
+| services/tts/src/tts_service/synthesizer_factory.py | Pluggable synthesizer factory for future model swaps. |
+| services/tts/src/tts_service/synthesizer_interface.py | Abstract `Synthesizer` contract for backend implementations. |
+| services/tts/src/tts_service/synthesizer_kokoro.py | Kokoro ONNX backend scaffold (download + inference placeholder). |
 
 ## Code Quality Validation
-- [x] Linting: Ruff lint on updated Python files via analyzer gate.
-- [ ] Formatting: Ruff format not executed.
-- [x] Dead-code scan: Vulture scan clean on updated Python files via analyzer gate.
-- [x] Tests: Unit tests executed (see Test Execution Results).
-- [ ] Compatibility: TTS smoke test attempted; timed out during IndexTTS-2 model warmup (see Test Execution Results).
-- [x] Pre-handoff scan: TODO/FIXME/mock matches observed in .venv, .pytest_cache, and existing agent-output docs; no new markers introduced in modified source files.
+- [ ] Linting: not run in this session.
+- [ ] Formatting: not run in this session.
+- [ ] Dead-code scan: not run in this session.
+- [ ] Tests: not run in this session.
+- [ ] Compatibility: TTS smoke/integration tests not run in this session.
+- [ ] Pre-handoff scan: not run in this session.
 
 ## Value Statement Validation
-**Original**: “As a User, I want to hear the translated text spoken naturally, so that I can consume the translation hands-free.”  
-**Implementation delivers**: TTS microservice consumes `TextTranslatedEvent` and produces `AudioSynthesisEvent` (inline or MinIO URI), preserves `correlation_id`, and propagates optional speaker context—completing the speech-to-speech loop for hands-free consumption.
+**Original**: “As a User, I want to hear the translated text spoken naturally, so that I can consume the translation hands-free.”
+
+**Implementation delivers**: The TTS service now produces `AudioSynthesisEvent` with the correct envelope and supports inline-or-URI payload transport plus speaker context propagation. The Kokoro synthesizer is still a scaffold (voice loading and phoneme/token mapping are not fully implemented), so “natural” audio is not yet proven.
 
 ## Test Coverage
-- **Unit**: Speech-lib, ASR, Translation, VAD, and TTS unit tests updated/added.
-- **Integration**: Attempted TTS smoke test; timed out during IndexTTS-2 warmup download.
+- **Unit**: Not executed in this session.
+- **Integration**: Not executed in this session.
 
 ## Test Execution Results
 | Command | Results | Issues | Coverage |
 |---------|---------|--------|----------|
-| runTests (services/tts/tests) | 14 passed, 0 failed | None reported | Not measured in this run |
-| `python tests/e2e/tts_pipeline_smoke.py` | FAILED | Timed out waiting for AudioSynthesisEvent while IndexTTS-2 warmup download was still in progress; logs captured in agent-output/live-testing/artifacts | Not measured |
+| n/a | Not run | n/a | n/a |
 
 ## Outstanding Items
-- IndexTTS-2 runtime validation still pending; warmup download in `speech-tts-service` is slow without HF_TOKEN and the smoke test timed out. Rerun after model download completes or with authenticated HF Hub access.
-- MinIO retention lifecycle (24h) is configured, but expiry behavior has not yet been validated with time-based observation.
+- Fix `process_event` in [services/tts/src/tts_service/main.py](services/tts/src/tts_service/main.py) to remove the invalid `producer.publish_event(...)` call with mismatched signature.
+- Implement real Kokoro preprocessing (phoneme/token mapping, voice vector loading) in [services/tts/src/tts_service/synthesizer_kokoro.py](services/tts/src/tts_service/synthesizer_kokoro.py); current output is mocked noise.
+- Clarify v0.5.0 CPU/GPU deployment profile and provider selection per Findings 013 and roadmap AC.
+- Add explicit duration/speed control behavior (epic AC) or document deferral.
+- Run analyzer gate (ruff + vulture) and unit/integration tests before QA handoff.
+- Update version artifacts (root CHANGELOG / release notes) if required by the plan.
+- Resolve plan critique criticals: treat Findings 013 as primary architecture reference and add explicit “no raw audio bytes in logs” redaction rule.
+- Determine line-level change stats for the report (git diff not available in this session).
 
 ## Next Steps
-- QA: Run integration tests and smoke checks for Kafka + MinIO + TTS flow.
-- UAT: Validate audio output quality + latency targets on reference hardware.
+- QA: Run code-quality scans and integration tests for Kafka + MinIO + TTS flow.
+- UAT: Validate Kokoro audio output quality and RTF/latency targets on reference hardware.
 
 ## Assumption Documentation
-### Assumption 1: IndexTTS-2 downloads and runs in the service container
-- **Description**: Service downloads IndexTTS-2 checkpoints via `huggingface_hub.snapshot_download` and runs with `indextts.infer_v2.IndexTTS2`.
-- **Rationale**: Plan 010 mandates IndexTTS-2; the runtime now uses its official inference API.
-- **Risk**: Dependency or checkpoint download failure blocks synthesis.
-- **Validation method**: Run `tests/e2e/tts_pipeline_smoke.py` with full IndexTTS-2 download and confirm audio output.
-- **Escalation evidence**: IndexTTS-2 fails to initialize after download → **Major** (escalate to planner).
+### Assumption 1: Kokoro voices.bin format can be loaded without Torch
+- **Description**: The Kokoro voices file is loadable via a lightweight approach (numpy/structured binary) without introducing Torch dependencies.
+- **Rationale**: The container is now CPU-lightweight and avoids Torch; voice-loading should not require large ML runtimes.
+- **Risk**: If voices.bin requires Torch or a proprietary loader, synthesis will fail or produce wrong voice styles.
+- **Validation method**: Implement a real loader and verify voice vectors against Kokoro reference samples.
+- **Escalation evidence**: voices.bin cannot be parsed without Torch → **Moderate** (revisit dependencies or model variant).
 
-### Assumption 2: Presigned URLs satisfy downstream retrieval needs
-- **Description**: `audio_uri` now uses presigned MinIO URLs so playback clients can retrieve without public bucket policies.
-- **Rationale**: Compose stack lacks anonymous bucket policy; presigned URLs enable immediate consumption.
-- **Risk**: Presigned expiry or URL rewriting errors could break playback.
-- **Validation method**: Keep smoke tests for URI mode and verify retrieval against the public endpoint.
-- **Escalation evidence**: 403/404 responses during normal operation → **Moderate** (fix + QA).
+### Assumption 2: Phoneme/token mapping can be derived from Kokoro config
+- **Description**: The phoneme/token mapping required by Kokoro can be derived from model assets or config and implemented deterministically.
+- **Rationale**: Required to produce intelligible audio and satisfy “natural speech” outcome.
+- **Risk**: Incorrect mapping leads to unintelligible output or runtime errors.
+- **Validation method**: Implement mapping and validate output on a small phrase set; compare against Kokoro reference.
+- **Escalation evidence**: Output remains unintelligible after mapping fixes → **Major** (escalate to planner for model swap or scope adjustment).
+
+### Assumption 3: QA/UAT prompt criteria were not available in this session
+- **Description**: QA/UAT evaluation prompts could not be loaded from the local config path.
+- **Rationale**: File access was denied outside the workspace.
+- **Risk**: Implementation report may miss required QA/UAT expectations.
+- **Validation method**: Re-open or provide the prompt files in workspace for inclusion.
+- **Escalation evidence**: QA/UAT rejects due to missing criteria → **Minor** (update report + rerun QA).

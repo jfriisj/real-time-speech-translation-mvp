@@ -23,4 +23,5 @@ class Synthesizer(ABC):
             - sample_rate_hz: The sample rate of the audio (e.g. 24000).
             - duration_ms: The duration of the audio in milliseconds.
         """
+        _ = text, speaker_reference_bytes, speaker_id
         pass

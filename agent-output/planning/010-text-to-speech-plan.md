@@ -5,7 +5,7 @@
 **Epic Alignment**: Epic 1.7 Text-to-Speech (TTS) (Stable Outcome)
 **Architecture**: [Findings 011](agent-output/architecture/011-tts-indextts-2-architecture-findings.md) (APPROVED_WITH_CHANGES)
 **Process Improvement**: Includes mandatory "Measurement Method" (PI-009).
-**Status**: Implementation In Progress (Rev 9 - Updated Checklists)
+**Status**: Implementation In Progress (Rev 10 - Integration & Kokoro Inference Tasks)
 
 ## Changelog
 
@@ -21,6 +21,7 @@
 | 2026-01-25 | Revision 7 | Pivoted synthesizer to `onnx-community/Kokoro-82M-v1.0-ONNX` for runtime stability while enforcing a pluggable architecture for future model swaps (IndexTTS/Qwen). |
 | 2026-01-25 | Revision 8 | Incorporated Findings 013: layered boundary, schema safety for model_name, pinned factory contract/providers, max-text caps, and asset caching. |
 | 2026-01-25 | Revision 9 | Marked implementation steps `[x]` as scaffolding and schema updates are complete. |
+| 2026-01-26 | Revision 10 | Amended plan based on Analysis 010. Added explicit tasks for "Real Kokoro Inference" (un-mocking) and "Integration Test Execution" to unblock QA. |
 
 ## Value Statement and Business Objective
 As a User, I want to hear the translated text spoken naturally, So that I can consume the translation hands-free.
@@ -152,11 +153,14 @@ Implement the `tts-service` using `onnx-community/Kokoro-82M-v1.0-ONNX` to synth
     - Define `Synthesizer` abstract base class:
         - Signature: `synthesize(text, speaker_ref, speaker_id) -> (audio_bytes, sample_rate, duration_ms)`.
     - Implement `SynthesizerFactory` that reads `TTS_MODEL_NAME` env var.
-- [x] **Implement Kokoro ONNX Backend**:
-    - Implement `KokoroSynthesizer` class.
-    - **Voice Mapping**: Create a mapping of `speaker_id` -> `voices/*.bin` style vectors.
-    - **Pipeline**: Text -> `misaki` Phonemes -> Tokenizer -> `onnxruntime` Inference -> Audio.
-    - **Model Handling**: Auto-download `onnx-community/Kokoro-82M-v1.0-ONNX` model and voice assets on startup to `/app/model_cache`.
+- [ ] **Implement Kokoro ONNX Backend**:
+    - [x] Scaffold `KokoroSynthesizer` class (Basic Download/Init).
+    - [ ] **Data Pipeline (Real Inference)**:
+        - Integrate `misaki` phonemizer with valid English/Spanish fallback.
+        - Parse authoritative `voices.bin` for style vectors.
+        - Replace "random noise" stub with real `onnxruntime` inference call (Inputs: tokens, style, speed).
+    - [ ] **Voice Mapping**: Implement `speaker_id` -> `voice_name` lookup (Default: `af_bella` if unknown).
+    - [ ] **Observability**: Ensure `model_name` ("Kokoro-82M-ONNX") and `synthesis_latency_ms` are returned to the caller.
 - [x] Implement `Dual-Mode Producer` (MinIO Upload + Kafka Produce).
 - [x] Implement `Consumer` loop. Measurement logging.
 
@@ -164,6 +168,12 @@ Implement the `tts-service` using `onnx-community/Kokoro-82M-v1.0-ONNX` to synth
 **Objective**: Wire up the full Speech-to-Speech loop.
 - [x] Update `docker-compose.yml`.
 - [x] **Pass-through Update**: Update ASR and Translation service consumers/producers to propagate `speaker_reference_bytes` and `speaker_id`.
+- [ ] **Integration Validation (The "Large Payload" Blocker)**:
+    - Execute Docker Compose stack (Kafka + Schema + MinIO + TTS).
+    - Trigger synthesis with >1.5MB equivalent text-to-speech payload.
+    - Verify `audio_uri` is generated and uploaded to MinIO `tts-audio` bucket.
+    - Verify downstream can fetch the object.
+    - Verify 404/Timeout handling logic logs correctly.
 
 ### 5. Version Management
 **Objective**: Prepare valid release artifacts.
@@ -171,13 +181,17 @@ Implement the `tts-service` using `onnx-community/Kokoro-82M-v1.0-ONNX` to synth
 - [ ] Update `CHANGELOG.md` reflecting Epic 1.7 delivery.
 
 ## Validation (Acceptance Criteria)
-- [ ] TTS Service is running and healthy using Kokoro ONNX model.
-- [ ] Pluggable interface allows swapping model config (verified via code review/unit test).
-- [ ] Events are correctly keyed by `correlation_id`.
-- [ ] Large payloads > 1.5MB are delivered via MinIO URI.
-- [ ] Synthesis RTF is measured and logged.
+- [ ] **Real Inference**: TTS Service generates intelligible audio using Kokoro ONNX model (verified by human listening to 5 samples).
+- [ ] **Dual-Mode Transport**: Large payloads (>1.5MB) are confirmed to route via MinIO `audio_uri`, and small payloads via `audio_bytes`.
+- [ ] **Observability**: Logs show `correlation_id`, `model_name`, and `synthesis_latency_ms`.
+- [ ] **Failure Resilience**: Service does not crash on missing voice mappings or Kafka errors.
+- [x] Pluggable interface allows swapping model config (verified via code review).
 
 ## Risks & Mitigations
+- **Risk: Integration Testing Gaps**: As noted in Analysis 010, the integration path (Docker Compose) is the primary risk to `audio_uri` validity.
+    - **Mitigation**: Explicit Integration Task added to Step 4. All PRs must include evidence of `audio_uri` fetch success.
+- **Risk: Kokoro Asset Complexity**: Handling style vectors and voices.bin is complex.
+    - **Mitigation**: Scoped spike in Step 3 to isolate voice entry/mapping logic.
 - **Risk: Model Resource Consumption**: Although ONNX is lighter, long-form synthesis can still spike CPU.
     - **Mitigation**: Limit concurrency (single worker for MVP) and enforce max text length caps.
 - **Risk: MinIO Reliability**: Essential for large payloads; downtime breaks long-form synthesis.

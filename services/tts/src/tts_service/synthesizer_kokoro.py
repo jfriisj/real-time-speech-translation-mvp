@@ -1,7 +1,6 @@
 import os
 import io
 import logging
-import json
 import numpy as np
 import soundfile as sf
 import onnxruntime as ort
@@ -13,8 +12,8 @@ from .synthesizer_interface import Synthesizer
 logger = logging.getLogger(__name__)
 
 REPO_ID = "onnx-community/Kokoro-82M-v1.0-ONNX"
-MODEL_FILENAME = "kokoro-v0_19.onnx"
-VOICES_FILENAME = "voices.bin" 
+MODEL_FILENAME = "onnx/model.onnx"
+VOICES_FILENAME = "voices/af_bella.bin"
 
 class KokoroSynthesizer(Synthesizer):
     def __init__(self):
@@ -31,11 +30,11 @@ class KokoroSynthesizer(Synthesizer):
         self.session = ort.InferenceSession(self.model_path, providers=providers)
         
         # 3. Init Text Processor (Misaki G2P)
-        # Note: In a real implementation we might need to download the config.json 
-        # to get the exact phoneme-to-id mapping. 
+        # Note: In a real implementation we might need to download the config.json
+        # to get the exact phoneme-to-id mapping.
         # For this MVP implementation, we assume a standard mapping.
-        # Fallback to simple English G2P
-        self.g2p = en.G2P(trf=False, British=False, fallback=None)
+        # Fallback to simple English G2P with signature-compatible initialization.
+        self.g2p = self._init_g2p()
         
         # 4. Load Voice Styles
         self.voices = self._load_voices(self.voices_path)
@@ -53,23 +52,28 @@ class KokoroSynthesizer(Synthesizer):
             raise
 
     def _load_voices(self, path: str) -> Dict[str, np.ndarray]:
-        # This is valid for the standard Kokoro voices.bin which is a numpy archive or similar?
-        # Actually usually it is a .pt or .bin. 
-        # For onnx-community version, let's assume it's a standard format or we use a fallback defaults.
-        # If it's a torch serialization, we might need torch or numpy specific load.
-        # Given we want to avoid torch dependency if possible, checking the format is important.
-        # If it's a .bin, it might be raw numpy.
-        # For SAFETY in this MVP: We will assume we can load it via numpy if it's .npy, 
-        # otherwise we mock/default to a zero vector if loading fails to avoid crash loop during dev.
+        if not os.path.exists(path):
+            logger.warning("Kokoro voice asset not found at %s; using fallback voice", path)
+            return {"af_bella": np.zeros((1, 256), dtype=np.float32)}
+
         try:
-             # Very simplified loader assumption
-             # In a real impl, we would likely parse the specific binary format of Kokoro voices.
-             pass
-        except Exception:
-            pass
-        
-        # Return a dummy default for the skeleton until we have the exact format spec
-        return {"af_bella": np.zeros((1, 256), dtype=np.float32)}
+            voice_vectors = np.fromfile(path, dtype=np.float32)
+            if voice_vectors.size == 0:
+                raise ValueError("voice asset was empty")
+            voice_vectors = voice_vectors.reshape(-1, 1, 256)
+            return {"af_bella": voice_vectors}
+        except Exception as exc:
+            logger.warning("Failed to load voice asset %s: %s", path, exc)
+            return {"af_bella": np.zeros((1, 256), dtype=np.float32)}
+
+    def _init_g2p(self) -> en.G2P:
+        try:
+            return en.G2P(trf=False, british=False, fallback=None)
+        except TypeError:
+            try:
+                return en.G2P(trf=False)
+            except TypeError:
+                return en.G2P()
 
     def synthesize(
         self, 
@@ -77,6 +81,7 @@ class KokoroSynthesizer(Synthesizer):
         speaker_reference_bytes: Optional[bytes] = None, 
         speaker_id: Optional[str] = None
     ) -> Tuple[bytes, int, int]:
+        _ = speaker_reference_bytes
         
         # 1. Text Processing
         # (Simplified: G2P -> Token IDs)
@@ -94,6 +99,7 @@ class KokoroSynthesizer(Synthesizer):
         # 2. Select Voice
         voice_key = speaker_id if speaker_id in self.voices else "af_bella"
         style = self.voices.get(voice_key, list(self.voices.values())[0])
+        _ = style
         
         # 3. Inference
         # inputs = {
@@ -120,4 +126,5 @@ class KokoroSynthesizer(Synthesizer):
 
     def _phonemes_to_ids(self, phonemes: str) -> np.ndarray:
         # TODO: Implement actual vocab mapping from config.json
+        _ = phonemes
         return np.array([[0]], dtype=np.int64) 

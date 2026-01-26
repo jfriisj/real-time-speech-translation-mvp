@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import pytest
-import numpy as np
 
 from tts_service import main as main_module
 
@@ -90,12 +89,12 @@ class _FakeProducer:
 
 class _FakeSynthesizer:
     def __init__(self) -> None:
-        self.calls: list[tuple[str, bytes | None]] = []
+        self.calls: list[tuple[str, bytes | None, str | None]] = []
 
-    def synthesize(self, text: str, speaker_reference_bytes: bytes | None):
-        self.calls.append((text, speaker_reference_bytes))
-        audio = np.zeros(1600, dtype=np.float32)
-        return audio, 16000
+    def synthesize(self, text: str, speaker_reference_bytes: bytes | None, speaker_id: str | None = None):
+        self.calls.append((text, speaker_reference_bytes, speaker_id))
+        audio_bytes = b"\x00\x01"
+        return audio_bytes, 16000, 100
 
 
 def test_main_exits_on_keyboardinterrupt(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -106,7 +105,7 @@ def test_main_exits_on_keyboardinterrupt(monkeypatch: pytest.MonkeyPatch, tmp_pa
         consumer_group_id: str = "tts-service"
         poll_timeout_seconds: float = 0.1
         schema_dir: Path = tmp_path
-        model_name: str = "IndexTeam/IndexTTS-2"
+        model_name: str = "kokoro-82m-onnx"
         inline_payload_max_bytes: int = 1024
         tts_model_dir: str = ""
         tts_model_cache_dir: str = ""
@@ -148,7 +147,7 @@ def test_main_exits_on_keyboardinterrupt(monkeypatch: pytest.MonkeyPatch, tmp_pa
     monkeypatch.setattr(main_module, "load_schema", lambda *_args, **_kwargs: {})
     monkeypatch.setattr(main_module, "KafkaProducerWrapper", _FakeProducerFactory)
     monkeypatch.setattr(main_module, "KafkaConsumerWrapper", _FakeConsumerFactory)
-    monkeypatch.setattr(main_module, "IndexTTS2Synthesizer", lambda *_args, **_kwargs: _FakeSynthesizer())
+    monkeypatch.setattr(main_module.SynthesizerFactory, "create", lambda: _FakeSynthesizer())
     monkeypatch.setattr(main_module, "ObjectStorage", lambda *_args, **_kwargs: _FakeStorage())
 
     main_module.main()

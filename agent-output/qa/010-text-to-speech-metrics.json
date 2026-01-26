@@ -3,13 +3,13 @@
   "feature": "text-to-speech",
   "qa_status": "QA Failed",
   "unit_tests": {
-    "passed": 14,
+    "passed": 11,
     "failed": 0
   },
   "coverage": {
     "attempted": true,
     "succeeded": true,
-    "note": "Coverage run via runTests (coverage mode); main.py coverage 81.31% (77/93 statements; branches 10/14)."
+    "note": "Coverage run via runTests (coverage mode) on 2026-01-26; main.py coverage 77.59% (79/100 statements; branches 11/16)."
   },
   "ruff": {
     "issues": 0
@@ -18,6 +18,7 @@
     "high_confidence_items": 0
   },
   "integration_tests": {
-    "executed": false
+    "executed": false,
+    "note": "Kafka/Schema Registry/MinIO integration tests not run in this session."
   }
 }

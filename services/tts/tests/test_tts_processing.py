@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import numpy as np
 from typing import cast
 
 from speech_lib import BaseEvent
@@ -8,14 +7,16 @@ from tts_service.main import build_output_event, process_event  # type: ignore[i
 
 
 class _Synthesizer:
-    def __init__(self, audio: np.ndarray, sample_rate_hz: int) -> None:
-        self._audio = audio
+    def __init__(self, audio_bytes: bytes, sample_rate_hz: int, duration_ms: int) -> None:
+        self._audio_bytes = audio_bytes
         self._sample_rate_hz = sample_rate_hz
+        self._duration_ms = duration_ms
         self.calls: list[tuple[str, bytes | None]] = []
 
-    def synthesize(self, text: str, speaker_reference_bytes: bytes | None):
+    def synthesize(self, text: str, speaker_reference_bytes: bytes | None, speaker_id: str | None = None):
         self.calls.append((text, speaker_reference_bytes))
-        return self._audio, self._sample_rate_hz
+        _ = speaker_id
+        return self._audio_bytes, self._sample_rate_hz, self._duration_ms
 
 
 class _RecordingProducer:
@@ -43,6 +44,7 @@ def test_build_output_event_sets_payload() -> None:
         duration_ms=500,
         sample_rate_hz=16000,
         speaker_id="speaker-1",
+        model_name="kokoro-82m-onnx",
     )
     payload = event.to_dict()["payload"]
     assert payload["audio_bytes"] == b"\x00\x01"
@@ -52,11 +54,12 @@ def test_build_output_event_sets_payload() -> None:
     assert payload["audio_format"] == "wav"
     assert payload["content_type"] == "audio/wav"
     assert payload["speaker_id"] == "speaker-1"
+    assert payload["model_name"] == "kokoro-82m-onnx"
 
 
 def test_process_event_emits_inline_audio() -> None:
-    audio = np.zeros(1600, dtype=np.float32)
-    synthesizer = _Synthesizer(audio, 16000)
+    audio_bytes = b"\x00\x01"
+    synthesizer = _Synthesizer(audio_bytes, 16000, 100)
     producer = _RecordingProducer()
     storage = _Storage()
 
@@ -70,6 +73,7 @@ def test_process_event_emits_inline_audio() -> None:
         producer=producer,
         output_schema={},
         inline_max_bytes=1024 * 1024,
+        model_name="kokoro-82m-onnx",
     )
 
     assert producer.published
@@ -79,11 +83,12 @@ def test_process_event_emits_inline_audio() -> None:
     assert payload["audio_bytes"] is not None
     assert payload["audio_uri"] is None
     assert payload["speaker_id"] == "speaker-2"
+    assert payload["model_name"] == "kokoro-82m-onnx"
 
 
 def test_process_event_emits_uri_when_too_large() -> None:
-    audio = np.zeros(1600, dtype=np.float32)
-    synthesizer = _Synthesizer(audio, 16000)
+    audio_bytes = b"\x00\x01"
+    synthesizer = _Synthesizer(audio_bytes, 16000, 100)
     producer = _RecordingProducer()
     storage = _Storage()
 
@@ -97,6 +102,7 @@ def test_process_event_emits_uri_when_too_large() -> None:
         producer=producer,
         output_schema={},
         inline_max_bytes=1,
+        model_name=None,
     )
 
     _topic, event, _schema, _key = producer.published[0]
