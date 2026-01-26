@@ -86,3 +86,4 @@ Thumbs.db
 
 # --- Project Specific ---
 shared/speech-lib/src/speech_lib/__pycache__/
+model_cache/
