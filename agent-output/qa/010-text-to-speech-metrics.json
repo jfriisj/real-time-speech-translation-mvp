@@ -18,7 +18,7 @@
     "high_confidence_items": 0
   },
   "integration_tests": {
-    "executed": false,
-    "note": "Kafka/Schema Registry/MinIO integration tests not run in this session."
+    "executed": true,
+    "note": "TTS pipeline smoke test passed on 2026-01-26 (inline payload). Large-payload URI mode and MinIO lifecycle validation still pending."
   }
 }
