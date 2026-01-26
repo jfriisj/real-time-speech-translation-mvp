@@ -87,3 +87,6 @@ Thumbs.db
 # --- Project Specific ---
 shared/speech-lib/src/speech_lib/__pycache__/
 model_cache/
+
+# Generated runtime logs/inspect artifacts (may contain secrets)
+agent-output/live-testing/artifacts/
