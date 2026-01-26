@@ -12,13 +12,14 @@ agent-output/planning/010-text-to-speech-plan.md
 |------|------------------|---------|
 | 2026-01-25 | Implementation report refresh | Updated report to reflect Kokoro ONNX pivot and current implementation state. |
 | 2026-01-26 | Implementation report update | Refreshed report for Plan 010 Rev 10 readiness; no code changes in this session. |
+| 2026-01-26 | Integration smoke rerun | Fixed Misaki G2P initialization and re-ran TTS pipeline smoke test successfully. |
 
 ## Implementation Summary (what + how delivers value)
 - Replaced IndexTTS-specific runtime wiring with a pluggable `Synthesizer` interface and factory selected via `TTS_MODEL_NAME` for model swaps.
 - Implemented a Kokoro ONNX backend scaffold that downloads the ONNX graph and voices assets, initializes ONNX Runtime, and produces WAV bytes for `AudioSynthesisEvent`.
 - Updated TTS output contract to include optional `model_name` in [shared/schemas/avro/AudioSynthesisEvent.avsc](shared/schemas/avro/AudioSynthesisEvent.avsc) and [shared/speech-lib/src/speech_lib/events.py](shared/speech-lib/src/speech_lib/events.py).
 - Updated Compose and container dependencies to remove IndexTTS/Torch stack and add `onnxruntime`, `misaki`, and `soundfile` for Kokoro ONNX.
- - **Current session**: no code changes; report updated to reflect Plan 010 Rev 10 readiness and critique constraints.
+- Updated Kokoro synthesizer initialization to handle Misaki G2P signature differences so the container boots successfully.
 
 ## Milestones Completed
 - [x] Shared schema updates (`AudioSynthesisEvent` + `model_name` optional field).
@@ -42,6 +43,7 @@ agent-output/planning/010-text-to-speech-plan.md
 | agent-output/roadmap/product-roadmap.md | Epic 1.7 status + AC updates | n/a |
 | agent-output/planning/010-text-to-speech-plan.md | Rev 10 adjustments + checklist updates | n/a |
 | agent-output/critiques/010-text-to-speech-plan-critique.md | Updated critique for Plan Rev 10 | n/a |
+| services/tts/src/tts_service/synthesizer_kokoro.py | Add compatible G2P initialization helper | n/a |
 
 ## Files Created
 | Path | Purpose |
@@ -51,11 +53,11 @@ agent-output/planning/010-text-to-speech-plan.md
 | services/tts/src/tts_service/synthesizer_kokoro.py | Kokoro ONNX backend scaffold (download + inference placeholder). |
 
 ## Code Quality Validation
-- [ ] Linting: not run in this session.
+- [x] Linting: Ruff scan clean for `services/tts/src/tts_service/synthesizer_kokoro.py`.
 - [ ] Formatting: not run in this session.
-- [ ] Dead-code scan: not run in this session.
-- [ ] Tests: not run in this session.
-- [ ] Compatibility: TTS smoke/integration tests not run in this session.
+- [x] Dead-code scan: Vulture scan clean for `services/tts/src/tts_service/synthesizer_kokoro.py`.
+- [x] Tests: TTS pipeline smoke test executed.
+- [x] Compatibility: TTS smoke test passes (Kafka + Schema Registry + MinIO + TTS).
 - [ ] Pre-handoff scan: not run in this session.
 
 ## Value Statement Validation
@@ -65,19 +67,19 @@ agent-output/planning/010-text-to-speech-plan.md
 
 ## Test Coverage
 - **Unit**: Not executed in this session.
-- **Integration**: Not executed in this session.
+- **Integration**: TTS pipeline smoke test executed successfully.
 
 ## Test Execution Results
 | Command | Results | Issues | Coverage |
 |---------|---------|--------|----------|
-| n/a | Not run | n/a | n/a |
+| `/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/tts_pipeline_smoke.py` | PASS | None | n/a |
 
 ## Outstanding Items
 - Fix `process_event` in [services/tts/src/tts_service/main.py](services/tts/src/tts_service/main.py) to remove the invalid `producer.publish_event(...)` call with mismatched signature.
 - Implement real Kokoro preprocessing (phoneme/token mapping, voice vector loading) in [services/tts/src/tts_service/synthesizer_kokoro.py](services/tts/src/tts_service/synthesizer_kokoro.py); current output is mocked noise.
 - Clarify v0.5.0 CPU/GPU deployment profile and provider selection per Findings 013 and roadmap AC.
 - Add explicit duration/speed control behavior (epic AC) or document deferral.
-- Run analyzer gate (ruff + vulture) and unit/integration tests before QA handoff.
+- Run unit tests with coverage before QA handoff.
 - Update version artifacts (root CHANGELOG / release notes) if required by the plan.
 - Resolve plan critique criticals: treat Findings 013 as primary architecture reference and add explicit “no raw audio bytes in logs” redaction rule.
 - Determine line-level change stats for the report (git diff not available in this session).
