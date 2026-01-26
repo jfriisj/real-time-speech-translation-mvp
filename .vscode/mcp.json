@@ -6,7 +6,7 @@
     },
     "filesystem": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/jonfriis/github/masters"]
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/jonfriis/github/real-time-speech-translation-mvp"]
     },
     "huggingface": {
       "url": "https://huggingface.co/mcp",

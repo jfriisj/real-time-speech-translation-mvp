@@ -13,6 +13,7 @@ agent-output/planning/010-text-to-speech-plan.md
 | 2026-01-25 | Implementation report refresh | Updated report to reflect Kokoro ONNX pivot and current implementation state. |
 | 2026-01-26 | Implementation report update | Refreshed report for Plan 010 Rev 10 readiness; no code changes in this session. |
 | 2026-01-26 | Integration smoke rerun | Fixed Misaki G2P initialization and re-ran TTS pipeline smoke test successfully. |
+| 2026-01-26 | Integration validation | Verified MinIO lifecycle rule configuration and URI failure semantics (404 + connection refusal). |
 
 ## Implementation Summary (what + how delivers value)
 - Replaced IndexTTS-specific runtime wiring with a pluggable `Synthesizer` interface and factory selected via `TTS_MODEL_NAME` for model swaps.
@@ -26,6 +27,7 @@ agent-output/planning/010-text-to-speech-plan.md
 - [x] TTS service wired to pluggable synthesizer factory.
 - [x] Kokoro ONNX synthesizer scaffold and model asset download.
 - [x] MinIO lifecycle rule present for 24h retention.
+- [x] MinIO lifecycle rule present for 24h retention (rule verified in MinIO).
 - [x] Compose config updated for Kokoro ONNX cache path.
 - [ ] Version management artifacts (CHANGELOG, release notes) updated for v0.5.0.
 
@@ -58,6 +60,7 @@ agent-output/planning/010-text-to-speech-plan.md
 - [x] Dead-code scan: Vulture scan clean for `services/tts/src/tts_service/synthesizer_kokoro.py`.
 - [x] Tests: TTS pipeline smoke test executed.
 - [x] Compatibility: TTS smoke test passes (Kafka + Schema Registry + MinIO + TTS).
+- [x] Integration: MinIO lifecycle policy inspected; URI 404 + connection refusal observed.
 - [ ] Pre-handoff scan: not run in this session.
 
 ## Value Statement Validation
@@ -67,12 +70,15 @@ agent-output/planning/010-text-to-speech-plan.md
 
 ## Test Coverage
 - **Unit**: Not executed in this session.
-- **Integration**: TTS pipeline smoke test executed successfully.
+- **Integration**: TTS pipeline smoke test executed successfully; MinIO lifecycle rule inspection; URI failure checks (404 + connection refusal).
 
 ## Test Execution Results
 | Command | Results | Issues | Coverage |
 |---------|---------|--------|----------|
 | `/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/tts_pipeline_smoke.py` | PASS | None | n/a |
+| `docker run --rm --network real-time-speech-translation-mvp_speech_net --entrypoint /bin/sh minio/mc:latest -c "mc alias set local http://minio:9000 minioadmin minioadmin >/dev/null && mc ilm ls local/tts-audio"` | PASS | Lifecycle rule present (`expire-tts-audio`, 1 day) | n/a |
+| `/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python -c "...missing_object + connection_refused checks..."` | PASS | Missing object returned 403; connection refused produced URLError | n/a |
+| `docker exec speech-tts-service python -c "...presigned missing object check..."` | PASS | Presigned missing object returned 404 | n/a |
 
 ## Outstanding Items
 - Fix `process_event` in [services/tts/src/tts_service/main.py](services/tts/src/tts_service/main.py) to remove the invalid `producer.publish_event(...)` call with mismatched signature.
@@ -83,6 +89,7 @@ agent-output/planning/010-text-to-speech-plan.md
 - Update version artifacts (root CHANGELOG / release notes) if required by the plan.
 - Resolve plan critique criticals: treat Findings 013 as primary architecture reference and add explicit “no raw audio bytes in logs” redaction rule.
 - Determine line-level change stats for the report (git diff not available in this session).
+- Observe MinIO lifecycle deletion after 24h (rule verified, but expiration behavior not yet observed).
 
 ## Next Steps
 - QA: Run code-quality scans and integration tests for Kafka + MinIO + TTS flow.

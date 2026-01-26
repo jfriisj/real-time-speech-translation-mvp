@@ -50,7 +50,7 @@ htmlcov/
 .ipynb_checkpoints
 
 # --- IDEs & Editors ---
-.vscode/
+#.vscode/
 # NOTE: VS Code files are often user/machine-specific and may include secrets (e.g., MCP auth).
 # If you ever want to commit shared VS Code config, switch to an allowlist pattern.
 .idea/

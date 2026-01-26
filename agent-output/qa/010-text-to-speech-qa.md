@@ -14,7 +14,8 @@
 | 2026-01-26 | Implementer | Verify coverage and execute tests | Re-ran analyzer gate + coverage tests; unit tests failed after Kokoro ONNX pivot; coverage dropped to 38.46%; Ruff/Vulture findings in `synthesizer_kokoro.py`. |
 | 2026-01-26 | Implementer | Fix tests and rerun QA | Updated tests for Kokoro pivot; unit tests pass; coverage now 77.59%; Ruff/Vulture clean. |
 | 2026-01-26 | QA | Verify coverage and execute tests | Re-ran Ruff + Vulture gates and TTS unit tests with coverage; 11/11 tests pass; coverage remains 77.59%; integration tests still not executed. |
-| 2026-01-26 | QA | Verify coverage and execute tests | Re-ran coverage tests and TTS pipeline smoke test; analyzer gate clean; smoke test passed but large-payload URI path still unverified. |
+| 2026-01-26 | QA | Verify coverage and execute tests | Re-ran coverage tests and TTS pipeline smoke test; analyzer gate clean; inline + URI payload smoke tests passed; MinIO lifecycle still unverified. |
+| 2026-01-26 | QA | Verify coverage and execute tests | Re-ran analyzer gate and unit tests with coverage; inline + URI smoke tests passed; MinIO lifecycle rule inspected; presigned 404 validated. |
 
 ## Timeline
 - **Test Strategy Started**: 2026-01-25
@@ -69,7 +70,7 @@
 | services/tts/src/tts_service/synthesizer_kokoro.py | `KokoroSynthesizer` | services/tts/tests/test_synthesizer.py | `test_kokoro_synthesizer_downloads_assets` | COVERED |
 
 ### Coverage Gaps
-- Large-payload URI mode and MinIO lifecycle validation remain unexecuted (only inline payload smoke validated).
+- MinIO lifecycle expiration behavior remains unverified.
 - Real Kokoro inference (phoneme/token mapping + voices.bin parsing) remains mocked; audio quality acceptance criteria are not validated by unit tests.
 
 ## Test Execution Results
@@ -88,7 +89,26 @@
 - **Status**: PASS
 - **Output**: PASS: TTS pipeline produced AudioSynthesisEvent
 - **Coverage**: n/a
-- **Remaining Gap**: Large-payload URI path (>1.5MB) and MinIO lifecycle not validated.
+- **Notes**: Validated inline payload mode.
+
+### Integration Tests (Large Payload URI)
+- **Command**: `env TTS_SMOKE_TEXT="(400 chars)" EXPECT_PAYLOAD_MODE=URI /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/tts_pipeline_smoke.py`
+- **Status**: PASS
+- **Output**: PASS: TTS pipeline produced AudioSynthesisEvent
+- **Coverage**: n/a
+- **Notes**: Validated URI payload mode and MinIO download path for large payload.
+
+### Integration Tests (MinIO Lifecycle Rule Inspection)
+- **Command**: `docker run --rm --network real-time-speech-translation-mvp_speech_net --entrypoint /bin/sh minio/mc:latest -c "mc alias set local http://minio:9000 minioadmin minioadmin >/dev/null && mc ilm ls local/tts-audio"`
+- **Status**: PASS
+- **Output**: `expire-tts-audio` enabled with 1-day expiration
+- **Coverage**: n/a
+
+### Integration Tests (URI Failure Semantics)
+- **Command**: `docker exec speech-tts-service python -c "...presigned missing object..."`
+- **Status**: PASS
+- **Output**: `presigned_missing: HTTPError status=404`
+- **Coverage**: n/a
 
 ## Code Quality Gate
 - **Ruff**: PASS (no issues in `services/tts/src/tts_service/synthesizer_kokoro.py`)
@@ -96,12 +116,12 @@
 
 ## QA Decision
 **QA Failed** due to:
-1. Large-payload URI integration validation (MinIO upload + fetch + lifecycle) not executed.
+1. MinIO lifecycle expiration behavior not validated (rule present, expiration not observed).
 2. Real Kokoro inference path remains mocked; audio quality acceptance criteria not validated.
 
 ## Recommended Next Steps
-- Execute the large-payload URI scenario (>1.5MB) and verify MinIO upload + download + lifecycle expiration behavior.
-- Add integration validation for URI retrieval failure behavior (404/timeout) and confirm log/skip semantics.
+- Validate MinIO lifecycle expiration behavior (24h) and document evidence.
+- Implement real Kokoro inference and complete audio quality checks (5 samples, intelligibility).
 
 ## Handoff
 Testing incomplete. QA not ready for UAT.

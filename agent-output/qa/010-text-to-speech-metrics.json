@@ -19,6 +19,6 @@
   },
   "integration_tests": {
     "executed": true,
-    "note": "TTS pipeline smoke test passed on 2026-01-26 (inline payload). Large-payload URI mode and MinIO lifecycle validation still pending."
+    "note": "TTS pipeline smoke tests passed on 2026-01-26 (inline + URI); MinIO lifecycle rule inspected; presigned missing object returned 404; expiration behavior still pending."
   }
 }
