@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM python:3.11-slim
 
 ARG MODEL_NAME=openai/whisper-tiny
@@ -14,16 +15,19 @@ RUN apt-get update \
 
 COPY shared/schemas /app/shared/schemas
 COPY shared/speech-lib /app/shared/speech-lib
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir /app/shared/speech-lib
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip \
+    && pip install /app/shared/speech-lib
 
 COPY services/asr /app/services/asr
 WORKDIR /app/services/asr
 
 ENV PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu
-RUN pip install --no-cache-dir .
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install .
 
-RUN python - <<'PY'
+RUN --mount=type=cache,target=/app/.cache/huggingface \
+    python - <<'PY'
 import os
 from transformers import pipeline
 

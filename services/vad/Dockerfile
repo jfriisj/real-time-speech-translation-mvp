@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM python:3.11-slim
 
 ARG VAD_MODEL_REPO=onnx-community/silero-vad
@@ -17,15 +18,18 @@ RUN apt-get update \
 
 COPY shared/schemas /app/shared/schemas
 COPY shared/speech-lib /app/shared/speech-lib
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir /app/shared/speech-lib
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip \
+    && pip install /app/shared/speech-lib
 
 COPY services/vad /app/services/vad
 WORKDIR /app/services/vad
 
-RUN pip install --no-cache-dir .
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install .
 
-RUN python - <<'PY'
+RUN --mount=type=cache,target=/app/.cache/huggingface \
+    python - <<'PY'
 import os
 from huggingface_hub import hf_hub_download
 

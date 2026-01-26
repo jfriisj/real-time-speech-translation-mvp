@@ -94,6 +94,8 @@ services:
       MODEL_NAME: openai/whisper-tiny
       SCHEMA_DIR: /app/shared/schemas/avro
       ASR_INPUT_TOPIC: speech.audio.ingress
+    volumes:
+      - hf_cache:/app/.cache/huggingface
     networks:
       - speech_net
 
@@ -120,6 +122,8 @@ services:
       VAD_USE_ONNX: "1"
       VAD_MODEL_REPO: onnx-community/silero-vad
       VAD_MODEL_FILENAME: silero_vad.onnx
+    volumes:
+      - hf_cache:/app/.cache/huggingface
     networks:
       - speech_net
 
@@ -136,6 +140,9 @@ services:
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       TARGET_LANGUAGE: es
       SCHEMA_DIR: /app/shared/schemas/avro
+      HF_HOME: /app/.cache/huggingface
+    volumes:
+      - hf_cache:/app/.cache/huggingface
     networks:
       - speech_net
 
@@ -161,6 +168,8 @@ services:
       MINIO_BUCKET: tts-audio
       MINIO_SECURE: "0"
       INLINE_PAYLOAD_MAX_BYTES: ${INLINE_PAYLOAD_MAX_BYTES:-1572864}
+    volumes:
+      - ./model_cache:/app/model_cache
     networks:
       - speech_net
 
@@ -203,3 +212,6 @@ services:
 networks:
   speech_net:
     driver: bridge
+
+volumes:
+  hf_cache:
