@@ -6,8 +6,10 @@ from types import ModuleType
 
 
 SRC_PATH = Path(__file__).resolve().parents[1] / "src"
-if str(SRC_PATH) not in sys.path:
-    sys.path.insert(0, str(SRC_PATH))
+SPEECH_LIB_PATH = Path(__file__).resolve().parents[3] / "shared" / "speech-lib" / "src"
+for path in (SRC_PATH, SPEECH_LIB_PATH):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 if "prometheus_client" not in sys.modules:
     fake_module = ModuleType("prometheus_client")
@@ -64,6 +66,22 @@ if "onnxruntime" not in sys.modules:
 
     fake_ort.InferenceSession = _FakeSession # type: ignore[attr-defined]
     sys.modules["onnxruntime"] = fake_ort
+
+if "misaki" not in sys.modules:
+    fake_misaki = ModuleType("misaki")
+    fake_misaki_en = ModuleType("misaki.en")
+
+    class _FakeG2P:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def __call__(self, _text: str):
+            return "a"
+
+    fake_misaki_en.G2P = _FakeG2P  # type: ignore[attr-defined]
+    fake_misaki.en = fake_misaki_en  # type: ignore[attr-defined]
+    sys.modules["misaki"] = fake_misaki
+    sys.modules["misaki.en"] = fake_misaki_en
 
 if "confluent_kafka" not in sys.modules:
     fake_kafka = ModuleType("confluent_kafka")

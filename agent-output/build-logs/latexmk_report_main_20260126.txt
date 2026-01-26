@@ -1,0 +1,1 @@
+Placeholder for latexmk output (will be overwritten if command is re-run with tee).

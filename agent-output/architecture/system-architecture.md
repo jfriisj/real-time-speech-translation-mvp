@@ -14,6 +14,7 @@
 | 2026-01-19 | Added QA integration points + failure-mode checklist for VAD stage | Improves test coverage at service boundaries (SR/Kafka/VAD/ASR) and reduces regressions during v0.4.0 hardening | Plan 009 (VAD) |
 | 2026-01-25 | Epic 1.7 TTS pre-planning constraints (AudioSynthesisEvent payload strategy, object-store guardrails) | Prevents Kafka payload cap violations and clarifies how synthesized audio and speaker context are transported | Epic 1.7 (TTS Service) |
 | 2026-01-25 | Epic 1.7 TTS model pivot to Kokoro ONNX + pluggable synthesizer requirement | Stabilizes CPU/GPU runtime via ONNX and preserves future ability to swap to IndexTTS/Qwen without contract changes | Plan 010 (TTS) + Findings 013 |
+| 2026-01-26 | Pre-implementation review of Plan 010 Rev 16 | Confirms architectural fit and pins remaining required changes (CPU/GPU profile clarity, input bounds, measurement boundaries) | Plan 010 (TTS) + Findings 014 |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:

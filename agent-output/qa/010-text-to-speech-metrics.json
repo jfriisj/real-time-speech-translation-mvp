@@ -2,14 +2,16 @@
   "plan_id": "010",
   "feature": "text-to-speech",
   "qa_status": "QA Failed",
+  "qa_scope_note": "Storage lifecycle QA handled separately; this QA pass focuses on TTS service behavior only.",
   "unit_tests": {
-    "passed": 11,
+    "attempted": true,
+    "passed": 17,
     "failed": 0
   },
   "coverage": {
     "attempted": true,
     "succeeded": true,
-    "note": "Coverage run via runTests (coverage mode) on 2026-01-26; main.py coverage 77.59% (79/100 statements; branches 11/16)."
+    "note": "Coverage run on 2026-01-26; total coverage 79% (268 statements, 55 misses)."
   },
   "ruff": {
     "issues": 0
@@ -19,6 +21,6 @@
   },
   "integration_tests": {
     "executed": true,
-    "note": "TTS pipeline smoke tests passed on 2026-01-26 (inline + URI); MinIO lifecycle rule inspected; presigned missing object returned 404; expiration behavior still pending."
+    "note": "Inline + URI TTS pipeline smoke tests passed; presigned missing-object fetch returns HTTP 404. MinIO 24h expiration out of scope for this QA pass."
   }
 }

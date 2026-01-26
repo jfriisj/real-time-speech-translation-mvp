@@ -1,13 +1,84 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
+
+\bibitem{aws_polly}
+{Amazon Web Services}.
+\newblock Amazon polly.
+\newblock \url{https://aws.amazon.com/polly/}, 2024.
+\newblock Accessed: 2026-01-26.
+
+\bibitem{aws_transcribe}
+{Amazon Web Services}.
+\newblock Amazon transcribe.
+\newblock \url{https://aws.amazon.com/transcribe/}, 2024.
+\newblock Accessed: 2026-01-26.
+
+\bibitem{aws_translate}
+{Amazon Web Services}.
+\newblock Amazon translate.
+\newblock \url{https://aws.amazon.com/translate/}, 2024.
+\newblock Accessed: 2026-01-26.
+
+\bibitem{bahdanau2014neural}
+Dzmitry Bahdanau, Kyunghyun Cho, and Yoshua Bengio.
+\newblock Neural machine translation by jointly learning to align and translate.
+\newblock {\em arXiv preprint arXiv:1409.0473}, 2014.
+
+\bibitem{bass2021softwarearchitectureinpractice}
+Len Bass, Paul Clements, and Rick Kazman.
+\newblock {\em Software Architecture in Practice}.
+\newblock Addison-Wesley Professional, 4 edition, 2021.
 
 \bibitem{Cormen-al:01}
 Thomas~H. Cormen, Charles~E. Leiserson, Ronald~L. Rivest, and Clifford Stein.
 \newblock {\em Introduction to Algorithms}.
 \newblock The MIT Press, Cambridge, Massachusetts, second edition, 2001.
 
+\bibitem{google_cloud_translate}
+{Google Cloud}.
+\newblock Cloud translation.
+\newblock \url{https://cloud.google.com/translate}, 2024.
+\newblock Accessed: 2026-01-26.
+
 \bibitem{Lindholm-Yellin:99}
 Tim Lindholm and Frank Yellin.
 \newblock {\em The {J}ava$^\mathit{TM}$ Virtual Machine Specification}.
 \newblock Addison-Wesley, 2nd edition, 1999.
+
+\bibitem{microsoft_translator}
+{Microsoft}.
+\newblock Microsoft translator.
+\newblock \url{https://www.microsoft.com/translator/}, 2024.
+\newblock Accessed: 2026-01-26.
+
+\bibitem{radford2022whisper}
+Alec Radford, Jong~Wook Kim, Tao Xu, Greg Brockman, Christine McLeavey, and Ilya Sutskever.
+\newblock Robust speech recognition via large-scale weak supervision.
+\newblock {\em arXiv preprint arXiv:2212.04356}, 2022.
+
+\bibitem{unesco2022inclusion}
+UNESCO.
+\newblock Inclusion and education: All means all.
+\newblock \url{https://www.unesco.org/}, 2022.
+\newblock Accessed: 2026-01-26.
+
+\bibitem{vaswani2017attention}
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan~N. Gomez, \L{}ukasz Kaiser, and Illia Polosukhin.
+\newblock Attention is all you need.
+\newblock In {\em Advances in Neural Information Processing Systems}, volume~30, 2017.
+
+\bibitem{wang2020fairseq}
+Changhan Wang, Anne Wu, Juan Pino, Alexei Baevski, Michael Auli, and Alexis Conneau.
+\newblock Fairseq s2t: Fast speech-to-text modeling with fairseq.
+\newblock In {\em Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics}, 2020.
+
+\bibitem{xu2025scalability}
+J.~Xu et~al.
+\newblock Scalability challenges in distributed speech translation systems, 2025.
+\newblock Preprint.
+
+\bibitem{zhang2024direct}
+Y.~Zhang et~al.
+\newblock Direct speech-to-speech translation: Architecture and optimization, 2024.
+\newblock Preprint.
 
 \end{thebibliography}

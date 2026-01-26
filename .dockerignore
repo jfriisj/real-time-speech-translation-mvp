@@ -11,3 +11,14 @@
 **/build
 **/*.egg-info
 node_modules
+
+# Large, non-build artifacts
+agent-output
+report-output
+build-logs
+tmp
+docs
+Analysis-and-design-of-a-platform-for-real-time-speech-translation-
+
+# Runtime caches (mounted as volumes when needed)
+model_cache

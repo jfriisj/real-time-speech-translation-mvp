@@ -53,7 +53,7 @@ def test_upload_bytes_returns_public_uri(monkeypatch: pytest.MonkeyPatch) -> Non
     fake_module.client = fake_boto3.client  # type: ignore[attr-defined]
     sys.modules["boto3"] = fake_module
 
-    from tts_service import storage as storage_module
+    from speech_lib import storage as storage_module
     from importlib import reload
 
     storage_module = reload(storage_module)

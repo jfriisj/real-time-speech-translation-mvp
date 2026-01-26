@@ -6,10 +6,6 @@ argument-hint: Reference the implementation or plan to validate (e.g., plan 002)
 tools: ['execute/testFailure', 'execute/getTerminalOutput', 'execute/runInTerminal', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'memory/*', 'todo']
 model: GPT-5.2-Codex (copilot)
 handoffs:
-  - label: 10 Request Live Testing Evidence (Real Environment)
-    agent: 10 LiveTesting
-    prompt: "UAT needs real-environment validation/evidence before a go/no-go decision. Please run live testing and provide reproducible results.\n\nInputs:\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n- QA report (if available): agent-output/qa/NNN-feature-slug-qa.md\n- Implementation report: agent-output/implementation/NNN-feature-slug-implementation.md\n- Target environment: [docker-compose local / staging]\n\nDeliverable:\n- Create/update: agent-output/live-testing/NNN-feature-slug-live-testing.md\n\nNote:\n- Redact any sensitive data; do not include raw user audio/PII."
-    send: false
   - label: 02 Report UAT Failure (Plan Revision)
     agent: 02 Planner
     prompt: "UAT failed: implementation does not deliver the stated value. A plan revision may be needed.\n\nInputs:\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n- UAT report (evidence): agent-output/uat/NNN-feature-slug-uat.md\n\nAsk:\n- Update plan objectives/acceptance criteria (WHAT/WHY) to resolve mismatch."

@@ -20,6 +20,7 @@ from .schema_registry import SchemaRegistryClient
 from .serialization import load_schema, serialize_event, deserialize_event
 from .producer import KafkaProducerWrapper
 from .consumer import KafkaConsumerWrapper
+from .storage import ObjectStorage
 
 __all__ = [
     "AUDIO_PAYLOAD_MAX_BYTES",
@@ -44,4 +45,5 @@ __all__ = [
     "deserialize_event",
     "KafkaProducerWrapper",
     "KafkaConsumerWrapper",
+    "ObjectStorage",
 ]

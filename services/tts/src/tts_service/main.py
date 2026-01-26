@@ -20,12 +20,13 @@ from speech_lib import (
 )
 
 from .config import Settings
-from .storage import ObjectStorage
+from speech_lib.storage import ObjectStorage
 from .synthesizer_factory import SynthesizerFactory
 from .synthesizer_interface import Synthesizer
 
 
 LOGGER = logging.getLogger(__name__)
+MAX_INPUT_CHARS = 500
 
 TTS_LATENCY_SECONDS = Histogram(
     "tts_latency_seconds",
@@ -91,6 +92,14 @@ def _extract_request(event: Dict[str, Any]) -> tuple[str, str, bytes | None, str
     text = str(payload.get("text", "")).strip()
     if not text:
         raise ValueError("missing payload.text")
+    if len(text) > MAX_INPUT_CHARS:
+        LOGGER.warning(
+            "Truncating payload.text correlation_id=%s length=%s cap=%s",
+            correlation_id,
+            len(text),
+            MAX_INPUT_CHARS,
+        )
+        text = text[:MAX_INPUT_CHARS]
 
     speaker_reference_bytes = payload.get("speaker_reference_bytes")
     speaker_id = payload.get("speaker_id")
@@ -117,11 +126,14 @@ def process_event(
 ) -> None:
     correlation_id, text, speaker_reference_bytes, speaker_id = _extract_request(event)
 
-    start_time = perf_counter()
+    service_start = perf_counter()
     # Updated signature: synthesize(text, ref_bytes, speaker_id) -> (bytes, sample_rate, duration)
-    wav_bytes, sample_rate_hz, duration_ms = synthesizer.synthesize(text, speaker_reference_bytes, speaker_id)
-    synthesis_seconds = perf_counter() - start_time
-    TTS_LATENCY_SECONDS.observe(synthesis_seconds)
+    wav_bytes, sample_rate_hz, duration_ms = synthesizer.synthesize(
+        text,
+        speaker_reference_bytes,
+        speaker_id,
+    )
+    inference_seconds = perf_counter() - service_start
 
     payload_mode = "INLINE"
     audio_bytes: bytes | None = None
@@ -164,15 +176,23 @@ def process_event(
         output_schema,
         key=correlation_id,
     )
+    service_seconds = perf_counter() - service_start
+    TTS_LATENCY_SECONDS.observe(service_seconds)
 
     LOGGER.info(
         "Published AudioSynthesisEvent correlation_id=%s input_char_count=%s "
-        "synthesis_latency_ms=%s payload_mode=%s payload_size_bytes=%s",
+        "synthesis_latency_ms=%s payload_mode=%s payload_size_bytes=%s model_name=%s",
         correlation_id,
         len(text),
-        int(synthesis_seconds * 1000),
+        int(service_seconds * 1000),
         payload_mode,
         payload_size_bytes,
+        model_name,
+    )
+    LOGGER.info(
+        "Inference latency correlation_id=%s inference_latency_ms=%s",
+        correlation_id,
+        int(inference_seconds * 1000),
     )
 
 

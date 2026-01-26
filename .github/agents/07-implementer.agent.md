@@ -3,7 +3,7 @@ description: Execution-focused coding agent that implements approved plans.
 name: 07 Implementer
 target: vscode
 argument-hint: Reference the approved plan to implement (e.g., plan 002)
-tools: ['vscode/vscodeAPI', 'execute', 'read', 'edit', 'search', 'web', 'filesystem/*', 'huggingface/*', 'memory/*', 'analyzer/*', 'ms-python.python/getPythonEnvironmentInfo', 'ms-python.python/getPythonExecutableCommand', 'ms-python.python/installPythonPackage', 'ms-python.python/configurePythonEnvironment', 'todo']
+tools: ['vscode/vscodeAPI', 'execute', 'read', 'edit', 'search', 'web', 'analyzer/*', 'filesystem/*', 'huggingface/*', 'memory/*', 'pylance-mcp-server/*', 'ms-python.python/getPythonEnvironmentInfo', 'ms-python.python/getPythonExecutableCommand', 'ms-python.python/installPythonPackage', 'ms-python.python/configurePythonEnvironment', 'todo']
 model: GPT-5.2-Codex (copilot)
 handoffs:
   - label: 03 Request Analysis (Implementation Blocker)
@@ -25,10 +25,6 @@ handoffs:
   - label: 08 Submit for QA (Testing Gate)
     agent: 08 QA
     prompt: "Implementation is complete. Please verify coverage and execute tests.\n\nInputs:\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n- Implementation report: agent-output/implementation/NNN-feature-slug-implementation.md\n\nDeliverable:\n- Create/update: agent-output/qa/NNN-feature-slug-qa.md\n- End with handoff to UAT if QA Complete."
-    send: false
-  - label: 10 Run Live Testing (Pre-PR Gate)
-    agent: 10 LiveTesting
-    prompt: "Implementation is ready for live testing before opening a PR. Please run the service in a real(-ish) environment and execute end-to-end smoke tests.\n\nInputs:\n- Plan (if any): agent-output/planning/NNN-feature-slug-plan.md\n- Branch/commit: [branch name or commit sha]\n- Implementation report: agent-output/implementation/NNN-feature-slug-implementation.md\n- QA report (if available): agent-output/qa/NNN-feature-slug-qa.md\n\nDeliverable:\n- Create: agent-output/live-testing/NNN-feature-slug-live-testing.md\n\nExit criteria:\n- PASS only if bring-up + health checks + /transcribe smoke succeed without errors.\n- FAIL with reproducible steps + logs if anything breaks."
     send: false
 ---
 
@@ -85,8 +81,8 @@ Best design meeting requirements without over-engineering. Pragmatic craft (good
 
 ## Workflow
 1. Read complete plan from `agent-output/planning/` + analysis (if exists) in full. These—not chat—are authoritative.
-2. Read evaluation criteria: `~/.config/Code/User/prompts/qa.agent.md` + `~/.config/Code/User/prompts/uat.agent.md` to understand evaluation.
-3. When addressing QA findings: Read complete QA report from `agent-output/qa/` + `~/.config/Code/User/prompts/qa.agent.md`. QA report—not chat—is authoritative.
+2. Read evaluation criteria from `agent-output/qa/` and `agent-output/uat/` to understand evaluation.
+3. When addressing QA findings: Read complete QA report from `agent-output/qa/`. QA report—not chat—is authoritative.
 4. Confirm Value Statement understanding. State how implementation delivers value.
 5. Confirm plan name, summarize change before coding.
 6. Enumerate clarifications. Send to planning if unresolved.

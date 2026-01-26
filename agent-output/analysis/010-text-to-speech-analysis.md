@@ -1,73 +1,65 @@
-# Analysis 010: Text-to-Speech (Kokoro pivot)
+# Analysis 010: Text-to-Speech Unknowns
 
-**Plan Reference (if any)**: [agent-output/planning/010-text-to-speech-plan.md](agent-output/planning/010-text-to-speech-plan.md)
-
+**Plan Reference (if any)**: agent-output/planning/010-text-to-speech-plan.md
 **Status**: Draft
-
-## Value Statement and Business Objective
-
-Deliver the Epic 1.7 `tts-service` so translated text is spoken naturally with measurable RTF/latency evidence, dual-mode transport, and speaker context propagation. The Kokoro ONNX pivot must prove the new synthesizer fits into the existing Kafka → MinIO → consumer pipeline without regressing the contracts that downstream services rely on.
 
 ## Changelog
 
 | Date | Agent Handoff | Request | Summary |
 |------|---------------|---------|---------|
-| 2026-01-25 | Analyst | Investigate Kokoro pivot unknowns | Surveyed the IndexTTS-2 implementation, uncovered voice-mapping, schema, and contract gaps that prevent the Kokoro refactor from landing. |
-| 2026-01-26 | Analyst | Capture integration/test blockers | Verified QA still marks the feature as Failed because Kafka/Schema/MinIO integration tests have not run, leaving `audio_uri`, retention, and Kokoro inference behavior unvalidated despite analyzer/coverage successes. |
+| 2026-01-26 | Planner | Identify open technical unknowns for Plan 010 completion | Captured the current implementation state and surfaced the remaining verification/refactor work needed to close the plan. |
 
 ## Objective
-
-Record the remaining technical unknowns after the Kokoro scaffold and analyzer/coverage gates pass so planners and implementers can close the integration, asset, and observability blocks before UAT handoff.
+Identify the specific technical unknowns that must be resolved before Plan 010 can be marked complete.
 
 ## Context
-
-- Plan 010 mandates dual-mode transport, optional speaker metadata, MinIO lifecycle (24h), `model_name` observability, and a pluggable synthesizer factory anchored on Kokoro-82M.
-- QA Report [agent-output/qa/010-text-to-speech-qa.md](agent-output/qa/010-text-to-speech-qa.md) still shows **QA Failed** because Kafka + Schema Registry + MinIO integration tests were never run; unit tests + coverage (77.59% on `main.py`) and Ruff/Vulture reports are green.
-- Blocker: the integration scenario (large payload → MinIO upload → `audio_uri` retrieval) is untested, and the Kokoro backend is currently scaffolded with mocked inference, so the real asset/voice/style requirements remain unknown.
-- Files/symbols involved: `services/tts/src/tts_service/main.py::process_event`, `build_output_event`, `ObjectStorage.upload_bytes`, `synthesizer_kokoro.py::KokoroSynthesizer.synthesize`, plus Docker Compose / QA artifacts that tie integration tests to Kafka/Schema/MinIO.
-
-## Root Cause
-
-- Integration-level automation (Kafka + Schema Registry + MinIO + TTS) has not been executed in this cycle, so `audio_uri` delivery, MinIO retention, and consumer failure semantics remain unvalidated.
-- `KokoroSynthesizer` currently downloads assets and initializes misaki/onnxruntime, but the inference step is mocked, the voice file loader is a placeholder, and the real style-vector mapping / `speaker_reference_bytes` semantics are unknown.
-- Without explicit instrumentation or tests covering the `model_name` metadata and `audio_uri` fallback, we cannot prove downstream consumers or QA metrics observe the new fields as promised.
+- Relevant modules/files: [services/tts/src/tts_service/main.py](services/tts/src/tts_service/main.py), [services/tts/src/tts_service/synthesizer_kokoro.py](services/tts/src/tts_service/synthesizer_kokoro.py), [services/tts/src/tts_service/storage.py](services/tts/src/tts_service/storage.py), [shared/speech-lib/src/speech_lib/__init__.py](shared/speech-lib/src/speech_lib/__init__.py), [tests/e2e/tts_pipeline_smoke.py](tests/e2e/tts_pipeline_smoke.py).
+- Known constraints: dual-mode transport with an inline payload cap near 1.5 MB, a 24 h MinIO lifecycle rule for the `tts-audio` bucket, and the expectation that `speech-lib` can expose reusable adapters following the latest plan revision.
 
 ## Methodology
-
-- Reviewed `services/tts/src/tts_service/main.py` (`process_event`, `build_output_event`) and the Kokoro backend (`synthesizer_kokoro.py`) to understand the new `model_name` propagation, dual-mode logic, and placeholder inference behavior.
-- Consulted the latest QA report and metrics JSON to capture the current gate status (unit tests passing, integration tests not run, QA still failed).
-- Cross-referenced the plan’s contracts (dual-mode transport, MinIO lifecycle, speaker context) against what the new code paths currently exercise.
+- Reviewed [agent-output/planning/010-text-to-speech-plan.md](agent-output/planning/010-text-to-speech-plan.md) to understand the remaining plan steps (real inference validation, integration tests, and cleanup/refactor).
+- Inspected the current TTS service implementation (`main.py`, `synthesizer_kokoro.py`, `storage.py`) plus the shared library entry point to determine which requirements are already satisfied versus still pending.
+- Studied the integration smoke script (`tests/e2e/tts_pipeline_smoke.py`) to assess what payload scenarios are currently exercised.
 
 ## Findings
 
 ### Facts
-- QA still reports **QA Failed** because integration tests for Kafka + Schema Registry + MinIO have not been run (see [agent-output/qa/010-text-to-speech-qa.md](agent-output/qa/010-text-to-speech-qa.md)); the unit-level analyzer/coverage duties now succeed, but the large-payload path remains unverified.
-- `process_event` now passes `model_name` from settings into `build_output_event` and decides between inline bytes and `ObjectStorage.upload_bytes` uploads, but no integration validation exercises the `audio_uri` download, MinIO retention, or consumer QoS for failure cases.
-- `KokoroSynthesizer` downloads Kokoro assets and configures an ONNX session, but the inference code is stubbed (random noise) and the voice loader/`speaker_reference_bytes` pathway is unimplemented, so the actual asset/voice/voice-style requirements are still unknown.
+- [services/tts/src/tts_service/main.py](services/tts/src/tts_service/main.py) already implements dual-mode payload selection, imports a service-local `ObjectStorage`, and handles inline vs. MinIO uploads before publishing the `AudioSynthesisEvent` with `model_name`.
+- [services/tts/src/tts_service/synthesizer_kokoro.py](services/tts/src/tts_service/synthesizer_kokoro.py) downloads the Kokoro assets, initializes `misaki` and `onnxruntime`, and runs inference, but the voice dictionary currently only retains the reshaped first vector (labelled `af_bella`), so any `speaker_id` beyond that key falls back to the same style vector.
+- [tests/e2e/tts_pipeline_smoke.py](tests/e2e/tts_pipeline_smoke.py) validates that exactly one of `audio_bytes` or `audio_uri` is populated and can fetch the URI when present, but it does not force the URI path via the inline cap, nor does it intentionally trigger MinIO/consumer 404 or timeout scenarios.
+- [shared/speech-lib/src/speech_lib/__init__.py](shared/speech-lib/src/speech_lib/__init__.py) exposes Kafka helpers and schema utilities but has no storage adapters exported yet, so there is no shared place to move `ObjectStorage` into without adding new APIs and dependencies.
 
 ### Hypotheses
-- Without bringing up Kafka + Schema Registry + MinIO, we cannot confirm that consumers successfully fetch `audio_uri`, that 404/timeout handling honors the plan’s failure policy, or that the 24h lifecycle rule actually expires objects after upload.
-- The real Kokoro voices asset may be in a non-NumPy format or require additional dependencies (e.g., PyTorch) so the current `_load_voices` stub will fail once real assets are used; downstream voice/style mapping and `speaker_id` fallback behavior must be explicitly verified.
-- Downstream consumers may not yet understand the new `model_name` field, so we should confirm their schemas tolerate it and that logging/metrics actually surface it for RTF/latency tracing.
+- The plan’s voice-mapping requirement cannot be satisfied without a deterministic mapping from `speaker_id` to the real vectors inside `voices.bin`; the current loader discards the majority of those vectors, so we need to discover which IDs exist and how to surface them safely.
+- The `TTS_SPEED` tunable is still missing—the Kokoro backend always feeds a constant `speed` tensor of `1.0` into ONNX—so the “Audio Control” acceptance criterion is not yet met until this env var is wired through the model inputs.
+- The integration validation step (Plan Step 4) is incomplete: there is no automated run that pushes >1.5 MB text, confirms MinIO upload/fetch, and logs what happens when downstream consumers hit a 404/timeout, so the failure-resilience and observability contracts remain unproven.
 
 ## Recommendations
-- Run the Docker Compose integration stack (Kafka + Schema Registry + MinIO + TTS) to produce a large payload, upload it to MinIO, and fetch the resulting `audio_uri`. Capture logs/metrics for `correlation_id`, `payload_mode`, and any 404/timeout events so we can validate the failure semantics and retention lifecycle.
-- Finish the Kokoro synthesizer spike: parse the actual `voices.bin`/style assets, confirm supported `speaker_id` values, wire in real inference inputs (token IDs, style vectors, optional `speaker_reference_bytes`), and ensure warmup/asset downloads succeed in CI.
-- Add integration-level assertions or instrumentation that record when `model_name` is emitted and when `audio_uri` uploads happen so QA can prove the observability contract holds for both inline and URI payloads.
+- Add or extend the integration smoke test to deliberately exceed the inline cap (`EXPECT_PAYLOAD_MODE=URI`), fetch the produced `audio_uri` from MinIO, and exercise the 404/timeout branches (e.g., by rewriting the URI) to prove the production/logging behavior required by the plan.
+- Explore Kokoro’s style-vector assets to document available voice IDs, implement a lookup that maps `speaker_id` → vector (with a default fallback), and propagate `TTS_SPEED` (default `1.0`) from the env into the `speed` tensor so the inference path honors the “Audio Control” requirement.
+- Move `ObjectStorage` into `speech-lib` (e.g., `shared/speech-lib/src/speech_lib/storage.py`), update that package’s exports and dependencies (adding `boto3`), and update the TTS service imports to use the shared adapter while deleting the deprecated `services/tts/src/tts_service/synthesizer.py`/`services/tts/tests/test_legacy_synthesizer.py` per plan Step 5.
 
 ## Open Questions
-- What are the authoritative Kokoro voice/style IDs, and how should unknown `speaker_id`s or speaker references map to them (e.g., fallback voice, silence, or default style)?
-- When a downstream consumer gets a MinIO `audio_uri` that is expired/missing, what is the expected behavior: retry window, skip playback, or fallback to inline audio if still cached?
-- Which artifact (repo-level manifest, `services/tts/pyproject.toml`, or a new VERSION file) will anchor the `v0.5.0` release so the plan and QA teams can verify compliance with Step 5 of the plan?
+## Research Gaps & Unverified Assumptions
+- **Speaker/style mapping** (Plan Step 3 assumes Kokoro’s `voices.bin` exposes easily consumable `speaker_id` keys beyond the default `af_bella`). The existing loader retains a single vector, so there is no fact-backed inventory of acceptable IDs nor an automated map to style vectors. Without this inventory, the “speaker context propagation” contract cannot be enforced or validated.
+- **Speed control observability** (Plan Step 7 lists a `TTS_SPEED` check, but the code still feeds a constant `1.0` into the Kokoro ONNX input tensor). The plan assumes the knob can produce a ≥10% duration delta, yet neither implementation nor tests currently confirm the parameter has any effect. This is a research gap before the “Audio Control” acceptance criterion can be certified.
+- **Dual-mode failure resilience** (Plan Step 4 promises graceful handling of MinIO upload/fetch errors and 404/timeout logging). The current smoke script (`tests/e2e/tts_pipeline_smoke.py`) only verifies the happy path and does not intentionally force the inline cap/URI path or downstream 404. Thus, there is no empirical evidence that the logging/fallback behavior works as specified.
+- **GPU delivery profile** (Roadmap + Findings 013 require runnable images for both CPU and GPU, yet Plan 010 defers GPU support to configuration. There is no documented verification of `onnxruntime-gpu` compatibility or explicit packaging/profile strategy; the assumption that the service can switch providers via configuration remains unvalidated.)
+- **MinIO retention evidence** (Plan Step 2 mandates a 24 h lifecycle rule, but no existing artifact verifies the rule’s presence or what observer should be consulted to confirm it. The plan assumes MinIO bucket policies are in place, yet there is no record or test to prove it.)
 
+1) What are the authoritative Kokoro voice/style identifiers beyond `af_bella`, and how should `speaker_id` map to them? **Success criteria**: The service resolves at least one additional voice/style vector, the mapping is driven by data in the asset (or a config), and tests cover the fallback case.
+2) How should we prove the dual-mode URI path and the downstream 404/timeout handling so that Plan Step 4’s acceptance criteria are satisfied? **Success criteria**: A scripted run can set `EXPECT_PAYLOAD_MODE=URI`, fetch the MinIO object from the public endpoint, and trigger the logging path for a missing/expired key.
+3) What does the package-level refactor to `speech-lib` require (exports, dependencies, import paths) so that `ObjectStorage` can be shared and the legacy synthesizer/test removed? **Success criteria**: `speech-lib` exports `ObjectStorage`, lists `boto3`, and the TTS service imports from `speech_lib.storage` without breaking other references.
+4) What evidence is acceptable for the 24 h MinIO retention requirement? **Success criteria**: A verified lifecycle rule (e.g., `expire-tts-audio`) with 24-hour expiration is recorded in QA artifacts or infrastructure docs.
 ## Handoff
-QA is blocked solely by the missing integration tests and the unresolved Kokoro inference/voice mapping behavior. Once the integration stack proves `audio_uri` retrieval, MinIO retention, and failure handling, the plan can be considered for UAT prep.
+This analysis documents the remaining verification/refactor work needed to finalize Plan 010; the open questions must be resolved before the feature can be promoted to a passing QA status.
 
 ## Handoff to Implementer
 **From**: Analyst
 **Artifact**: agent-output/analysis/010-text-to-speech-analysis.md
-**Status**: Draft
+**Status**: Complete
 **Key Context**:
-- The Kokoro pivot has been wired into `main.process_event` and the synthesizer factory, but the large-payload path, MinIO upload/download cycle, and `model_name` observability still lack integration coverage.
-- Kokoro assets are downloaded, but the inference path is currently mocked and the voice loader lacks knowledge of the real format, so the `speaker_id` → style vector contract is undefined.
-**Recommended Action**: Spike the Kokoro backend to confirm real asset/loading behavior and bring up the Kafka/Schema/MinIO integration stack to exercise `audio_uri` uploads/downloads, retention, and downstream logging/metrics before handing QA a passing report.
+- Dual-mode delivery is wired into `main.process_event`, but the large-payload/URI path still lacks integration coverage and failure logging proof.
+- The Kokoro backend downloads assets and runs inference, yet does not yet map `speaker_id`s beyond `af_bella` or honor a configurable `TTS_SPEED`.
+- Storage logic is still service-local; plan Step 5 explicitly expects it to live in `speech-lib` and to remove the deprecated `synthesizer.py`/`test_legacy_synthesizer.py`.
+**Recommended Action**: Answer the open questions above by adding the required tests, completing the Kokoro voice/speed wiring, moving the storage adapter into `speech-lib`, and documenting the 24 h MinIO retention so the plan can be closed.

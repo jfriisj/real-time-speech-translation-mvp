@@ -24,4 +24,4 @@ class Synthesizer(ABC):
             - duration_ms: The duration of the audio in milliseconds.
         """
         _ = text, speaker_reference_bytes, speaker_id
-        pass
+        raise NotImplementedError

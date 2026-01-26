@@ -21,7 +21,10 @@ Synthesizes speech from translated text and emits `AudioSynthesisEvent` on `spee
 - `MINIO_PRESIGNED_EXPIRES_SECONDS`
 - `INLINE_PAYLOAD_MAX_BYTES`
 - `METRICS_PORT`
+- `TTS_SPEED`
 
 ## Notes
 - Output format is WAV only.
 - Speaker context is optional and falls back to the default voice when unsupported.
+- `TTS_SPEED` defaults to `1.0` (faster > 1.0, slower < 1.0).
+- Speaker IDs map to Kokoro voice vectors using `af_bella` or `af_bella-<index>` keys.

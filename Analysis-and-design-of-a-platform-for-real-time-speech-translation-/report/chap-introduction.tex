@@ -2,21 +2,56 @@
 \chapter{Introduction}
 \label{chap:introduction}
 
-\subsection{Background and Motivation}
-Beskriv behovet for sproglig inklusion og problemet med de nuværende proprietære løsninger fra Google og Microsoft.
+\section{Background and Motivation}
+\label{sec:background-motivation}
 
+In a world marked by accelerating globalization and rapid digitalization, effective cross-language communication has become a critical enabler of collaborative innovation, knowledge transfer, and equitable access to information. Real-time speech-to-speech translation—the ability to convert spoken utterances from one language to another with minimal latency—holds significant promise for breaking down linguistic barriers and fostering inclusion across cultural and geographical boundaries. This potential extends not merely to large enterprises but equally to smaller organizations, public institutions, and civil society actors, for whom linguistic accessibility can profoundly influence participation and equal opportunity \cite{unesco2022inclusion}.
 
+The market for real-time speech translation is today dominated by large technology companies including Google (Alphabet Inc.), Microsoft Corporation, and Amazon. These organizations offer integrated solutions through Google Translate~\cite{google_cloud_translate}, Microsoft Translator~\cite{microsoft_translator}, and AWS services combining Amazon Transcribe, Amazon Translate, and Amazon Polly~\cite{aws_transcribe,aws_translate,aws_polly}. While these platforms deliver functional capabilities, they are typically embedded within larger, proprietary ecosystems that can be expensive, restrictive in customization, and difficult to integrate for smaller actors, open-source projects, or specialized applications. Moreover, independent research into optimal architectural principles for such systems remains limited, particularly regarding the critical balance between latency, horizontal scalability, and robustness in distributed environments \cite{xu2025scalability,zhang2024direct}.
 
-\subsection{Problem Statement}
-Den manglende forskning i arkitektoniske principper for realtids-systemer med lav latens.
+This thesis therefore investigates an alternative architectural approach grounded in event-driven microservices. The premise is that by decomposing the speech translation pipeline into loosely coupled, independently scalable services communicating asynchronously through an event backbone, we can achieve both the flexibility required for customization and the performance characteristics necessary for real-time operation.
 
+\section{Problem Statement}
+\label{sec:problem}
 
+Existing research on microservices architecture and real-time translation systems typically concentrates on either improving individual AI components—such as automatic speech recognition (ASR) models or machine translation quality—or on end-to-end monolithic systems. While advances in component-level technologies have been substantial (e.g., neural machine translation~\cite{bahdanau2014neural,vaswani2017attention}; modern ASR systems~\cite{radford2022whisper}; and large-scale translation frameworks~\cite{wang2020fairseq}), there remains a significant gap in systematic, architecture-level guidance for integrating multiple AI services under strict latency constraints.
 
-\subsection{Research Questions}
-Indsæt din hovedproblemstilling og de fem underspørgsmål (SQ1-SQ5).
+In particular, the literature offers limited empirical understanding of how event-driven communication can be optimized to handle the sequential data flow of speech through multiple processing stages while simultaneously enabling horizontal scaling and maintaining high availability under variable load. Questions around message ordering, delivery semantics (at-least-once vs exactly-once), payload constraints, failure recovery, and observability remain underspecified in the context of real-time, multi-stage AI pipelines. Furthermore, the engineering trade-offs between latency, throughput, fault tolerance, and resource consumption—critical to thesis-grade evaluation—have not been systematically measured and documented for this domain.
 
+\section{Research Questions}
+\label{sec:research-questions}
 
+The above context motivates the following inquiry:
 
+\textbf{Main Research Question (MRQ):}\\
+How can an event-driven microservice architecture be designed and implemented to deliver robust and scalable real-time speech-to-speech translation with measurable performance optimization?
 
-\subsection{Success Criteria}
-Beskriv de målbare parametre for svartid, kapacitet og kvalitet.
+\noindent
+This overarching question is decomposed into five specific sub-questions:
+
+\begin{description}
+	\item[SQ1] Which architectural principles and design patterns support an effective real-time speech translation pipeline?
+	\item[SQ2] Which factors influence end-to-end latency and the ability to scale?
+	\item[SQ3] How can these factors be measured and optimized in practice?
+	\item[SQ4] How can the system remain robust and available when individual components fail?
+	\item[SQ5] How can system performance and output quality be evaluated and compared against existing solutions?
+\end{description}
+
+\section{Success Criteria}
+\label{sec:success-criteria}
+
+To ensure rigorous and objective evaluation, this thesis establishes the following measurable success criteria across system performance and output quality dimensions:
+
+\begin{description}
+	\item[Latency] Measurement of end-to-end latency from audio ingress to translated output, reported using percentile statistics (P50, P90, P99) and including per-stage latency decomposition where feasible. This addresses SQ2 and SQ3.
+	
+	\item[Capacity and Scalability] Determination of maximum sustainable throughput (measured in requests per second or concurrent audio streams) while maintaining latency within acceptable bounds. This directly addresses SQ2 and establishes the baseline for scaling experiments.
+	
+	\item[Robustness and Availability] Experimental validation of system behavior under adverse conditions including component failures, overload scenarios, and malformed messages. Measurements include error recovery rate, time to recovery, and graceful degradation characteristics. This addresses SQ4.
+	
+	\item[Resource Utilization] Profiling of CPU and memory consumption as a function of throughput and latency, providing insight into cost-efficiency trade-offs. This informs SQ2 and practical deployment decisions.
+	
+	\item[Output Quality] Evaluation of ASR output quality using standard metrics (Word Error Rate, Character Error Rate) and translation quality using both automated metrics (BLEU, COMET) and where feasible human evaluation. This addresses SQ5 and enables comparison with commercial solutions.
+	
+	\item[Deployability and Extensibility] Demonstration of deployment on a cloud platform and extension to an additional language pair with minimal engineering effort, validating the claimed flexibility of the microservices approach. This addresses the practical utility and architectural generalizability of the design.
+\end{description}
