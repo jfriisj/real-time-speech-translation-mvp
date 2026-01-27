@@ -224,7 +224,7 @@ So that I can consume the translation hands-free.
 
 **Business Value**:
 - **UX**: Completes the "Speech-to-Speech" loop.
-- **Stability**: Uses `Kokoro-82M` (ONNX) to ensure reliable runtime on both CPU and GPU (Thesis Requirement).
+- **Stability**: Uses `Kokoro-82M` (ONNX) to ensure reliable runtime on both CPU (Thesis Requirement).
 - **Extensibility**: Establishes a pluggable architecture (Factory Pattern) allowing future swaps to `IndexTTS-2` or `Qwen3-TTS` without service rewriting.
 
 **Dependencies**:
