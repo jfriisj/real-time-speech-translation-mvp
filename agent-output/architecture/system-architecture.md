@@ -1,6 +1,6 @@
 # System Architecture — Universal Speech Translation Platform
 
-**Last Updated**: 2026-01-25
+**Last Updated**: 2026-01-27
 
 ## Changelog
 
@@ -13,8 +13,11 @@
 | 2026-01-19 | Epic 1.6 VAD pre-planning constraints (segmentation semantics + ordering) | Prevents non-deterministic ASR behavior and avoids schema/topic drift before planning | Epic 1.6 (VAD Service) |
 | 2026-01-19 | Added QA integration points + failure-mode checklist for VAD stage | Improves test coverage at service boundaries (SR/Kafka/VAD/ASR) and reduces regressions during v0.4.0 hardening | Plan 009 (VAD) |
 | 2026-01-25 | Epic 1.7 TTS pre-planning constraints (AudioSynthesisEvent payload strategy, object-store guardrails) | Prevents Kafka payload cap violations and clarifies how synthesized audio and speaker context are transported | Epic 1.7 (TTS Service) |
-| 2026-01-25 | Epic 1.7 TTS model pivot to Kokoro ONNX + pluggable synthesizer requirement | Stabilizes CPU/GPU runtime via ONNX and preserves future ability to swap to IndexTTS/Qwen without contract changes | Plan 010 (TTS) + Findings 013 |
-| 2026-01-26 | Pre-implementation review of Plan 010 Rev 16 | Confirms architectural fit and pins remaining required changes (CPU/GPU profile clarity, input bounds, measurement boundaries) | Plan 010 (TTS) + Findings 014 |
+| 2026-01-25 | Epic 1.7 TTS model pivot to Kokoro ONNX + pluggable synthesizer requirement | Stabilizes CPU/GPU runtime via ONNX and preserves future ability to swap to IndexTTS/Qwen without contract changes | Findings 011 |
+| 2026-01-27 | Epic 1.7 TTS governance gaps recorded (missing Plan 010 + evidence artifacts) | Restores documentation traceability for contract decisions and release gating; prevents “phantom requirements” | Findings 012 |
+| 2026-01-27 | Plan 010 (TTS) pre-implementation review | Confirms architectural fit; requires plan deltas to avoid premature storage dependency and to align payload thresholds with Kafka invariants | Findings 015 |
+| 2026-01-27 | Epic 1.8 artifact persistence (MinIO/S3) pre-planning constraints | Approves claim-check support to keep Kafka payloads small and enable auditability, with required retention + security guardrails | Findings 013 |
+| 2026-01-27 | Plan 010 (TTS) re-review after contract additions | Flags required alignment fixes (speaker context pass-through, SR compatibility wording, retention defaults, `audio_uri` ownership) before implementation | Findings 017 |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:
@@ -51,6 +54,7 @@ Deliver a **hard MVP** event-driven speech translation pipeline that is:
 
 ### Planned supporting infrastructure (v0.3.0+)
 - MAY introduce an object store (e.g., MinIO/S3) if payloads must be transported by URI rather than inline (speaker reference context and/or synthesized audio output).
+	- For v0.6.0+, object storage is the preferred mechanism for persisting intermediate artifacts for thesis auditability (Claim Check pattern).
 
 ## Runtime Flows (Hard MVP)
 1. Producer publishes `AudioInputEvent` (topic: `speech.audio.ingress`) with a `correlation_id`.
@@ -155,6 +159,28 @@ Implementation note (v0.5.0):
 - Kafka broker max message size: 2 MiB (`message.max.bytes=2097152`) for local dev MVP.
 - `AudioInputEvent` inline audio payload hard cap: 1.5 MiB.
 - Larger-than-cap audio is rejected in v0.1.0 (reference/URI pattern is deferred).
+
+### Decision: Claim Check pattern is introduced for audio artifacts (v0.6.0)
+**Context**: Persisting audio artifacts (ingress audio, VAD segments, TTS output) improves auditability and avoids Kafka payload failures for non-trivial durations.
+
+**Choice (guardrail)**:
+- Blob-carrying events MUST support either inline bytes OR an external URI/reference (exactly one set) with explicit `content_type` metadata.
+- The system MUST remain operable with object storage disabled (baseline inline path remains valid where size permits).
+
+**Rationale**:
+- Preserves Kafka throughput and reduces broker pressure.
+- Enables thesis-grade “inspect each stage” workflows.
+
+**Consequences**:
+- Introduces new dependency and failure modes; services must degrade gracefully if URIs expire/missing.
+
+### Decision: Object storage retention and URI security are mandatory (v0.6.0)
+**Choice (guardrail)**:
+- Artifact retention MUST be time-bounded (default target: 24 hours) and configurable by environment.
+- Presigned URLs (if used) MUST NOT be logged in full and MUST be time-bounded.
+
+**Consequences**:
+- Adds governance requirements (lifecycle rules, internal-only endpoints by default in dev).
 
 ### Decision: ASR topic bindings are non-negotiable (Epic 1.2)
 **Context**: The ASR service is the first real microservice to bind to the shared contract. Topic-name drift between plans and the shared infra smoke test will break integration.

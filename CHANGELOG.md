@@ -1,9 +1,10 @@
 # Changelog
 
 ## 0.5.0 - 2026-01-26
-- Finalized Kokoro ONNX inference pipeline with real phoneme tokenization.
-- Enforced input length caps and dual-mode payload delivery for TTS outputs.
-- Verified MinIO lifecycle retention policy for TTS audio URIs (24h).
+- Added TTS service with Kokoro ONNX backend and pluggable synthesizer factory.
+- Enforced input length caps and dual-mode payload delivery for TTS outputs (inline vs URI).
+- Added AudioSynthesisEvent speaker context pass-through and text snippet fields.
+- Added MinIO lifecycle retention policy for TTS audio URIs (24h).
 
 ## 0.5.0-rc - 2026-01-25
 - Added TTS service with IndexTTS-2 integration and dual-mode audio transport.

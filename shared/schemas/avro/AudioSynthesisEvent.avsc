@@ -22,7 +22,9 @@
           {"name": "audio_format", "type": "string", "default": "wav"},
           {"name": "content_type", "type": "string", "default": "audio/wav"},
           {"name": "model_name", "type": ["null", "string"], "default": null},
-          {"name": "speaker_id", "type": ["null", "string"], "default": null}
+          {"name": "speaker_id", "type": ["null", "string"], "default": null},
+          {"name": "speaker_reference_bytes", "type": ["null", "bytes"], "default": null},
+          {"name": "text_snippet", "type": ["null", "string"], "default": null}
         ]
       }
     }

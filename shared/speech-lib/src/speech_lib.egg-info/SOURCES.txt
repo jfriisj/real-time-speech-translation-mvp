@@ -8,6 +8,7 @@ src/speech_lib/events.py
 src/speech_lib/producer.py
 src/speech_lib/schema_registry.py
 src/speech_lib/serialization.py
+src/speech_lib/storage.py
 src/speech_lib.egg-info/PKG-INFO
 src/speech_lib.egg-info/SOURCES.txt
 src/speech_lib.egg-info/dependency_links.txt

@@ -11,9 +11,10 @@
     "huggingface": {
       "url": "https://huggingface.co/mcp",
       "headers": {
-        "Authorization": "HF_TOKEN"
+        "Authorization": "Bearer <HF_TOKEN>"
       }
-    },
+    }
+  ,
      "github": {
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/"

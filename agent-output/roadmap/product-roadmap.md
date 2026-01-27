@@ -243,6 +243,36 @@ So that I can consume the translation hands-free.
 
 ---
 
+## Release v0.6.0 - Observability & Persistence (Thesis Validation)
+**Status**: Planned
+**Strategic Goal**: Enable deep auditing of the pipeline by persisting intermediate artifacts (audio/text) effectively implementing "Claim Check" pattern to keep Kafka request size low.
+
+### Epic 1.8: Artifact Persistence (S3/MinIO)
+**Priority**: P2
+**Status**: Planned
+
+**User Story**:
+As a Researcher,
+I want to save the intermediate audio input, VAD segments, and synthesized speech to object storage (S3/MinIO),
+So that I can manually inspect the quality of each stage and ensure the Event Bus is not clogged with large audio payloads.
+
+**Business Value**:
+- **Thesis Validation**: Provides physical evidence of the pipeline's intermediate states.
+- **Debugging**: Allows "replay" or inspection of specific failure cases (e.g., "Why did ASR fail? Let's listen to the VAD segment").
+- **Scalability**: Removes large blobs from Kafka (Claim Check Pattern), preventing throughput degradation.
+
+**Dependencies**:
+- Epic 1.1 (Shared Lib needs `ObjectStorage` support - *Already present*).
+- MinIO service in Docker Compose.
+
+**Acceptance Criteria**:
+- [ ] MinIO added to `docker-compose.yml`.
+- [ ] `ObjectStorage` utility in Shared Lib wired to environment variables.
+- [ ] Pipeline Services (Gateway, VAD, ASR, TTS) configured to optionally offload blobs to S3.
+- [ ] Events updated to carry `payload_url` (optional) alongside or instead of inline bytes.
+
+---
+
 ## Backlog / Future Consideration
 **Strategic Note**: These items are valuable but strictly out of scope for the Hard MVP to ensure Thesis delivery date is met.
 

@@ -20,6 +20,7 @@ from speech_lib import (
     TOPIC_TRANSLATION_TEXT,
     TOPIC_TTS_OUTPUT,
     load_schema,
+    ObjectStorage,
 )
 
 
@@ -94,7 +95,22 @@ def _rewrite_minio_uri(audio_uri: str, public_endpoint: str) -> str:
     return urlunparse(rewritten)
 
 
-def _fetch_audio(audio_uri: str, public_endpoint: str, timeout_seconds: float) -> bytes:
+def _fetch_audio(
+    audio_uri: str,
+    public_endpoint: str,
+    timeout_seconds: float,
+) -> bytes:
+    if audio_uri.startswith("s3://"):
+        bucket, key = audio_uri.replace("s3://", "", 1).split("/", 1)
+        storage = ObjectStorage(
+            endpoint=os.getenv("MINIO_ENDPOINT", "http://127.0.0.1:9000"),
+            access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
+            secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
+            bucket=bucket,
+            secure=os.getenv("MINIO_SECURE", "0") == "1",
+            public_endpoint=os.getenv("MINIO_PUBLIC_ENDPOINT") or None,
+        )
+        audio_uri = storage.presign_get(key=key)
     resolved_uri = _rewrite_minio_uri(audio_uri, public_endpoint)
     with urlopen(resolved_uri, timeout=timeout_seconds) as response:
         return response.read()

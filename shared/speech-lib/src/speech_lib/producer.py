@@ -31,6 +31,7 @@ class KafkaProducerWrapper:
         event: BaseEvent,
         schema: Dict[str, Any],
         key: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> None:
         payload = event.to_dict()
         audio_bytes = payload.get("payload", {}).get("audio_bytes")
@@ -43,5 +44,8 @@ class KafkaProducerWrapper:
             raise ValueError(
                 f"Serialized event exceeds {KAFKA_MESSAGE_MAX_BYTES} bytes (MVP limit)"
             )
-        self.producer.produce(topic, value=raw, key=key)
+        formatted_headers = None
+        if headers:
+            formatted_headers = [(k, v) for k, v in headers.items()]
+        self.producer.produce(topic, value=raw, key=key, headers=formatted_headers)
         self.producer.flush()

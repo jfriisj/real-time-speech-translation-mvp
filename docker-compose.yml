@@ -165,7 +165,8 @@ services:
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: tts-audio
       MINIO_SECURE: "0"
-      INLINE_PAYLOAD_MAX_BYTES: ${INLINE_PAYLOAD_MAX_BYTES:-1572864}
+      INLINE_PAYLOAD_MAX_BYTES: ${INLINE_PAYLOAD_MAX_BYTES:-1310720}
+      TTS_AUDIO_URI_MODE: ${TTS_AUDIO_URI_MODE:-presigned}
     volumes:
       - ./model_cache:/app/model_cache
     networks:
@@ -189,7 +190,7 @@ services:
       GATEWAY_PORT: 8000
       SAMPLE_RATE_HZ: 16000
       AUDIO_FORMAT: wav
-      MAX_BUFFER_BYTES: 1572864
+      MAX_BUFFER_BYTES: 1310720
       MAX_CHUNK_BYTES: 65536
       MAX_CONNECTIONS: 10
       IDLE_TIMEOUT_SECONDS: 10

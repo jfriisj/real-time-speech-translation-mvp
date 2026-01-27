@@ -82,6 +82,8 @@ class AudioSynthesisPayload:
     content_type: str = "audio/wav"
     model_name: Optional[str] = None
     speaker_id: Optional[str] = None
+    speaker_reference_bytes: Optional[bytes] = None
+    text_snippet: Optional[str] = None
 
     def validate(self) -> None:
         has_bytes = isinstance(self.audio_bytes, (bytes, bytearray)) and bool(self.audio_bytes)

@@ -31,9 +31,22 @@ class ObjectStorage:
             use_ssl=self.secure,
         )
 
-    def upload_bytes(self, *, key: str, data: bytes, content_type: str) -> str:
+    def upload_bytes(
+        self,
+        *,
+        key: str,
+        data: bytes,
+        content_type: str,
+        return_key: bool = False,
+    ) -> str:
         client = self._client()
         client.put_object(Bucket=self.bucket, Key=key, Body=data, ContentType=content_type)
+        if return_key:
+            return f"s3://{self.bucket}/{key}"
+        return self.presign_get(key=key)
+
+    def presign_get(self, *, key: str) -> str:
+        client = self._client()
         url = client.generate_presigned_url(
             "get_object",
             Params={"Bucket": self.bucket, "Key": key},
