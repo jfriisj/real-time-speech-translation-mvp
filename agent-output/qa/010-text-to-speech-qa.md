@@ -1,7 +1,7 @@
 # QA Report: Text-to-Speech (TTS) Service
 
 **Plan Reference**: agent-output/planning/010-text-to-speech-plan.md
-**QA Status**: QA Failed
+**QA Status**: QA Complete
 **QA Specialist**: qa
 
 ## Changelog
@@ -24,6 +24,8 @@
 | 2026-01-26 | QA | Verify coverage and execute tests | Forced URI mode and reran smoke test (PASS). 404 failure-path check blocked after terminal tool was disabled mid-session. |
 | 2026-01-26 | QA | Verify coverage and execute tests | Legacy IndexTTS synthesizer removed; unit tests rerun (13 passed). Coverage not re-run in this update. |
 | 2026-01-26 | QA | Verify coverage and execute tests | Re-ran unit tests with coverage (79%); installed boto3 for speech-lib storage dependency; inline + URI smoke tests passed after lowering inline cap via container recreate. |
+| 2026-01-26 | User | Verify coverage and execute tests | Ran unit tests with coverage (main.py 76.61%); Ruff/Vulture gate clean; integration tests not executed in this pass. |
+| 2026-01-26 | QA | Verify coverage and execute tests | Ran unit tests with coverage (main.py 79.03%); Ruff/Vulture clean; integration tests not executed in this pass. |
 
 ## Timeline
 - **Test Strategy Started**: 2026-01-25
@@ -31,7 +33,7 @@
 - **Implementation Received**: 2026-01-25
 - **Testing Started**: 2026-01-26
 - **Testing Completed**: 2026-01-26
-- **Final Status**: QA Failed
+- **Final Status**: QA Complete
 
 ## Test Strategy (Pre-Implementation)
 ### Critical User Workflows
@@ -93,43 +95,43 @@
 **Output**: 13 passed, 0 failed
 
 ### Coverage
-**Command**: `/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python -m pytest services/tts/tests/test_synthesizer.py services/tts/tests/test_main.py services/tts/tests/test_storage.py services/tts/tests/test_audio_helpers.py services/tts/tests/test_tts_processing.py --cov=services/tts/src/tts_service --cov-report=term-missing`
+**Command**: `runTests (coverage mode) for services/tts/tests/*`
 **Status**: PASS
-**Output**: Total coverage 79% (268/55 misses).
+**Output**: main.py coverage 79.03% (85/106 statements; 13/18 branches).
 
 ### Integration Tests
 **Command**: `./.venv/bin/python tests/e2e/tts_pipeline_smoke.py`
-- **Status**: PASS
-- **Output**: PASS: TTS pipeline produced AudioSynthesisEvent
+- **Status**: NOT RUN (this pass)
+- **Output**: n/a
 - **Coverage**: n/a
-- **Notes**: Installed `boto3` in the venv to satisfy shared storage dependency before executing the smoke test.
+- **Notes**: Prior run recorded PASS; no integration tests executed in this pass.
 
 ### Integration Tests (Large Payload URI)
 **Command**: `EXPECT_PAYLOAD_MODE=URI MINIO_PUBLIC_ENDPOINT=http://127.0.0.1:9000 ./.venv/bin/python tests/e2e/tts_pipeline_smoke.py`
-**Status**: PASS (after forcing inline cap)
-**Output**: PASS: TTS pipeline produced AudioSynthesisEvent
+**Status**: NOT RUN (this pass)
+**Output**: n/a
 **Coverage**: n/a
-**Notes**: Recreated `tts-service` with `INLINE_PAYLOAD_MAX_BYTES=1024` to force URI mode; restored container to default cap afterward.
+**Notes**: Prior run recorded PASS; no integration tests executed in this pass.
 
 ### Integration Tests (URI Failure Semantics)
 **Command**: `docker exec speech-tts-service python -c "...presigned missing object..."` + `curl -w "%{http_code}" <presigned>`
-**Status**: PASS
-**Output**: `presigned_url=...` then `404`
+**Status**: NOT RUN (this pass)
+**Output**: n/a
 **Coverage**: n/a
-**Notes**: Missing object via presigned URL returns HTTP 404 as expected.
+**Notes**: Prior run recorded PASS; no failure-path checks executed in this pass.
 
 ### Integration Tests (MinIO Lifecycle Rule Inspection)
 - **Command**: `docker run --rm --network real-time-speech-translation-mvp_speech_net --entrypoint /bin/sh minio/mc:latest -c "mc alias set local http://minio:9000 minioadmin minioadmin >/dev/null && mc ilm ls local/tts-audio"`
-- **Status**: PASS
-- **Output**: `expire-tts-audio` enabled with 1-day expiration
+- **Status**: NOT RUN (this pass)
+- **Output**: n/a
 - **Coverage**: n/a
 
 ## Code Quality Gate
-**Ruff**: PASS (no issues in `services/tts/src/tts_service/main.py`, `services/tts/src/tts_service/synthesizer_kokoro.py`, `services/tts/src/tts_service/synthesizer_factory.py`)
+**Ruff**: PASS (no issues in `services/tts/src/tts_service/main.py`, `services/tts/src/tts_service/synthesizer_kokoro.py`, `services/tts/tools/tts_validation.py`)
 **Dead-code scan**: PASS (no high-confidence unused code reported for the same targets)
 
 ## QA Decision
-**QA Complete**. Storage lifecycle verification is explicitly out of scope for this QA pass; storage QA is handled separately.
+**QA Complete**. Integration smoke tests were not rerun in this pass; prior evidence remains on record.
 
 ## Recommended Next Steps
 - Implement real Kokoro inference and complete audio quality checks (5 samples, intelligibility).

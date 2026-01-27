@@ -94,12 +94,12 @@ def _extract_request(event: Dict[str, Any]) -> tuple[str, str, bytes | None, str
         raise ValueError("missing payload.text")
     if len(text) > MAX_INPUT_CHARS:
         LOGGER.warning(
-            "Truncating payload.text correlation_id=%s length=%s cap=%s",
+            "Rejecting payload.text correlation_id=%s length=%s cap=%s",
             correlation_id,
             len(text),
             MAX_INPUT_CHARS,
         )
-        text = text[:MAX_INPUT_CHARS]
+        raise ValueError("payload.text exceeds max length")
 
     speaker_reference_bytes = payload.get("speaker_reference_bytes")
     speaker_id = payload.get("speaker_id")

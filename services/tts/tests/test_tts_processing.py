@@ -109,3 +109,29 @@ def test_process_event_emits_uri_when_too_large() -> None:
     payload = cast(BaseEvent, event).to_dict()["payload"]
     assert payload["audio_bytes"] is None
     assert payload["audio_uri"].startswith("http://minio/")
+
+
+def test_process_event_rejects_overlong_text() -> None:
+    audio_bytes = b"\x00\x01"
+    synthesizer = _Synthesizer(audio_bytes, 16000, 100)
+    producer = _RecordingProducer()
+    storage = _Storage()
+
+    long_text = "x" * 501
+    try:
+        process_event(
+            event={
+                "correlation_id": "corr-4",
+                "payload": {"text": long_text},
+            },
+            synthesizer=synthesizer,
+            storage=storage,
+            producer=producer,
+            output_schema={},
+            inline_max_bytes=1024 * 1024,
+            model_name=None,
+        )
+    except ValueError as exc:
+        assert "exceeds max length" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError for overlong payload.text")
