@@ -95,24 +95,35 @@ def _parse_args() -> RunConfig:
     )
 
 
-def _register_schemas(config: RunConfig) -> dict[str, dict]:
+def _register_schemas(
+    config: RunConfig,
+) -> tuple[dict[str, dict], dict[str, int], SchemaRegistryClient]:
     input_schema = load_schema("AudioInputEvent.avsc", schema_dir=config.schema_dir)
     segment_schema = load_schema("SpeechSegmentEvent.avsc", schema_dir=config.schema_dir)
     asr_schema = load_schema("TextRecognizedEvent.avsc", schema_dir=config.schema_dir)
     translation_schema = load_schema("TextTranslatedEvent.avsc", schema_dir=config.schema_dir)
 
     registry = SchemaRegistryClient(config.schema_registry_url)
-    registry.register_schema(f"{TOPIC_AUDIO_INGRESS}-value", input_schema)
-    registry.register_schema(f"{TOPIC_SPEECH_SEGMENT}-value", segment_schema)
-    registry.register_schema(f"{TOPIC_ASR_TEXT}-value", asr_schema)
-    registry.register_schema(f"{TOPIC_TRANSLATION_TEXT}-value", translation_schema)
+    schema_ids = {
+        "input": registry.register_schema(
+            f"{TOPIC_AUDIO_INGRESS}-value", input_schema
+        ),
+        "segment": registry.register_schema(
+            f"{TOPIC_SPEECH_SEGMENT}-value", segment_schema
+        ),
+        "asr": registry.register_schema(f"{TOPIC_ASR_TEXT}-value", asr_schema),
+        "translation": registry.register_schema(
+            f"{TOPIC_TRANSLATION_TEXT}-value", translation_schema
+        ),
+    }
 
-    return {
+    schemas = {
         "input": input_schema,
         "segment": segment_schema,
         "asr": asr_schema,
         "translation": translation_schema,
     }
+    return schemas, schema_ids, registry
 
 
 def _ensure_espeak() -> None:
@@ -343,19 +354,21 @@ def _word_error_rate(reference: str, hypothesis: str) -> float:
 
 
 def _run_baseline(config: RunConfig) -> dict[str, object]:
-    schemas = _register_schemas(config)
+    schemas, schema_ids, registry = _register_schemas(config)
     producer = KafkaProducerWrapper.from_confluent(config.bootstrap_servers)
     asr_consumer = KafkaConsumerWrapper.from_confluent(
         config.bootstrap_servers,
         group_id=f"vad-baseline-{int(time.time())}",
         topics=[TOPIC_ASR_TEXT],
         config={"enable.auto.commit": False},
+        schema_registry=registry,
     )
     translation_consumer = KafkaConsumerWrapper.from_confluent(
         config.bootstrap_servers,
         group_id=f"vad-baseline-translation-{int(time.time())}",
         topics=[TOPIC_TRANSLATION_TEXT],
         config={"enable.auto.commit": False},
+        schema_registry=registry,
     )
     dataset = _make_dataset(config)
 
@@ -373,7 +386,12 @@ def _run_baseline(config: RunConfig) -> dict[str, object]:
                 "language_hint": "en",
             },
         )
-        producer.publish_event(TOPIC_AUDIO_INGRESS, event, schemas["input"])
+        producer.publish_event(
+            TOPIC_AUDIO_INGRESS,
+            event,
+            schemas["input"],
+            schema_id=schema_ids["input"],
+        )
         text = _await_asr_text(asr_consumer, schemas["asr"], correlation_id, config.timeout_seconds)
         _await_translation(
             translation_consumer,
@@ -404,19 +422,21 @@ def _run_baseline(config: RunConfig) -> dict[str, object]:
 
 
 def _run_vad(config: RunConfig) -> dict[str, object]:
-    schemas = _register_schemas(config)
+    schemas, schema_ids, registry = _register_schemas(config)
     producer = KafkaProducerWrapper.from_confluent(config.bootstrap_servers)
     segment_consumer = KafkaConsumerWrapper.from_confluent(
         config.bootstrap_servers,
         group_id=f"vad-segment-metric-{int(time.time())}",
         topics=[TOPIC_SPEECH_SEGMENT],
         config={"enable.auto.commit": False},
+        schema_registry=registry,
     )
     asr_consumer = KafkaConsumerWrapper.from_confluent(
         config.bootstrap_servers,
         group_id=f"vad-asr-metric-{int(time.time())}",
         topics=[TOPIC_ASR_TEXT],
         config={"enable.auto.commit": False},
+        schema_registry=registry,
     )
 
     dataset = _make_dataset(config)
@@ -434,7 +454,12 @@ def _run_vad(config: RunConfig) -> dict[str, object]:
                 "language_hint": "en",
             },
         )
-        producer.publish_event(TOPIC_AUDIO_INGRESS, event, schemas["input"])
+        producer.publish_event(
+            TOPIC_AUDIO_INGRESS,
+            event,
+            schemas["input"],
+            schema_id=schema_ids["input"],
+        )
         segment_seconds, transcript = _collect_vad_results(
             segment_consumer,
             asr_consumer,

@@ -54,6 +54,15 @@ class KokoroTokenizer:
             ids.append(int(token_id))
         if self.eos_token_id is not None:
             ids.append(self.eos_token_id)
+        if not ids:
+            for char in "".join(tokens):
+                token_id = self.vocab.get(char)
+                if token_id is not None:
+                    ids.append(int(token_id))
+            if not ids:
+                space_id = self.vocab.get(" ")
+                if space_id is not None:
+                    ids.append(int(space_id))
         return ids
 
 

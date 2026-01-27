@@ -130,21 +130,30 @@ def _parse_args() -> RunConfig:
     )
 
 
-def _register_schemas(config: RunConfig) -> dict[str, dict]:
+def _register_schemas(
+    config: RunConfig,
+) -> tuple[dict[str, dict], dict[str, int], SchemaRegistryClient]:
     input_schema = load_schema("AudioInputEvent.avsc", schema_dir=config.schema_dir)
     asr_schema = load_schema("TextRecognizedEvent.avsc", schema_dir=config.schema_dir)
     translation_schema = load_schema("TextTranslatedEvent.avsc", schema_dir=config.schema_dir)
 
     registry = SchemaRegistryClient(config.schema_registry_url)
-    registry.register_schema(f"{TOPIC_AUDIO_INGRESS}-value", input_schema)
-    registry.register_schema(f"{TOPIC_ASR_TEXT}-value", asr_schema)
-    registry.register_schema(f"{TOPIC_TRANSLATION_TEXT}-value", translation_schema)
+    schema_ids = {
+        "input": registry.register_schema(
+            f"{TOPIC_AUDIO_INGRESS}-value", input_schema
+        ),
+        "asr": registry.register_schema(f"{TOPIC_ASR_TEXT}-value", asr_schema),
+        "translation": registry.register_schema(
+            f"{TOPIC_TRANSLATION_TEXT}-value", translation_schema
+        ),
+    }
 
-    return {
+    schemas = {
         "input": input_schema,
         "asr": asr_schema,
         "translation": translation_schema,
     }
+    return schemas, schema_ids, registry
 
 
 def _percentiles(values: list[float]) -> dict[str, float]:
@@ -160,7 +169,7 @@ def _percentiles(values: list[float]) -> dict[str, float]:
 
 def main() -> int:
     config = _parse_args()
-    schemas = _register_schemas(config)
+    schemas, schema_ids, registry = _register_schemas(config)
 
     producer = KafkaProducerWrapper.from_confluent(config.bootstrap_servers)
     asr_consumer = KafkaConsumerWrapper.from_confluent(
@@ -168,12 +177,14 @@ def main() -> int:
         group_id=f"traceability-probe-{config.run_id}",
         topics=[TOPIC_ASR_TEXT],
         config={"auto.offset.reset": "latest", "enable.auto.commit": False},
+        schema_registry=registry,
     )
     translation_consumer = KafkaConsumerWrapper.from_confluent(
         config.bootstrap_servers,
         group_id=f"traceability-probe-{config.run_id}",
         topics=[TOPIC_TRANSLATION_TEXT],
         config={"auto.offset.reset": "latest", "enable.auto.commit": False},
+        schema_registry=registry,
     )
 
     wav_bytes = _make_wav_bytes(config.sample_rate_hz, config.duration_seconds)
@@ -196,7 +207,12 @@ def main() -> int:
             payload=payload,
         )
 
-        producer.publish_event(TOPIC_AUDIO_INGRESS, event, schemas["input"])
+        producer.publish_event(
+            TOPIC_AUDIO_INGRESS,
+            event,
+            schemas["input"],
+            schema_id=schema_ids["input"],
+        )
         t0 = _to_epoch_ms(event.timestamp)
         t1 = None
         t2 = None

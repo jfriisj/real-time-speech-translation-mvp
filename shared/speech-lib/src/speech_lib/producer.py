@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 from .constants import AUDIO_PAYLOAD_MAX_BYTES, KAFKA_MESSAGE_MAX_BYTES
 from .events import BaseEvent
-from .serialization import serialize_event
+from .serialization import serialize_event, serialize_event_with_schema_id
 
 
 @dataclass
@@ -32,6 +32,7 @@ class KafkaProducerWrapper:
         schema: Dict[str, Any],
         key: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
+        schema_id: Optional[int] = None,
     ) -> None:
         payload = event.to_dict()
         audio_bytes = payload.get("payload", {}).get("audio_bytes")
@@ -39,7 +40,10 @@ class KafkaProducerWrapper:
             raise ValueError(
                 f"audio_bytes exceeds {AUDIO_PAYLOAD_MAX_BYTES} bytes (MVP limit)"
             )
-        raw = serialize_event(schema, payload)
+        if schema_id is None:
+            raw = serialize_event(schema, payload)
+        else:
+            raw = serialize_event_with_schema_id(schema, payload, schema_id)
         if len(raw) > KAFKA_MESSAGE_MAX_BYTES:
             raise ValueError(
                 f"Serialized event exceeds {KAFKA_MESSAGE_MAX_BYTES} bytes (MVP limit)"

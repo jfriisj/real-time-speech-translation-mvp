@@ -67,11 +67,11 @@ def _make_pcm_bytes(sample_rate: int, seconds: float) -> bytes:
     return bytes(frames)
 
 
-def _register_schema(config: RunConfig) -> dict:
+def _register_schema(config: RunConfig) -> tuple[dict, SchemaRegistryClient]:
     schema = load_schema("TextRecognizedEvent.avsc", schema_dir=config.schema_dir)
     registry = SchemaRegistryClient(config.schema_registry_url)
     registry.register_schema(f"{TOPIC_ASR_TEXT}-value", schema)
-    return schema
+    return schema, registry
 
 
 def _parse_correlation_id(handshake: str) -> Optional[str]:
@@ -117,12 +117,13 @@ def _await_asr_event(
 
 def main() -> int:
     config = _parse_args()
-    schema = _register_schema(config)
+    schema, registry = _register_schema(config)
     consumer = KafkaConsumerWrapper.from_confluent(
         config.bootstrap_servers,
         group_id=f"gateway-asr-qa-{int(time.time())}",
         topics=[TOPIC_ASR_TEXT],
         config={"enable.auto.commit": False},
+        schema_registry=registry,
     )
     consumer.poll(schema, timeout=0.1)
     correlation_id = asyncio.run(_send_stream(config))

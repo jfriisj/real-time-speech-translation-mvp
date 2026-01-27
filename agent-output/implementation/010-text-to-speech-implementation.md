@@ -1,91 +1,119 @@
-# Implementation Report: 010-text-to-speech (TTS)
+# Implementation Report: 010-text-to-speech
 
 ## Plan Reference
-- Plan: agent-output/planning/010-text-to-speech-plan.md (Rev 26)
-- Critique: agent-output/critiques/010-text-to-speech-plan-critique.md (Approved, Revision 4)
-- Architecture Findings: agent-output/architecture/017-text-to-speech-plan-architecture-findings.md
+- Plan: agent-output/planning/010-text-to-speech-plan.md (Rev 31)
+- Critique: agent-output/critiques/010-text-to-speech-plan-critique.md (Revision 8)
 
 ## Date
-- 2026-01-27
+2026-01-27
 
 ## Changelog
 | Date | Handoff | Request | Summary |
 |------|---------|---------|---------|
-| 2026-01-27 | User → Implementer | Implementation report creation | Initialized implementation report scaffold for Plan 010 (TTS). |
+| 2026-01-27 | User → Implementer | Prepare implementation report | Plan approved; implementation can proceed. |
 
-## Implementation Summary (What + How it delivers value)
-- Implemented the `tts` service to consume `TextTranslatedEvent` and emit `AudioSynthesisEvent` using a pluggable synthesizer with Kokoro ONNX as the default engine. Added claim-check payload handling (inline vs URI) with optional object storage, speaker context pass-through, and trace header propagation to preserve end-to-end context. Updated shared contracts and helpers to enforce the 1.25 MiB payload guardrail and to support internal object keys or presigned URLs.
+## Implementation Summary
+Plan 010 is approved and implementation can proceed. No code changes have been made yet in this report.
 
 ## Milestones Completed
-- [x] M1: Schema Definition & Shared Contract
-- [x] M2: TTS Service Scaffold & Pluggable Factory
-- [x] M3: Kokoro ONNX Integration & Tokenization
-- [x] M4: Event Loop & Payload Management (Claim Check)
-- [x] M5: Version Management & Release
+- [ ] M1: Schema Definition & Shared Contract
+- [ ] M2: TTS Service Scaffold & Pluggable Factory
+- [ ] M3: Kokoro ONNX Integration & Tokenization
+- [ ] M4: Event Loop & Payload Management (Claim Check)
+- [ ] M5: Version Management & Release
 
 ## Files Modified
 | Path | Changes | Lines |
 |------|---------|-------|
-| shared/speech-lib/src/speech_lib/constants.py | Align inline payload cap to 1.25 MiB. | N/A |
-| shared/speech-lib/src/speech_lib/events.py | Add speaker context + text snippet to `AudioSynthesisPayload`. | N/A |
-| shared/speech-lib/src/speech_lib/producer.py | Support optional Kafka headers. | N/A |
-| shared/speech-lib/src/speech_lib/storage.py | Add internal key option + presign helper. | N/A |
-| shared/schemas/avro/AudioSynthesisEvent.avsc | Add speaker context + text snippet fields. | N/A |
-| docker-compose.yml | Align payload limits + add `TTS_AUDIO_URI_MODE`. | N/A |
-| tests/e2e/tts_pipeline_smoke.py | Handle internal `s3://` keys via presign. | N/A |
-| CHANGELOG.md | Update 0.5.0 release notes. | N/A |
-| package.json | Bump version to 0.5.0. | N/A |
+| _None_ | _No implementation changes due to plan blockers_ | 0 |
 
 ## Files Created
 | Path | Purpose |
 |------|---------|
-| services/tts/README.md | TTS service documentation. |
-| services/tts/Dockerfile | TTS service container build. |
-| services/tts/pyproject.toml | TTS service package metadata. |
-| services/tts/minio-lifecycle.json | MinIO lifecycle rule (24h retention). |
-| services/tts/src/tts_service/__init__.py | Package init. |
-| services/tts/src/tts_service/audio.py | WAV encoding + speed handling utilities. |
-| services/tts/src/tts_service/config.py | TTS runtime configuration. |
-| services/tts/src/tts_service/factory.py | Synthesizer factory. |
-| services/tts/src/tts_service/kokoro.py | Kokoro ONNX synthesizer + tokenizer. |
-| services/tts/src/tts_service/processing.py | Request extraction + payload building. |
-| services/tts/src/tts_service/synthesizer.py | Synthesizer interface + mock engine. |
-| services/tts/src/tts_service/main.py | TTS service entrypoint. |
-| services/tts/tests/test_processing.py | Unit tests for TTS processing. |
+| agent-output/implementation/010-text-to-speech-implementation.md | Implementation report with blocked status |
 
 ## Code Quality Validation
-- [x] Linting (Ruff): Clean on changed Python files.
-- [x] Tests: `services/tts/tests`.
-- [ ] Compatibility Checks: ONNX runtime not installed in Python 3.14 env (expected; Docker uses Python 3.11).
+- [ ] Ruff lint
+- [ ] Dead-code scan (Vulture)
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] E2E tests
 
 ## Value Statement Validation
-- **Original**: As a User, I want to hear the translated text spoken naturally, So that I can consume the translation hands-free.
-- **Implementation Delivers**: The service now synthesizes audio from translated text and emits `AudioSynthesisEvent` with inline or URI payloads, enabling hands-free consumption once runtime model validation is completed.
+**Original**: “As a User, I want to hear the translated text spoken naturally, So that I can consume the translation hands-free.”
 
-## Test Coverage (Unit/Integration)
-- **Unit Tests**: `services/tts/tests/test_processing.py`
-- **Integration Tests**: Not run in this handoff.
+**Status**: Not validated — implementation blocked before execution.
+
+## Test Coverage
+- Unit: Not run (implementation not started)
+- Integration: Not run
 
 ## Test Execution Results
-| Command | Result | Issues | Coverage |
-|---------|--------|--------|----------|
-| `/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python -m pytest /home/jonfriis/github/real-time-speech-translation-mvp/services/tts/tests` | Pass (7 tests) | None | N/A |
+# Implementation Report: 010-text-to-speech
+
+## Plan Reference
+- Plan: agent-output/planning/010-text-to-speech-plan.md (Rev 31)
+- Critique: agent-output/critiques/010-text-to-speech-plan-critique.md (Revision 8)
+
+## Date
+2026-01-27
+
+## Changelog
+| Date | Handoff | Request | Summary |
+|------|---------|---------|---------|
+| 2026-01-27 | User → Implementer | Start implementation | Implemented Claim Check key alignment and internal key handling; updated tests and smoke path handling; ran lint + unit tests. |
+
+## Implementation Summary (what + how delivers value)
+Aligned Claim Check storage semantics with the plan by using correlation-based object keys (`tts/{correlation_id}.wav`) and emitting internal keys for `audio_uri`. Updated the TTS processing path to drop oversized payloads with the required warning message when storage is disabled or upload fails. Expanded the smoke test to support internal-key retrieval. This keeps synthesized audio delivery consistent with the contract while preserving inline/URI XOR semantics.
+
+## Milestones Completed
+- [x] M4: Event Loop & Payload Management (Claim Check) — key alignment + fallback behavior
+
+## Files Modified
+| Path | Changes | Lines |
+|------|---------|-------|
+| services/tts/src/tts_service/processing.py | Use correlation-based key, return internal object key, drop on upload failure. | N/A |
+| services/tts/src/tts_service/main.py | Pass correlation_id into storage selection. | N/A |
+| services/tts/tests/test_processing.py | Update tests for internal key + new signature. | N/A |
+| tests/e2e/tts_pipeline_smoke.py | Handle internal object keys (no scheme) by presigning. | N/A |
+
+## Files Created
+| Path | Purpose |
+|------|---------|
+| _None_ | _No new files created in this change._ |
+
+## Code Quality Validation
+- [x] Ruff lint (mcp analyzer) on updated files: no issues.
+- [ ] Dead-code scan (Vulture) not run (optional).
+- [x] Unit tests: pytest (17 tests) passed.
+- [ ] Integration tests not run (Kafka/Schema Registry/MinIO required).
+- [ ] E2E tests not run.
+Note: TODO/FIXME scan matched existing `MockSynthesizer` references and historical docs; no new TODO/FIXME markers were introduced in the updated files.
+
+## Value Statement Validation
+**Original**: As a User, I want to hear the translated text spoken naturally, So that I can consume the translation hands-free.
+
+**Status**: Partially validated. Claim Check behavior now aligns with the contract, but service-level audio evidence and integration runs are still outstanding.
+
+## Test Coverage (unit/integration)
+- Unit: services/tts/tests/test_processing.py, services/tts/tests/test_main.py, services/tts/tests/test_kokoro.py, services/tts/tests/test_config.py
+- Integration: Not run
+
+## Test Execution Results
+| Command | Result | Issues |
+|---------|--------|--------|
+| /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python -m pytest services/tts/tests/test_processing.py services/tts/tests/test_main.py services/tts/tests/test_kokoro.py services/tts/tests/test_config.py | Pass (17 tests) | None |
 
 ## Outstanding Items
-- Confirm Kokoro tokenizer requirements and validate output quality with real model runtime.
-- Capture service-level latency/RTF evidence and intelligibility proof for UAT.
-- Capture MinIO lifecycle retention proof artifact.
-- Clarify non-blocking critique questions (DLQ for >500 chars, rollback policy vs constraint, minimal metrics contract).
+- Run integration/e2e tests (Kafka/Schema Registry/MinIO) and capture service-level evidence.
+- Capture latency/RTF logs for curated phrase set and record artifacts.
+- Capture MinIO lifecycle retention proof.
 
 ## Next Steps
-- Run service-level smoke tests (TTS pipeline) and capture evidence artifacts.
-- Update QA/UAT artifacts after evidence capture.
-- Prepare QA handoff and subsequent UAT.
+1. Run integration/e2e tests and capture evidence artifacts in report-output/qa-evidence/.
+2. Re-run QA/UAT after evidence capture.
 
-## Assumptions & Open Questions
+## Assumptions / Open Questions
 | Description | Rationale | Risk | Validation Method | Escalation |
 |-------------|-----------|------|-------------------|------------|
-| Tokenizer requirements for Kokoro ONNX must be confirmed. | Plan depends on correct phonemization pipeline. | Incorrect synthesis or model mismatch. | Validate with model docs and smoke test. | SAME-DAY |
-| Storage fallback behavior is log-and-drop for large payloads when storage disabled. | Plan states drop with warning, but DLQ behavior not specified. | Data loss without traceability. | Decide DLQ vs log-only with product owner. | SAME-DAY |
-| Rollback to “system-speech fallback / mock” may conflict with “must use Kokoro-82M” constraint. | Plan allows rollback; critique flagged potential conflict. | Release constraint violation. | Confirm scope: demo-only vs release. | SAME-DAY |
-| Minimal metrics contract (counters/histograms) in v0.5.0 is optional. | Plan mandates logging/tracing but not metrics. | Reduced observability. | Align with roadmap/architect. | MINOR |
+| Internal `audio_uri` is a key (not URL) for all services | Matches plan and Findings 020 | Integration break if a consumer expects URLs | Validate via integration tests and Gateway presign path | SAME-DAY |

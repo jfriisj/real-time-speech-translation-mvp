@@ -14,7 +14,14 @@ class _RecordingProducer:
     def __init__(self) -> None:
         self.published: list[tuple[str, object, dict]] = []
 
-    def publish_event(self, topic: str, event: object, schema: dict) -> None:
+    def publish_event(
+        self,
+        topic: str,
+        event: object,
+        schema: dict,
+        key: str | None = None,
+        schema_id: int | None = None,
+    ) -> None:
         self.published.append((topic, event, schema))
 
 

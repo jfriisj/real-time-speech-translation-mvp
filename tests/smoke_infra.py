@@ -21,11 +21,14 @@ TOPIC = "speech.asr.text"
 def main() -> None:
     schema = load_schema("TextRecognizedEvent.avsc")
     registry = SchemaRegistryClient(SCHEMA_REGISTRY_URL)
-    registry.register_schema(f"{TOPIC}-value", schema)
+    schema_id = registry.register_schema(f"{TOPIC}-value", schema)
 
     producer = KafkaProducerWrapper.from_confluent(BOOTSTRAP_SERVERS)
     consumer = KafkaConsumerWrapper.from_confluent(
-        BOOTSTRAP_SERVERS, group_id="speech-smoke", topics=[TOPIC]
+        BOOTSTRAP_SERVERS,
+        group_id="speech-smoke",
+        topics=[TOPIC],
+        schema_registry=registry,
     )
 
     event = BaseEvent(
@@ -35,7 +38,7 @@ def main() -> None:
         payload={"text": "hello", "language": "en", "confidence": 0.99},
     )
 
-    producer.publish_event(TOPIC, event, schema)
+    producer.publish_event(TOPIC, event, schema, schema_id=schema_id)
 
     received = None
     deadline = time() + 15

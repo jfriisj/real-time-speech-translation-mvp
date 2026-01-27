@@ -52,16 +52,24 @@ def _resolve_schema_dir() -> Path:
     return Path(__file__).resolve().parents[2] / "shared" / "schemas" / "avro"
 
 
-def _register_schemas(registry: SchemaRegistryClient, schema_dir: Path) -> dict[str, dict]:
+def _register_schemas(
+    registry: SchemaRegistryClient, schema_dir: Path
+) -> tuple[dict[str, dict], dict[str, int]]:
     schemas = {
         "audio": load_schema("AudioInputEvent.avsc", schema_dir=schema_dir),
         "asr": load_schema("TextRecognizedEvent.avsc", schema_dir=schema_dir),
         "translation": load_schema("TextTranslatedEvent.avsc", schema_dir=schema_dir),
     }
-    registry.register_schema(f"{TOPIC_AUDIO_INGRESS}-value", schemas["audio"])
-    registry.register_schema(f"{TOPIC_ASR_TEXT}-value", schemas["asr"])
-    registry.register_schema(f"{TOPIC_TRANSLATION_TEXT}-value", schemas["translation"])
-    return schemas
+    ids = {
+        "audio": registry.register_schema(
+            f"{TOPIC_AUDIO_INGRESS}-value", schemas["audio"]
+        ),
+        "asr": registry.register_schema(f"{TOPIC_ASR_TEXT}-value", schemas["asr"]),
+        "translation": registry.register_schema(
+            f"{TOPIC_TRANSLATION_TEXT}-value", schemas["translation"]
+        ),
+    }
+    return schemas, ids
 
 
 def _await_event(
@@ -85,7 +93,7 @@ def _await_event(
 def main() -> int:
     schema_dir = _resolve_schema_dir()
     registry = SchemaRegistryClient("http://127.0.0.1:8081")
-    schemas = _register_schemas(registry, schema_dir)
+    schemas, schema_ids = _register_schemas(registry, schema_dir)
 
     producer = KafkaProducerWrapper.from_confluent("127.0.0.1:29092")
     asr_consumer = KafkaConsumerWrapper.from_confluent(
@@ -93,12 +101,14 @@ def main() -> int:
         group_id=f"legacy-asr-qa-{int(time.time())}",
         topics=[TOPIC_ASR_TEXT],
         config={"enable.auto.commit": False},
+        schema_registry=registry,
     )
     translation_consumer = KafkaConsumerWrapper.from_confluent(
         "127.0.0.1:29092",
         group_id=f"legacy-translation-qa-{int(time.time())}",
         topics=[TOPIC_TRANSLATION_TEXT],
         config={"enable.auto.commit": False},
+        schema_registry=registry,
     )
 
     correlation_id = f"legacy-smoke-{uuid4()}"
@@ -115,7 +125,12 @@ def main() -> int:
         },
     )
 
-    producer.publish_event(TOPIC_AUDIO_INGRESS, event, schemas["audio"])
+    producer.publish_event(
+        TOPIC_AUDIO_INGRESS,
+        event,
+        schemas["audio"],
+        schema_id=schema_ids["audio"],
+    )
 
     _await_event(asr_consumer, schemas["asr"], correlation_id, 120, "TextRecognizedEvent")
     _await_event(

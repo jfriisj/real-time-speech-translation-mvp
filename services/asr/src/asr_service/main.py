@@ -27,9 +27,10 @@ def register_schemas(
     input_schema: Dict[str, Any],
     output_schema: Dict[str, Any],
     input_topic: str,
-) -> None:
-    registry.register_schema(f"{input_topic}-value", input_schema)
-    registry.register_schema(f"{TOPIC_ASR_TEXT}-value", output_schema)
+) -> tuple[int, int]:
+    input_schema_id = registry.register_schema(f"{input_topic}-value", input_schema)
+    output_schema_id = registry.register_schema(f"{TOPIC_ASR_TEXT}-value", output_schema)
+    return input_schema_id, output_schema_id
 
 
 def resolve_input_schema_name(input_topic: str) -> str:
@@ -73,6 +74,7 @@ def process_event(
     transcriber: Transcriber,
     producer: KafkaProducerWrapper,
     output_schema: Dict[str, Any],
+    output_schema_id: int,
 ) -> None:
     correlation_id = str(event.get("correlation_id", ""))
     payload = event.get("payload") or {}
@@ -94,7 +96,12 @@ def process_event(
     if not output_event.payload["text"]:
         raise ValueError("transcription result is empty")
 
-    producer.publish_event(TOPIC_ASR_TEXT, output_event, output_schema)
+    producer.publish_event(
+        TOPIC_ASR_TEXT,
+        output_event,
+        output_schema,
+        schema_id=output_schema_id,
+    )
     segment_index = payload.get("segment_index")
     if segment_index is not None:
         LOGGER.info(
@@ -115,12 +122,15 @@ def main() -> None:
     output_schema = load_schema("TextRecognizedEvent.avsc", schema_dir=settings.schema_dir)
 
     registry = SchemaRegistryClient(settings.schema_registry_url)
-    register_schemas(registry, input_schema, output_schema, settings.input_topic)
+    _input_schema_id, output_schema_id = register_schemas(
+        registry, input_schema, output_schema, settings.input_topic
+    )
 
     consumer = KafkaConsumerWrapper.from_confluent(
         settings.kafka_bootstrap_servers,
         group_id=settings.consumer_group_id,
         topics=[settings.input_topic],
+        schema_registry=registry,
     )
     producer = KafkaProducerWrapper.from_confluent(settings.kafka_bootstrap_servers)
     transcriber = Transcriber(settings.model_name)
@@ -133,7 +143,7 @@ def main() -> None:
             if event is None:
                 continue
             try:
-                process_event(event, transcriber, producer, output_schema)
+                process_event(event, transcriber, producer, output_schema, output_schema_id)
             except ValueError as exc:
                 LOGGER.warning("Dropping event: %s", exc)
             except Exception:  # pragma: no cover - safety net for runtime errors

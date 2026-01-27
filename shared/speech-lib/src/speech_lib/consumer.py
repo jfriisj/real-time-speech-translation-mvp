@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, Mapping
 
 from .serialization import deserialize_event
+from .schema_registry import SchemaRegistryClient
 
 
 @dataclass
 class KafkaConsumerWrapper:
     consumer: Any
+    schema_registry: SchemaRegistryClient | None = None
 
     @classmethod
     def from_confluent(
@@ -17,6 +19,7 @@ class KafkaConsumerWrapper:
         group_id: str,
         topics: Iterable[str],
         config: Mapping[str, Any] | None = None,
+        schema_registry: SchemaRegistryClient | None = None,
     ) -> "KafkaConsumerWrapper":
         try:
             from confluent_kafka import Consumer  # type: ignore
@@ -36,13 +39,13 @@ class KafkaConsumerWrapper:
 
         consumer = Consumer(consumer_config)
         consumer.subscribe(list(topics))
-        return cls(consumer=consumer)
+        return cls(consumer=consumer, schema_registry=schema_registry)
 
     def poll(self, schema: Dict[str, Any], timeout: float = 1.0) -> Dict[str, Any] | None:
         message = self.consumer.poll(timeout=timeout)
         if message is None or message.error():
             return None
-        return deserialize_event(schema, message.value())
+        return deserialize_event(schema, message.value(), schema_registry=self.schema_registry)
 
     def poll_with_message(
         self, schema: Dict[str, Any], timeout: float = 1.0
@@ -50,7 +53,10 @@ class KafkaConsumerWrapper:
         message = self.consumer.poll(timeout=timeout)
         if message is None or message.error():
             return None
-        return deserialize_event(schema, message.value()), message
+        return (
+            deserialize_event(schema, message.value(), schema_registry=self.schema_registry),
+            message,
+        )
 
     def commit_message(self, message: Any) -> None:
         self.consumer.commit(message=message, asynchronous=False)

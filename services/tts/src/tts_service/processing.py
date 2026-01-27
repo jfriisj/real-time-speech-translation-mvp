@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from typing import Any, Dict
-from uuid import uuid4
 
 from speech_lib import AudioSynthesisPayload, BaseEvent
 from speech_lib.storage import ObjectStorage
@@ -54,21 +54,34 @@ def select_audio_transport(
     disable_storage: bool,
     storage: ObjectStorage | None,
     audio_uri_mode: str,
+    correlation_id: str,
 ) -> tuple[bytes | None, str | None, str]:
-    if len(audio_bytes) <= inline_limit_bytes:
+    force_uri = os.getenv("FORCE_AUDIO_URI", "0") == "1"
+    if not force_uri and len(audio_bytes) <= inline_limit_bytes:
         return audio_bytes, None, "inline"
 
     if disable_storage or storage is None:
-        raise ValueError("audio_bytes exceeds inline limit and storage is disabled")
+        raise ValueError("Payload too large for inline and storage disabled")
 
-    key = f"{uuid4()}.wav"
+    key = f"tts/{correlation_id}.wav"
     return_key = audio_uri_mode.lower() == "internal"
-    audio_uri = storage.upload_bytes(
-        key=key,
-        data=audio_bytes,
-        content_type="audio/wav",
-        return_key=return_key,
-    )
+    try:
+        audio_uri = storage.upload_bytes(
+            key=key,
+            data=audio_bytes,
+            content_type="audio/wav",
+            return_key=return_key,
+        )
+    except Exception as exc:  # pragma: no cover - storage failure guard
+        raise ValueError("Payload too large for inline and storage disabled") from exc
+
+    if return_key:
+        if audio_uri.startswith("s3://"):
+            bucket_key = audio_uri.replace("s3://", "", 1)
+            _bucket, resolved_key = bucket_key.split("/", 1)
+            return None, resolved_key, "uri"
+        return None, audio_uri, "uri"
+
     return None, audio_uri, "uri"
 
 
@@ -119,3 +132,9 @@ def build_output_event(
             "text_snippet": payload.text_snippet,
         },
     )
+
+
+def compute_rtf(duration_ms: int, latency_ms: float) -> float | None:
+    if latency_ms <= 0:
+        return None
+    return (duration_ms / 1000.0) / (latency_ms / 1000.0)

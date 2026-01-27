@@ -53,9 +53,14 @@ def register_schemas(
     registry: SchemaRegistryClient,
     input_schema: Dict[str, Any],
     output_schema: Dict[str, Any],
-) -> None:
-    registry.register_schema(f"{TOPIC_ASR_TEXT}-value", input_schema)
-    registry.register_schema(f"{TOPIC_TRANSLATION_TEXT}-value", output_schema)
+) -> tuple[int, int]:
+    input_schema_id = registry.register_schema(
+        f"{TOPIC_ASR_TEXT}-value", input_schema
+    )
+    output_schema_id = registry.register_schema(
+        f"{TOPIC_TRANSLATION_TEXT}-value", output_schema
+    )
+    return input_schema_id, output_schema_id
 
 
 def build_output_event(
@@ -88,6 +93,7 @@ def process_event(
     translator: Translator,
     producer: KafkaProducerWrapper,
     output_schema: Dict[str, Any],
+    output_schema_id: int,
     target_language: str,
 ) -> None:
     (
@@ -114,7 +120,12 @@ def process_event(
         speaker_id=speaker_id,
     )
 
-    producer.publish_event(TOPIC_TRANSLATION_TEXT, output_event, output_schema)
+    producer.publish_event(
+        TOPIC_TRANSLATION_TEXT,
+        output_event,
+        output_schema,
+        schema_id=output_schema_id,
+    )
     LOGGER.info("Published TextTranslatedEvent correlation_id=%s", correlation_id)
 
 
@@ -139,13 +150,16 @@ def main() -> None:
     output_schema = load_schema("TextTranslatedEvent.avsc", schema_dir=schema_dir)
 
     registry = SchemaRegistryClient(settings.schema_registry_url)
-    register_schemas(registry, input_schema, output_schema)
+    _input_schema_id, output_schema_id = register_schemas(
+        registry, input_schema, output_schema
+    )
 
     consumer = KafkaConsumerWrapper.from_confluent(
         settings.kafka_bootstrap_servers,
         group_id=settings.consumer_group_id,
         topics=[TOPIC_ASR_TEXT],
         config={"enable.auto.commit": False},
+        schema_registry=registry,
     )
     producer = KafkaProducerWrapper.from_confluent(settings.kafka_bootstrap_servers)
 
@@ -176,6 +190,7 @@ def main() -> None:
                     translator=translator,
                     producer=producer,
                     output_schema=output_schema,
+                    output_schema_id=output_schema_id,
                     target_language=settings.target_language,
                 )
             except ValueError as exc:

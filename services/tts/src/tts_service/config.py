@@ -43,7 +43,7 @@ class Settings:
             schema_dir=Path(os.getenv("SCHEMA_DIR", "shared/schemas/avro")),
             model_engine=os.getenv("TTS_MODEL_ENGINE", "kokoro_onnx"),
             model_repo=os.getenv("TTS_MODEL_REPO", "onnx-community/Kokoro-82M-v1.0-ONNX"),
-            model_filename=os.getenv("TTS_MODEL_FILENAME", "model.onnx"),
+            model_filename=os.getenv("TTS_MODEL_FILENAME", "onnx/model.onnx"),
             model_cache_dir=Path(os.getenv("TTS_MODEL_CACHE_DIR", "model_cache")),
             model_name=os.getenv("TTS_MODEL_NAME", "kokoro-82m-onnx"),
             sample_rate_hz=int(os.getenv("TTS_SAMPLE_RATE_HZ", "24000")),

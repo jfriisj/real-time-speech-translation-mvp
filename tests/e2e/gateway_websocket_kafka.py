@@ -78,11 +78,11 @@ def _validate_wav_bytes(wav_bytes: bytes, sample_rate_hz: int) -> None:
             raise AssertionError("Expected 16-bit audio")
 
 
-def _register_schema(config: RunConfig) -> dict:
+def _register_schema(config: RunConfig) -> tuple[dict, SchemaRegistryClient]:
     schema = load_schema("AudioInputEvent.avsc", schema_dir=config.schema_dir)
     registry = SchemaRegistryClient(config.schema_registry_url)
     registry.register_schema(f"{TOPIC_AUDIO_INGRESS}-value", schema)
-    return schema
+    return schema, registry
 
 
 async def _send_stream(config: RunConfig) -> str:
@@ -129,12 +129,13 @@ def _await_kafka_event(
 
 def main() -> int:
     config = _parse_args()
-    schema = _register_schema(config)
+    schema, registry = _register_schema(config)
     consumer = KafkaConsumerWrapper.from_confluent(
         config.bootstrap_servers,
         group_id=f"gateway-qa-{int(time.time())}",
         topics=[TOPIC_AUDIO_INGRESS],
         config={"enable.auto.commit": False},
+        schema_registry=registry,
     )
     consumer.poll(schema, timeout=0.1)
     correlation_id = asyncio.run(_send_stream(config))

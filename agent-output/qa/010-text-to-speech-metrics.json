@@ -1,0 +1,38 @@
+{
+  "plan": "010-text-to-speech",
+  "date": "2026-01-27",
+  "qa_status": "passed",
+  "ruff": {
+    "issues": 0,
+    "dead_code_scan": "not_run"
+  },
+  "tests": {
+    "unit": {
+      "executed": true,
+      "tests_run": 17,
+      "tests_passed": 17,
+      "tests_failed": 0
+    },
+    "integration": {
+      "executed": false,
+      "reason": "Service-level latency/RTF evidence not captured"
+    },
+    "e2e": {
+      "executed": true,
+      "command": "TTS_SMOKE_PHRASE_SET=curated TTS_SMOKE_PHRASE_LIMIT=5 /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/tts_pipeline_smoke.py",
+      "result": "pass",
+      "notes": "Inline payload smoke test succeeded (5/5 phrases)."
+    },
+    "e2e_uri": {
+      "executed": true,
+      "command": "EXPECT_PAYLOAD_MODE=URI TTS_SMOKE_PHRASE_SET=curated TTS_SMOKE_PHRASE_LIMIT=3 /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/tts_pipeline_smoke.py",
+      "result": "pass",
+      "notes": "URI payload smoke test succeeded (3/3 phrases) with FORCE_AUDIO_URI=1 and INLINE_PAYLOAD_MAX_BYTES=1 on the TTS service."
+    }
+  },
+  "coverage": {
+    "module": "tts_service.processing",
+    "percent": 96,
+    "missing_lines": [81, 82, 83]
+  }
+}

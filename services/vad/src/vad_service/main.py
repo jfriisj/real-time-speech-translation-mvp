@@ -39,9 +39,14 @@ def register_schemas(
     registry: SchemaRegistryClient,
     input_schema: Dict[str, Any],
     output_schema: Dict[str, Any],
-) -> None:
-    registry.register_schema(f"{TOPIC_AUDIO_INGRESS}-value", input_schema)
-    registry.register_schema(f"{TOPIC_SPEECH_SEGMENT}-value", output_schema)
+) -> tuple[int, int]:
+    input_schema_id = registry.register_schema(
+        f"{TOPIC_AUDIO_INGRESS}-value", input_schema
+    )
+    output_schema_id = registry.register_schema(
+        f"{TOPIC_SPEECH_SEGMENT}-value", output_schema
+    )
+    return input_schema_id, output_schema_id
 
 
 def _load_vad_model(settings: Settings) -> Optional[VadModel]:
@@ -64,6 +69,7 @@ def process_event(
     event: Dict[str, Any],
     producer: KafkaProducerWrapper,
     output_schema: Dict[str, Any],
+    output_schema_id: int,
     settings: Settings,
     vad_model: Optional[VadModel],
 ) -> None:
@@ -134,6 +140,7 @@ def process_event(
             output_event,
             output_schema,
             key=correlation_id,
+            schema_id=output_schema_id,
         )
         LOGGER.info(
             "Published SpeechSegmentEvent correlation_id=%s segment_index=%s",
@@ -154,12 +161,15 @@ def main() -> None:
     output_schema = load_schema("SpeechSegmentEvent.avsc", schema_dir=schema_dir)
 
     registry = SchemaRegistryClient(settings.schema_registry_url)
-    register_schemas(registry, input_schema, output_schema)
+    _input_schema_id, output_schema_id = register_schemas(
+        registry, input_schema, output_schema
+    )
 
     consumer = KafkaConsumerWrapper.from_confluent(
         settings.kafka_bootstrap_servers,
         group_id=settings.consumer_group_id,
         topics=[TOPIC_AUDIO_INGRESS],
+        schema_registry=registry,
     )
     producer = KafkaProducerWrapper.from_confluent(settings.kafka_bootstrap_servers)
     vad_model = _load_vad_model(settings)
@@ -176,6 +186,7 @@ def main() -> None:
                     event=event,
                     producer=producer,
                     output_schema=output_schema,
+                    output_schema_id=output_schema_id,
                     settings=settings,
                     vad_model=vad_model,
                 )

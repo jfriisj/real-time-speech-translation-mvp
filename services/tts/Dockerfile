@@ -2,7 +2,7 @@
 FROM python:3.11-slim
 
 ARG TTS_MODEL_REPO=onnx-community/Kokoro-82M-v1.0-ONNX
-ARG TTS_MODEL_FILENAME=model.onnx
+ARG TTS_MODEL_FILENAME=onnx/model.onnx
 
 ENV PYTHONUNBUFFERED=1
 ENV HF_HOME=/app/.cache/huggingface

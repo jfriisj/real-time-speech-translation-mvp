@@ -39,8 +39,9 @@ def create_app(settings: Settings) -> FastAPI:
         )
         schema = load_schema("AudioInputEvent.avsc", schema_dir=settings.schema_dir)
         registry = SchemaRegistryClient(settings.schema_registry_url)
-        registry.register_schema(f"{TOPIC_AUDIO_INGRESS}-value", schema)
+        schema_id = registry.register_schema(f"{TOPIC_AUDIO_INGRESS}-value", schema)
         app.state.audio_schema = schema
+        app.state.audio_schema_id = schema_id
         app.state.producer = KafkaProducerWrapper.from_confluent(
             settings.kafka_bootstrap_servers
         )
@@ -185,8 +186,15 @@ async def finalize_publish(
     )
 
     schema: Dict[str, Any] = state.audio_schema
+    schema_id: int = state.audio_schema_id
     producer: KafkaProducerWrapper = state.producer
-    producer.publish_event(TOPIC_AUDIO_INGRESS, event, schema, key=correlation_id)
+    producer.publish_event(
+        TOPIC_AUDIO_INGRESS,
+        event,
+        schema,
+        key=correlation_id,
+        schema_id=schema_id,
+    )
 
 
 def main() -> None:

@@ -57,12 +57,17 @@ def test_asr_pipeline_integration() -> None:
     output_schema = load_schema("TextRecognizedEvent.avsc", schema_dir=schema_dir)
 
     registry = SchemaRegistryClient(registry_url)
-    registry.register_schema(f"{TOPIC_AUDIO_INGRESS}-value", input_schema)
+    input_schema_id = registry.register_schema(
+        f"{TOPIC_AUDIO_INGRESS}-value", input_schema
+    )
     registry.register_schema(f"{TOPIC_ASR_TEXT}-value", output_schema)
 
     producer = KafkaProducerWrapper.from_confluent(bootstrap)
     consumer = KafkaConsumerWrapper.from_confluent(
-        bootstrap, group_id="asr-integration", topics=[TOPIC_ASR_TEXT]
+        bootstrap,
+        group_id="asr-integration",
+        topics=[TOPIC_ASR_TEXT],
+        schema_registry=registry,
     )
 
     payload = {
@@ -78,7 +83,12 @@ def test_asr_pipeline_integration() -> None:
         payload=payload,
     )
 
-    producer.publish_event(TOPIC_AUDIO_INGRESS, event, input_schema)
+    producer.publish_event(
+        TOPIC_AUDIO_INGRESS,
+        event,
+        input_schema,
+        schema_id=input_schema_id,
+    )
 
     deadline = time.time() + 30
     received = None

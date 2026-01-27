@@ -15,6 +15,7 @@
 | 2026-01-19 16:00 | Sequencing Validation (PI-003) | Confirmed process improvements (Analyst Checks, Planner Stubs) do not affect v0.3.0 delivery timeline. |
 | 2026-01-19 17:00 | Released v0.3.0 (Ingress) | Delivered Epic 1.5 (Phase 1); Moved Epics 1.6 & 1.7 to new v0.4.0 Release to reflect iterative delivery. |
 | 2026-01-25 10:00 | Pivoted Epic 1.7 to Kokoro ONNX | Changed TTS model strategy from IndexTTS-2 to Kokoro ONNX for runtime stability; mandated pluggable architecture for future swaps. |
+| 2026-01-27 10:00 | Scope Shift (Epics 1.7 & 1.8) | Pulled MinIO/Claim Check infrastructure from Epic 1.8 into Epic 1.7 to support TTS large audio requirements. |
 
 ---
 
@@ -229,17 +230,19 @@ So that I can consume the translation hands-free.
 
 **Dependencies**:
 - Epic 1.3 (Translation output).
+- **Infrastructure**: MinIO/S3 and ObjectStorage utility (pulled forward from Epic 1.8).
 
 **Acceptance Criteria**:
 - [x] **Architecture**: data flow designed to propagate "Source Audio Sample" (or embedding) from Ingress -> TTS for cloning context.
+- [x] **Infrastructure**: MinIO added to `docker-compose.yml` and `ObjectStorage` added to shared lib (implements Epic 1.8 core).
 - [ ] TTS Service consumes `TextTranslatedEvent`.
 - [ ] TTS Service uses `onnx-community/Kokoro-82M-v1.0-ONNX` (or stable equivalent).
-- [ ] TTS Service produces `AudioSynthesisEvent`.
+- [ ] TTS Service produces `AudioSynthesisEvent` (using Claim Check pattern for payloads > 1.25 MiB).
 - [x] **Pluggability**: Synthesizer implementation accepts a config switch (Factory pattern) for future model support.
 - [ ] Basic duration/speed control implemented.
 
 **Status Notes**:
-- 2026-01-25: Plan 010 finalized (Rev 8). Implementation started; Kokoro ONNX scaffolded; Schemas updated.
+- 2026-01-27: Infrastructure scope expanded. Plan 010 (Rev 31) pulls MinIO and Claim Check logic into this epic to handle large audio synthesis without blocking on v0.6.0.
 
 ---
 
@@ -247,7 +250,7 @@ So that I can consume the translation hands-free.
 **Status**: Planned
 **Strategic Goal**: Enable deep auditing of the pipeline by persisting intermediate artifacts (audio/text) effectively implementing "Claim Check" pattern to keep Kafka request size low.
 
-### Epic 1.8: Artifact Persistence (S3/MinIO)
+### Epic 1.8: Artifact Persistence (S3/MinIO) - Platform Rollout
 **Priority**: P2
 **Status**: Planned
 
@@ -262,13 +265,13 @@ So that I can manually inspect the quality of each stage and ensure the Event Bu
 - **Scalability**: Removes large blobs from Kafka (Claim Check Pattern), preventing throughput degradation.
 
 **Dependencies**:
-- Epic 1.1 (Shared Lib needs `ObjectStorage` support - *Already present*).
-- MinIO service in Docker Compose.
+- Epic 1.1 (Shared Lib needs `ObjectStorage` support - *Delivered in v0.5.0*).
+- MinIO service in Docker Compose (*Delivered in v0.5.0*).
 
 **Acceptance Criteria**:
-- [ ] MinIO added to `docker-compose.yml`.
-- [ ] `ObjectStorage` utility in Shared Lib wired to environment variables.
-- [ ] Pipeline Services (Gateway, VAD, ASR, TTS) configured to optionally offload blobs to S3.
+- [x] MinIO added to `docker-compose.yml` (Done in Epic 1.7).
+- [x] `ObjectStorage` utility in Shared Lib wired to environment variables (Done in Epic 1.7).
+- [ ] Pipeline Services (Gateway, VAD, ASR) configured to optionally offload blobs to S3.
 - [ ] Events updated to carry `payload_url` (optional) alongside or instead of inline bytes.
 
 ---

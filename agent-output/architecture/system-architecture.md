@@ -18,6 +18,8 @@
 | 2026-01-27 | Plan 010 (TTS) pre-implementation review | Confirms architectural fit; requires plan deltas to avoid premature storage dependency and to align payload thresholds with Kafka invariants | Findings 015 |
 | 2026-01-27 | Epic 1.8 artifact persistence (MinIO/S3) pre-planning constraints | Approves claim-check support to keep Kafka payloads small and enable auditability, with required retention + security guardrails | Findings 013 |
 | 2026-01-27 | Plan 010 (TTS) re-review after contract additions | Flags required alignment fixes (speaker context pass-through, SR compatibility wording, retention defaults, `audio_uri` ownership) before implementation | Findings 017 |
+| 2026-01-27 | Plan 010 (TTS) pre-implementation review (Rev 29) | Confirms architectural fit; requires pinning topic/subject naming and repairing acceptance criteria text to prevent integration drift | Findings 019 |
+| 2026-01-27 | Scope shift: Claim Check enablement pulled into Epic 1.7 | Records that v0.5.0 introduces object storage/Claim Check for TTS output as a pilot; Epic 1.8 becomes the platform-wide rollout | Findings 020 |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:
@@ -160,11 +162,13 @@ Implementation note (v0.5.0):
 - `AudioInputEvent` inline audio payload hard cap: 1.5 MiB.
 - Larger-than-cap audio is rejected in v0.1.0 (reference/URI pattern is deferred).
 
-### Decision: Claim Check pattern is introduced for audio artifacts (v0.6.0)
+### Decision: Claim Check pattern is introduced for audio artifacts (v0.5.0 pilot; v0.6.0 rollout)
 **Context**: Persisting audio artifacts (ingress audio, VAD segments, TTS output) improves auditability and avoids Kafka payload failures for non-trivial durations.
 
 **Choice (guardrail)**:
 - Blob-carrying events MUST support either inline bytes OR an external URI/reference (exactly one set) with explicit `content_type` metadata.
+- **v0.5.0 pilot**: TTS output (`AudioSynthesisEvent`) may use Claim Check to prevent Kafka payload invariant violations.
+- **v0.6.0 rollout**: the pipeline may expand Claim Check / artifact persistence across ingress audio and VAD segments for thesis-grade auditability.
 - The system MUST remain operable with object storage disabled (baseline inline path remains valid where size permits).
 
 **Rationale**:

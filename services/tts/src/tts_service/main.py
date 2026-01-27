@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,7 @@ from .factory import SynthesizerFactory
 from .processing import (
     build_audio_payload,
     build_output_event,
+    compute_rtf,
     enforce_text_limit,
     extract_translation_request,
     select_audio_transport,
@@ -76,14 +78,19 @@ def main() -> None:
     output_schema = load_schema("AudioSynthesisEvent.avsc", schema_dir=schema_dir)
 
     registry = SchemaRegistryClient(settings.schema_registry_url)
-    registry.register_schema(f"{TOPIC_TRANSLATION_TEXT}-value", input_schema)
-    registry.register_schema(f"{TOPIC_TTS_OUTPUT}-value", output_schema)
+    _input_schema_id = registry.register_schema(
+        f"{TOPIC_TRANSLATION_TEXT}-value", input_schema
+    )
+    output_schema_id = registry.register_schema(
+        f"{TOPIC_TTS_OUTPUT}-value", output_schema
+    )
 
     consumer = KafkaConsumerWrapper.from_confluent(
         settings.kafka_bootstrap_servers,
         group_id=settings.consumer_group_id,
         topics=[TOPIC_TRANSLATION_TEXT],
         config={"enable.auto.commit": False},
+        schema_registry=registry,
     )
     producer = KafkaProducerWrapper.from_confluent(settings.kafka_bootstrap_servers)
     synthesizer = SynthesizerFactory.create(settings)
@@ -108,11 +115,14 @@ def main() -> None:
                 request = extract_translation_request(event)
                 enforce_text_limit(request.text, settings.max_text_length)
 
+                synthesis_start = time.perf_counter()
                 synthesized = synthesizer.synthesize(
                     request.text,
                     speaker_id=request.speaker_id,
                     speed=settings.tts_speed,
                 )
+                synthesis_latency_ms = (time.perf_counter() - synthesis_start) * 1000
+                rtf = compute_rtf(synthesized.duration_ms, synthesis_latency_ms)
 
                 audio_bytes = synthesized.audio_bytes
                 audio_bytes_out, audio_uri, mode = select_audio_transport(
@@ -121,6 +131,7 @@ def main() -> None:
                     disable_storage=settings.disable_storage,
                     storage=storage,
                     audio_uri_mode=settings.audio_uri_mode,
+                    correlation_id=request.correlation_id,
                 )
 
                 payload = build_audio_payload(
@@ -146,13 +157,16 @@ def main() -> None:
                     output_schema,
                     key=request.correlation_id,
                     headers=headers,
+                    schema_id=output_schema_id,
                 )
 
                 LOGGER.info(
-                    "Published AudioSynthesisEvent correlation_id=%s audio_size_bytes=%s transport_mode=%s",
+                    "Published AudioSynthesisEvent correlation_id=%s audio_size_bytes=%s transport_mode=%s synthesis_latency_ms=%.2f rtf=%s",
                     request.correlation_id,
                     len(audio_bytes),
                     mode,
+                    synthesis_latency_ms,
+                    f"{rtf:.3f}" if rtf is not None else "n/a",
                 )
             except ValueError as exc:
                 LOGGER.warning("Dropping event correlation_id=%s: %s", correlation_id, exc)

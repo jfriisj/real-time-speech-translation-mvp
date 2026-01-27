@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import os
 import struct
@@ -56,14 +57,32 @@ def _resolve_schema_dir() -> Path:
     return Path(__file__).resolve().parents[2] / "shared" / "schemas" / "avro"
 
 
-def _register_schemas(registry: SchemaRegistryClient, schema_dir: Path) -> dict[str, dict]:
+def _load_phrase_set() -> list[dict]:
+    phrase_file = os.getenv("TTS_SMOKE_PHRASE_FILE")
+    if phrase_file:
+        data = json.loads(Path(phrase_file).read_text())
+        return data if isinstance(data, list) else []
+    if os.getenv("TTS_SMOKE_PHRASE_SET", "").lower() == "curated":
+        curated = Path(__file__).resolve().parents[2] / "tests" / "data" / "metrics" / "tts_phrases.json"
+        data = json.loads(curated.read_text())
+        return data if isinstance(data, list) else []
+    return []
+
+
+def _register_schemas(
+    registry: SchemaRegistryClient, schema_dir: Path
+) -> tuple[dict[str, dict], dict[str, int]]:
     schemas = {
         "translation": load_schema("TextTranslatedEvent.avsc", schema_dir=schema_dir),
         "tts": load_schema("AudioSynthesisEvent.avsc", schema_dir=schema_dir),
     }
-    registry.register_schema(f"{TOPIC_TRANSLATION_TEXT}-value", schemas["translation"])
-    registry.register_schema(f"{TOPIC_TTS_OUTPUT}-value", schemas["tts"])
-    return schemas
+    ids = {
+        "translation": registry.register_schema(
+            f"{TOPIC_TRANSLATION_TEXT}-value", schemas["translation"]
+        ),
+        "tts": registry.register_schema(f"{TOPIC_TTS_OUTPUT}-value", schemas["tts"]),
+    }
+    return schemas, ids
 
 
 def _await_event(
@@ -95,6 +114,15 @@ def _rewrite_minio_uri(audio_uri: str, public_endpoint: str) -> str:
     return urlunparse(rewritten)
 
 
+def _prime_consumer(consumer: KafkaConsumerWrapper, schema: dict) -> None:
+    deadline = time.time() + 5
+    while time.time() < deadline:
+        consumer.consumer.poll(0.2)
+        if consumer.consumer.assignment():
+            return
+        time.sleep(0.1)
+
+
 def _fetch_audio(
     audio_uri: str,
     public_endpoint: str,
@@ -111,6 +139,17 @@ def _fetch_audio(
             public_endpoint=os.getenv("MINIO_PUBLIC_ENDPOINT") or None,
         )
         audio_uri = storage.presign_get(key=key)
+    elif "://" not in audio_uri:
+        bucket = os.getenv("MINIO_BUCKET", "tts-audio")
+        storage = ObjectStorage(
+            endpoint=os.getenv("MINIO_ENDPOINT", "http://127.0.0.1:9000"),
+            access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
+            secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
+            bucket=bucket,
+            secure=os.getenv("MINIO_SECURE", "0") == "1",
+            public_endpoint=os.getenv("MINIO_PUBLIC_ENDPOINT") or None,
+        )
+        audio_uri = storage.presign_get(key=audio_uri)
     resolved_uri = _rewrite_minio_uri(audio_uri, public_endpoint)
     with urlopen(resolved_uri, timeout=timeout_seconds) as response:
         return response.read()
@@ -150,41 +189,82 @@ def main() -> int:
         "TTS_SMOKE_TEXT",
         "Hello from the TTS smoke test. This checks inline or URI payload delivery.",
     )
+    phrase_limit = int(os.getenv("TTS_SMOKE_PHRASE_LIMIT", "5"))
+    phrases = _load_phrase_set()
 
     schema_dir = _resolve_schema_dir()
     registry = SchemaRegistryClient(schema_registry_url)
-    schemas = _register_schemas(registry, schema_dir)
+    schemas, schema_ids = _register_schemas(registry, schema_dir)
 
     producer = KafkaProducerWrapper.from_confluent(kafka_bootstrap)
     consumer = KafkaConsumerWrapper.from_confluent(
         kafka_bootstrap,
         group_id=f"tts-smoke-{int(time.time())}",
         topics=[TOPIC_TTS_OUTPUT],
-        config={"enable.auto.commit": False},
-    )
-
-    correlation_id = f"tts-smoke-{uuid4()}"
-    speaker_reference = _make_wav_bytes()
-    event = BaseEvent(
-        event_type="TextTranslatedEvent",
-        correlation_id=correlation_id,
-        source_service="tts-smoke-test",
-        payload={
-            "text": input_text,
-            "source_language": "en",
-            "target_language": "es",
-            "quality_score": None,
-            "speaker_reference_bytes": speaker_reference,
-            "speaker_id": "smoke-speaker",
+        config={
+            "enable.auto.commit": False,
+            "auto.offset.reset": "latest",
         },
+        schema_registry=registry,
     )
 
-    producer.publish_event(TOPIC_TRANSLATION_TEXT, event, schemas["translation"])
-    output_event = _await_event(consumer, schemas["tts"], correlation_id, timeout_seconds)
-    payload = output_event.get("payload") or {}
-    _validate_payload(payload, expected_mode, public_endpoint)
+    _prime_consumer(consumer, schemas["tts"])
 
-    print("PASS: TTS pipeline produced AudioSynthesisEvent")
+    speaker_reference = _make_wav_bytes()
+    if phrases:
+        phrases = phrases[:phrase_limit]
+        for phrase in phrases:
+            correlation_id = f"tts-smoke-{uuid4()}"
+            event = BaseEvent(
+                event_type="TextTranslatedEvent",
+                correlation_id=correlation_id,
+                source_service="tts-smoke-test",
+                payload={
+                    "text": phrase.get("text", ""),
+                    "source_language": phrase.get("language", "en"),
+                    "target_language": "es",
+                    "quality_score": None,
+                    "speaker_reference_bytes": speaker_reference,
+                    "speaker_id": "smoke-speaker",
+                },
+            )
+
+            producer.publish_event(
+                TOPIC_TRANSLATION_TEXT,
+                event,
+                schemas["translation"],
+                schema_id=schema_ids["translation"],
+            )
+            output_event = _await_event(consumer, schemas["tts"], correlation_id, timeout_seconds)
+            payload = output_event.get("payload") or {}
+            _validate_payload(payload, expected_mode, public_endpoint)
+            print(f"PASS: {phrase.get('id', correlation_id)}")
+    else:
+        correlation_id = f"tts-smoke-{uuid4()}"
+        event = BaseEvent(
+            event_type="TextTranslatedEvent",
+            correlation_id=correlation_id,
+            source_service="tts-smoke-test",
+            payload={
+                "text": input_text,
+                "source_language": "en",
+                "target_language": "es",
+                "quality_score": None,
+                "speaker_reference_bytes": speaker_reference,
+                "speaker_id": "smoke-speaker",
+            },
+        )
+
+        producer.publish_event(
+            TOPIC_TRANSLATION_TEXT,
+            event,
+            schemas["translation"],
+            schema_id=schema_ids["translation"],
+        )
+        output_event = _await_event(consumer, schemas["tts"], correlation_id, timeout_seconds)
+        payload = output_event.get("payload") or {}
+        _validate_payload(payload, expected_mode, public_endpoint)
+        print("PASS: TTS pipeline produced AudioSynthesisEvent")
     return 0
 
 
