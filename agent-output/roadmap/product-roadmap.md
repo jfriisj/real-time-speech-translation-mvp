@@ -21,6 +21,7 @@
 | 2026-01-28 10:15 | Resequencing (Resilience First) | Paused Epics 1.7 (TTS) and 1.8 (Persistence) to prioritize Epic 1.9 (Resilience) and enforce strict dependency order (1.9 -> 1.8 -> 1.7). |
 | 2026-01-28 12:00 | Released v0.4.1 | Delivered Epic 1.9 (Service Startup Resilience); Added Epic 1.9.1 (Hardening) to Backlog for future deterministic verification. |
 | 2026-01-28 17:00 | Plan 029 retrospective closed | Recorded Plan 029 (uv-first test workflow) as committed for v0.5.0 and updated the release tracker accordingly. |
+| 2026-01-28 18:10 | Plan 028 committed locally | Stage 1 commit created for Plan 028; v0.5.0 now has all targeted plans committed locally and is ready for release approval. |
 
 ---
 
@@ -364,7 +365,7 @@ So that I can certify the platform as "production-hardened" rather than just "fu
 | Plan ID | Title | UAT Status | Committed |
 |---------|-------|------------|----------|
 | 029 | Test Infrastructure Hardening (uv-first) | Approved | ✓ |
-| 028 | Kafka Consumer Group Recovery Hardening | UAT Complete | ✓ |
+| 028 | Kafka Consumer Group Recovery Hardening | Approved | ✓ |
 
 **Release Status**: 2 of 2 plans committed
 **Ready for Release**: Yes
