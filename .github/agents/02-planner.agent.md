@@ -18,6 +18,10 @@ handoffs:
     agent: 03-Analyst
     prompt: I've encountered technical unknowns that require deep investigation. Please analyze.
     send: false
+  - label: Request Security Review
+    agent: 05-Security
+    prompt: Please review this plan for security implications and compliance.
+    send: false
   - label: Submit for Review
     agent: 06-Critic
     prompt: Plan is complete. Please review for clarity, completeness, and architectural alignment.

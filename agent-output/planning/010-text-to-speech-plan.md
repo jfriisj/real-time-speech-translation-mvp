@@ -3,7 +3,7 @@
 **ID**: 010 (Rev 35)
 **Target Release**: v0.5.0
 **Epic**: Epic 1.7 (TTS)
-**Status**: Approved (Detailed Design)
+**Status**: Approved (Detailed Design) — **PAUSED per Roadmap sequencing**
 **Plan Owner**: Planner Agent
 **Date**: 2026-01-27
 **Analysis Ref**: agent-output/analysis/010-text-to-speech-plan-analysis.md, agent-output/analysis/012-text-to-speech-claim-check-analysis.md
@@ -14,7 +14,9 @@
 **User Story**: As a User, I want to hear the translated text spoken naturally, So that I can consume the translation hands-free.
 
 **Business Objective**: Deliver a stable (ONNX-based) and scalable TTS capability that completes the "Source Audio -> Translated Audio" loop ("Speech-to-Speech").
-**Key Requirement**: Support large audio synthesis (> 1.25MiB) by fully implementing the **Claim Check Pattern** (using MinIO/S3), ensuring the system does not crash or clog Kafka when synthesizing longer phrases (Validation of Epic 1.8 core concepts within v0.5.0).
+**Key Requirement**: Support large audio synthesis (> 1.25MiB) by using the platform **Claim Check Pattern** (using MinIO/S3), ensuring the system does not crash or clog Kafka when synthesizing longer phrases.
+
+**Roadmap Alignment Note (2026-01-28)**: The roadmap now enforces dependency order **Epic 1.9 → Epic 1.8 → Epic 1.7**. This plan is therefore paused until Epic 1.8 artifact persistence/claim-check rollout is treated as delivered and stable enough for TTS E2E verification.
 
 ## Test Infrastructure & Tooling Requirements
 **Objective**: Ensure the service is verifiable in isolation and within the event pipeline.
@@ -45,7 +47,7 @@
   - QA Script: `tests/e2e/tts_pipeline_smoke.py` MUST verify both inline and URI paths.
 
 ## Assumptions
-- `speech-lib.storage.ObjectStorage` and MinIO container are **AVAILABLE and REQUIRED** for full compliance (large payloads).
+- Claim-check storage primitives (shared library + MinIO bootstrap/lifecycle ownership) are **AVAILABLE** before TTS is treated as deliverable.
 - **Operable without Storage**: Service MUST start and process inline payloads even when storage is disabled/unavailable; only oversized outputs are dropped.
 - ONNX Runtime and Tokenizers libraries are compatible with the base python image.
 - `espeak-ng` system dependency is available in the runtime environment (required by `phonemizer`).
@@ -58,6 +60,10 @@
   - TTS creates keys using a canonical format: `tts/{correlation_id}.wav`.
   - **Collision Risk (Accepted Debt)**: If a `correlation_id` is reused (retry/replay), the object will be overwritten ("Last Write Wins"). This is accepted for v0.5.0 MVP to keep logic simple.
   - Retention is managed by MinIO bucket configuration (lifecycle policy). Target: 24h retention.
+
+**OPEN QUESTION (Roadmap/Release Target Conflict)**: The roadmap currently places Epic 1.7 under **v0.5.0** while also requiring Epic 1.7 to wait for Epic 1.8, which is described under **v0.6.0**. Decision needed:
+- Move Epic 1.7 target release to v0.6.x (after v0.6.0), OR
+- Pull the minimal Epic 1.8 prerequisites into v0.5.x explicitly.
 
 ## Contract Decisions
 
@@ -124,7 +130,7 @@ To ensure consistent behavior across environments, the service MUST expose and d
 ### Data Retention & Privacy
 - **Claim Check Implementation**: Adopted early in v0.5.0 (ahead of Epic 1.8 platform-wide rollout) to solve immediate Kafka payload size constraints for TTS.
 - **Audio URI Lifecycle**: Managed via object store key reference and bucket lifecycle policy.
-- **Infrastructure**: The `minio-init` container MUST run on startup to create the `tts-audio` bucket and apply the 24-hour retention policy (defined in `services/tts/minio-lifecycle.json`).
+- **Infrastructure**: The `minio-init` container MUST run on startup to create the `tts-audio` bucket and apply the 24-hour retention policy (defined in `minio-lifecycle.json`).
 - **Retention**: Time-bounded (default: 24 hours). Service does NOT implement deletion logic.
 - **URI Type**: Internal object key (preferred) for intra-system transport.
   - **Preferred path**: TTS emits internal object key; Gateway (edge) generates ephemeral presigned URL at read time for the client (using `TTS_AUDIO_URI_MODE=internal`).
@@ -198,7 +204,7 @@ To ensure consistent behavior across environments, the service MUST expose and d
 ### M5: Version Management & Release
 **Goal**: Prepare artifacts for Release v0.5.0.
 **Deliverables**:
-- Version bump to `0.5.0` in package files.
+- Verify version alignment for the release train (note: repo-level version may already be set to `0.5.0`).
 - CHANGELOG updated.
 
 ## Verification & Acceptance

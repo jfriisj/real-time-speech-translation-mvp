@@ -25,6 +25,7 @@
 | 2026-01-28 | Plan 011 (Schema Registry Readiness) pre-implementation review | Approves intent but blocks shared-lib retry/backoff policy; requires service-level bounded startup waiting and/or compose health gating for Schema Registry readiness | Findings 024 |
 | 2026-01-28 | Epic 1.9 (Service Startup Resilience) pre-planning assessment | Establishes platform-level startup resilience invariant (bounded readiness gates at service boundary; no shared-lib orchestration) to unblock stable E2E for Epics 1.8–1.7 | Findings 025 |
 | 2026-01-28 | Plan 025 (Service Startup Resilience) pre-implementation review | Confirms architectural fit; requires plan cleanup + explicit readiness/healthcheck strategy and standardized startup-gate config to prevent drift | Findings 026 |
+| 2026-01-28 | Plan 028 (Kafka Consumer Group Recovery Hardening) architecture review | Aligns consumer-group recovery tuning + diagnosability with Epic 1.9 boundaries; requires shared-lib helper to remain pure/thin and telemetry to stay low-volume | Findings 028 |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:

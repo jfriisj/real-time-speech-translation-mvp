@@ -31,6 +31,8 @@
 ## 2. Context & Roadmap Alignment
 This plan implements the second core microservice of the v0.2.0 "Walking Skeleton", enabling the end-to-end flow from Audio -> Text -> Translated Text. It relies on the contracts established in v0.1.0 and populated by the ASR service (Epic 1.2).
 
+**Roadmap Status Note (2026-01-28)**: Epic 1.3 is currently marked **In Progress** in the roadmap due to required diagnostics/stabilization work (testability + startup stability). This work is also a practical prerequisite for Epic 1.7 (TTS), which consumes `TextTranslatedEvent`.
+
 **Roadmap Reference**:
 - **Release v0.2.0**: Core Services
 - **Epic 1.3**: Text-to-Text Translation
@@ -43,9 +45,9 @@ This plan implements the second core microservice of the v0.2.0 "Walking Skeleto
 - **Failure Handling**: Log and drop (no error events for MVP).
 
 ## 3. Assumptions & Constraints
-- **Assumption**: A simple offline translation model (e.g. `Helsinki-NLP/opus-mt-en-es` or similar lightweight model) or a deterministic mock is sufficient for MVP connectivity proof.
-- **Decision (MVP)**: To minimize model weight/download issues during the "Walking Skeleton" phase, we will implement a **Deterministic Mock Interface** first. This ensures we prove the event flow (Kafka->App->Kafka) without fighting PyTorch/heavy dependencies immediately. Real model integration can happen in a follow-up task or as a config switch.
-    - *Why?* The goal is structural proof (Epic 1.3) and traceability (Epic 1.4).
+- **Assumption**: A CPU-capable translation backend (real model) is already integrated for functional value; a deterministic mock remains a valid fallback to isolate infra/test issues.
+- **Decision (Fallback)**: Maintain a **Deterministic Mock Interface** as an optional fallback mode for diagnostics (proves Kafka→App→Kafka flow without confounding model/runtime variability).
+    - *Why?* The goal is structural proof (Epic 1.3) and traceability (Epic 1.4), while the reopened initiative focuses on diagnosability and stability.
 - **Decision (Config)**: The target language MUST be configurable via environment variable `TARGET_LANGUAGE` (default: `"es"`).
 - **Decision (Failure Handling)**: "Log and drop" means the service logs the error and **commits the offset** (advances the consumer group). This prevents poison-pill messages from causing infinite retry loops in the MVP.
 - **Constraint**: Must use the shared `speech-lib` for Avro/Kafka.

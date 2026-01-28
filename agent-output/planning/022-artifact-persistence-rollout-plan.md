@@ -8,12 +8,15 @@
 **Date**: 2026-01-28
 **Analysis Ref**: agent-output/analysis/015-artifact-persistence-rollout-research-gaps.md
 **Architecture Ref**: agent-output/architecture/023-artifact-persistence-rollout-plan-architecture-findings.md
-**Preceded By**: Epic 1.7 (TTS)
+**Preceded By**: Epic 1.9 (Service Startup Resilience)
+**Unblocks**: Epic 1.7 (TTS)
 
 ## Value Statement and Business Objective
 **User Story**: As a Researcher, I want to persist intermediate audio and speech segment artifacts to object storage, So that I can audit the quality of each pipeline stage and prevent Kafka payload size violations.
 
-**Business Objective**: Extend the **Claim Check Pattern** (piloted in TTS) to the entire platform (Gateway, VAD, ASR), ensuring that large audio payloads (>1.25 MiB) are offloaded to MinIO/S3 while maintaining a consistent audit trail.
+**Business Objective**: Extend the **Claim Check Pattern** to the entire platform (Gateway, VAD, ASR), ensuring that large audio payloads (>1.25 MiB) are offloaded to MinIO/S3 while maintaining a consistent audit trail.
+
+**Roadmap Alignment Note (2026-01-28)**: The roadmap now enforces dependency order **Epic 1.9 → Epic 1.8 → Epic 1.7**. This plan should be treated as a prerequisite for treating TTS (Epic 1.7) as shippable.
 
 **Success Metric**:
 - **Completeness**: 100% of payloads > 1.25 MiB are offloaded to object storage (or strictly rejected if storage is down).
@@ -22,7 +25,7 @@
 - **Auditability**: A researcher can retrieve the input audio, VAD segment, and TTS output for a given `correlation_id` using a consistent key scheme.
 
 ## Context & Scope
-- **Inputs**: `AudioInputEvent` (Ingress), `SpeechSegmentEvent` (VAD), `AudioSynthesisEvent` (TTS - retrofit), `TextRecognizedEvent` (ASR - optional).
+- **Inputs**: `AudioInputEvent` (Ingress), `SpeechSegmentEvent` (VAD), `AudioSynthesisEvent` (TTS - alignment/compatibility), `TextRecognizedEvent` (ASR - optional).
 - **Terminology**: The Roadmap Acceptance Criteria text `payload_url` is implemented by the explicit `*_uri` field names (`audio_uri`, `segment_uri`) defined in this plan.
 - **Scope**:
   - Update `speech-lib` to enforce non-secret object reference semantics.

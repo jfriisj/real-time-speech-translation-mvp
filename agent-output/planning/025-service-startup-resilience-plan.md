@@ -4,7 +4,7 @@
 **Feature Slug**: service-startup-resilience
 **Target Release**: v0.4.1 (Resilience Patch)
 **Epic Alignment**: Epic 1.9 (Service Startup Resilience)  
-**Status**: Revised
+**Status**: Revised (Roadmap: Epic 1.9 Delivered in v0.4.1)
 
 ## Changelog
 | Date | Agent | Request | Summary |
