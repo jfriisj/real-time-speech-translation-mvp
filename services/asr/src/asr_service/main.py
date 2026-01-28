@@ -17,7 +17,7 @@ from speech_lib import (
 
 from .config import Settings
 from .processing import decode_wav, validate_audio_payload
-from .startup import wait_for_dependencies
+from speech_lib.startup import wait_for_dependencies
 from .transcriber import Transcriber
 
 

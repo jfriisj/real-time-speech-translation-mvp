@@ -15,7 +15,7 @@ from speech_lib import (
 )
 
 from .config import Settings
-from .startup import wait_for_dependencies
+from speech_lib.startup import wait_for_dependencies
 from .translator import HuggingFaceTranslator, Translator
 
 

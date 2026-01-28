@@ -4,15 +4,22 @@ import logging
 import random
 import socket
 import time
-from typing import Tuple
+from typing import Protocol, Tuple
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-from .config import Settings
-
 
 LOGGER = logging.getLogger(__name__)
+
+
+class StartupSettings(Protocol):
+    kafka_bootstrap_servers: str
+    schema_registry_url: str
+    startup_max_wait_seconds: float
+    startup_initial_backoff_seconds: float
+    startup_max_backoff_seconds: float
+    startup_attempt_timeout_seconds: float
 
 
 def _sanitize_url(url: str) -> str:
@@ -72,21 +79,26 @@ def wait_for_kafka(
     while True:
         attempt += 1
         try:
-            with socket.create_connection(
-                (host, port), timeout=attempt_timeout_seconds
-            ):
+            with socket.create_connection((host, port), timeout=attempt_timeout_seconds):
                 LOGGER.info("Kafka ready at %s:%s", host, port)
                 return
         except OSError as exc:
             if time.monotonic() >= deadline:
-                LOGGER.error("Kafka not ready after %.0fs at %s:%s", max_wait_seconds, host, port)
+                LOGGER.error(
+                    "Kafka not ready after %.0fs at %s:%s",
+                    max_wait_seconds,
+                    host,
+                    port,
+                )
                 raise SystemExit(1) from exc
             delay = _next_backoff(
                 attempt=attempt,
                 initial_backoff_seconds=initial_backoff_seconds,
                 max_backoff_seconds=max_backoff_seconds,
             )
-            LOGGER.info("Waiting for Kafka at %s:%s (retry in %.1fs)", host, port, delay)
+            LOGGER.info(
+                "Waiting for Kafka at %s:%s (retry in %.1fs)", host, port, delay
+            )
             _sleep_with_jitter(delay)
 
 
@@ -118,18 +130,26 @@ def wait_for_schema_registry(
             return
         except (URLError, HTTPError, OSError) as exc:
             if time.monotonic() >= deadline:
-                LOGGER.error("Schema Registry not ready after %.0fs at %s", max_wait_seconds, safe_target)
+                LOGGER.error(
+                    "Schema Registry not ready after %.0fs at %s",
+                    max_wait_seconds,
+                    safe_target,
+                )
                 raise SystemExit(1) from exc
             delay = _next_backoff(
                 attempt=attempt,
                 initial_backoff_seconds=initial_backoff_seconds,
                 max_backoff_seconds=max_backoff_seconds,
             )
-            LOGGER.info("Waiting for Schema Registry at %s (retry in %.1fs)", safe_target, delay)
+            LOGGER.info(
+                "Waiting for Schema Registry at %s (retry in %.1fs)",
+                safe_target,
+                delay,
+            )
             _sleep_with_jitter(delay)
 
 
-def wait_for_dependencies(settings: Settings) -> None:
+def wait_for_dependencies(settings: StartupSettings) -> None:
     LOGGER.info("Starting readiness checks...")
     host, port = _parse_kafka_bootstrap(settings.kafka_bootstrap_servers)
     wait_for_kafka(

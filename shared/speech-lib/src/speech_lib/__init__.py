@@ -22,6 +22,7 @@ from .serialization import load_schema, serialize_event, deserialize_event
 from .producer import KafkaProducerWrapper
 from .consumer import KafkaConsumerWrapper
 from .storage import ObjectStorage
+from .startup import StartupSettings, wait_for_dependencies
 
 __all__ = [
     "AUDIO_PAYLOAD_MAX_BYTES",
@@ -49,4 +50,6 @@ __all__ = [
     "KafkaProducerWrapper",
     "KafkaConsumerWrapper",
     "ObjectStorage",
+    "StartupSettings",
+    "wait_for_dependencies",
 ]

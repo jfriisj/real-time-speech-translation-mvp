@@ -26,7 +26,7 @@ from .processing import (
     extract_translation_request,
     select_audio_transport,
 )
-from .startup import wait_for_dependencies
+from speech_lib.startup import wait_for_dependencies
 
 
 LOGGER = logging.getLogger(__name__)

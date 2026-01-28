@@ -24,7 +24,7 @@ from .audio import pcm_to_wav
 from .config import Settings
 from .limits import BufferAccumulator, ConnectionLimiter, RateLimiter
 from .protocol import build_handshake_message, parse_sentinel_message
-from .startup import wait_for_dependencies
+from speech_lib.startup import wait_for_dependencies
 
 
 LOGGER = logging.getLogger(__name__)

@@ -25,7 +25,7 @@ from .processing import (
     resample_audio,
     validate_audio_payload,
 )
-from .startup import wait_for_dependencies
+from speech_lib.startup import wait_for_dependencies
 from .vad import VadModel, infer_speech_probabilities, load_onnx_model
 
 
