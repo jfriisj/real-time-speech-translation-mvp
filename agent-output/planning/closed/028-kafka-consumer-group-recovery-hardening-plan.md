@@ -2,7 +2,7 @@
 ID: 028
 Origin: 028
 UUID: 4f6b2c1d
-Status: Committed for Release v0.5.0
+Status: Released (v0.5.0)
 ---
 
 # Plan 028: Kafka Consumer Group Recovery Hardening (Reduce post-restart tail latency)
@@ -33,6 +33,7 @@ This plan is tracked in the v0.5.0 release train. The v0.5.0 roadmap now include
 | 2026-01-28 | Clarify consumer-only scope + QA handoff pointer | Avoid scope creep (Gateway is not assumed to be a consumer) and keep QA/tooling details in the QA execution record per planning rubric. |
 | 2026-01-28 | Status update | Implementation now in progress. |
 | 2026-01-28 | Stage 1 commit (DevOps) | Plan, implementation, QA, and UAT documents moved to closed/ and marked as committed for v0.5.0 release readiness. |
+| 2026-01-28 | Release v0.5.0 | Stage 2 release executed; plan shipped in v0.5.0 and lifecycle status set to Released. |
 
 ## Value Statement and Business Objective
 As an operator/contributor, I want services to recover Kafka consumption quickly after restarts, so that end-to-end smoke tests and development bring-up are reliable and do not fail due to predictable consumer group stabilization delays.

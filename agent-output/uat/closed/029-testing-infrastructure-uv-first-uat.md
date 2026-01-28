@@ -2,7 +2,7 @@
 ID: 029
 Origin: 029
 UUID: 8b4c1a2f
-Status: Committed for Release v0.5.0
+Status: Released (v0.5.0)
 ---
 
 # UAT Report: Test Infrastructure Hardening (uv-first, reproducible QA)
@@ -17,6 +17,7 @@ Status: Committed for Release v0.5.0
 |------|---------------|---------|---------|
 | 2026-01-28 | QA | Validate uv-first workflow and QA evidence | UAT Complete — QA artifact documents uv-managed `.venv`, dependency installs, targeted startup/consumer tests, and full suite run that demonstrate the documented workflow meets the value statement. |
 | 2026-01-28 | DevOps | Record commitment | UAT artifact marked as committed for release v0.5.0 as part of Stage 1 processing. |
+| 2026-01-28 | DevOps | Release v0.5.0 | Stage 2 release executed; UAT artifact shipped in v0.5.0 and lifecycle status set to Released. |
 | 2026-01-28 | UAT | Lifecycle cleanup | Document moved to closed/ per lifecycle rule (Status: Committed for Release v0.5.0). |
 
 ## Value Statement Under Test

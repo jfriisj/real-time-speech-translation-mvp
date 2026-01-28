@@ -2,7 +2,7 @@
 ID: 028
 Origin: 028
 UUID: 7f8e9b3c
-Status: Committed for Release v0.5.0
+Status: Released (v0.5.0)
 ---
 
 # QA Report: Plan 028: Kafka Consumer Group Recovery Hardening
@@ -19,6 +19,7 @@ Status: Committed for Release v0.5.0
 | 2026-01-28 | QA Specialist | Record smoke evidence | Rebuilt the compose stack and ran `TTS_SMOKE_MODE=steady-state` and `TTS_SMOKE_MODE=cold-start` smoke scripts to capture the final telemetry/latency behaviors. |
 | 2026-01-28 | QA Specialist | Execute targeted units | Ran consumer wrapper + VAD config tests with the new on-assign wiring to verify the tuning guardrails. |
 | 2026-01-28 | DevOps | Record commitment | QA artifact marked as committed for release v0.5.0 and moved to closed/ as part of Stage 1 processing. |
+| 2026-01-28 | DevOps | Release v0.5.0 | Stage 2 release executed; QA artifact shipped with v0.5.0 and lifecycle status set to Released. |
 
 ## Timeline
 - **Test Strategy Started**: 2026-01-28 15:15 UTC

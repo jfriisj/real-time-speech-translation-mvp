@@ -2,7 +2,7 @@
 ID: 029
 Origin: 029
 UUID: 8b4c1a2f
-Status: Committed for Release v0.5.0
+Status: Released (v0.5.0)
 ---
 
 # QA Report: Plan 029: Test Infrastructure Hardening (uv-first, reproducible QA)
@@ -19,6 +19,7 @@ Status: Committed for Release v0.5.0
 | 2026-01-28 | Implementer | Implementation ready for QA testing | Documented the uv-first runbook, dependency alignment, and startup contract so QA can validate the canonical workflow. |
 | 2026-01-28 | QA | Confirm uv-first workflow | Recreated the uv-managed `.venv`, installed dependencies through `uv pip`, and executed the startup + consumer config tests plus the full pytest suite to prove the documented commands work. |
 | 2026-01-28 | DevOps | Record commitment | QA evidence artifact closed as part of Stage 1 release processing for v0.5.0. |
+| 2026-01-28 | DevOps | Release v0.5.0 | Stage 2 release executed; QA artifact shipped with v0.5.0 and lifecycle status set to Released. |
 
 ## Timeline
 - **Test Strategy Started**: 2026-01-28 15:50 UTC

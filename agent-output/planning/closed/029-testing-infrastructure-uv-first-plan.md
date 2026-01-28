@@ -2,7 +2,7 @@
 ID: 029
 Origin: 029
 UUID: 8b4c1a2f
-Status: Committed for Release v0.5.0
+Status: Released (v0.5.0)
 ---
 
 # Plan 029: Test Infrastructure Hardening (uv-first, reproducible QA)
@@ -30,6 +30,7 @@ This plan exists to remove test-toolchain variance that currently blocks QA sign
 | 2026-01-28 | Code review approved | Code review completed; ready for QA. |
 | 2026-01-28 | UAT approved | UV-first QA evidence validated with documented commands and readiness for release. |
 | 2026-01-28 | Committed for Release v0.5.0 | Stage 1 DevOps commit records the plan is ready for v0.5.0 packaging. |
+| 2026-01-28 | Release v0.5.0 | Stage 2 release executed; plan shipped in v0.5.0 and lifecycle status set to Released. |
 
 ## Value Statement and Business Objective
 As an operator/contributor, I want a reproducible, dependency-complete test runner workflow that does not depend on host `pip` availability, so that QA and future CI can validate changes consistently and quickly.

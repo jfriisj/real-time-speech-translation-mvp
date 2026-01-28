@@ -2,7 +2,7 @@
 ID: 028
 Origin: 028
 UUID: 4f6b2c1d
-Status: Committed for Release v0.5.0
+Status: Released (v0.5.0)
 ---
 
 # UAT Report: Plan 028: Kafka Consumer Group Recovery Hardening (Reduce post-restart tail latency)
@@ -19,6 +19,7 @@ Status: Committed for Release v0.5.0
 | 2026-01-28 | UAT | Validate QA evidence + business value | Implementation delivers the value statement per the implementation summary, but QA remains in-progress and no integration results have been posted; release blocked until QA updates the record. |
 | 2026-01-28 | QA | Record integration evidence | Compose rebuild plus steady-state/cold-start `tests/e2e/tts_pipeline_smoke.py` runs and their telemetry outputs are recorded in the QA artifact. |
 | 2026-01-28 | DevOps | Record commitment | UAT artifact marked as committed for release v0.5.0 and moved to closed/ during Stage 1 processing. |
+| 2026-01-28 | DevOps | Release v0.5.0 | Stage 2 release executed; UAT artifact shipped in v0.5.0 and lifecycle status set to Released. |
 
 ## Value Statement Under Test
 As an operator/contributor, I want services to recover Kafka consumption quickly after restarts, so that end-to-end smoke tests and development bring-up are reliable and do not fail due to predictable consumer group stabilization delays.

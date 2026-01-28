@@ -2,7 +2,7 @@
 ID: 028
 Origin: 028
 UUID: 4f6b2c1d
-Status: Committed for Release v0.5.0
+Status: Released (v0.5.0)
 ---
 
 # Implementation 028: Kafka Consumer Group Recovery Hardening
@@ -21,6 +21,7 @@ Status: Committed for Release v0.5.0
 | 2026-01-28 | Baseline evidence capture | Rebuilt compose stack, captured TTS + VAD baseline recovery telemetry, noted VAD→ASR timeout. |
 | 2026-01-28 | ASR pipeline fix | Updated ASR transcriber input handling to avoid transformers num_frames errors; VAD smoke now passes. |
 | 2026-01-28 | Stage 1 commit (DevOps) | Implementation document moved to closed/ and marked committed for v0.5.0 release readiness. |
+| 2026-01-28 | Release v0.5.0 | Stage 2 release executed; implementation shipped in v0.5.0 and lifecycle status set to Released. |
 | 2026-01-28 | Code review fix | Added on-assign support in KafkaConsumerWrapper and removed direct consumer subscribe calls in services. |
 
 ## Implementation Summary

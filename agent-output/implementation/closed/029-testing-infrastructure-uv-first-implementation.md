@@ -2,7 +2,7 @@
 ID: 029
 Origin: 029
 UUID: 8b4c1a2f
-Status: Committed for Release v0.5.0
+Status: Released (v0.5.0)
 ---
 
 # Implementation 029: Test Infrastructure Hardening (uv-first, reproducible QA)
@@ -19,6 +19,7 @@ Status: Committed for Release v0.5.0
 |------|------------------|---------|
 | 2026-01-28 | Begin implementation | Initialized implementation document for Plan 029. |
 | 2026-01-28 | Stage 1 commit | Marked implementation as committed for v0.5.0 release readiness. |
+| 2026-01-28 | Release v0.5.0 | Stage 2 release executed; implementation shipped in v0.5.0 and lifecycle status set to Released. |
 
 ## Implementation Summary
 

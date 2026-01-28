@@ -22,6 +22,7 @@
 | 2026-01-28 12:00 | Released v0.4.1 | Delivered Epic 1.9 (Service Startup Resilience); Added Epic 1.9.1 (Hardening) to Backlog for future deterministic verification. |
 | 2026-01-28 17:00 | Plan 029 retrospective closed | Recorded Plan 029 (uv-first test workflow) as committed for v0.5.0 and updated the release tracker accordingly. |
 | 2026-01-28 18:10 | Plan 028 committed locally | Stage 1 commit created for Plan 028; v0.5.0 now has all targeted plans committed locally and is ready for release approval. |
+| 2026-01-28 18:20 | Stage 2 release approved (v0.5.0) | User requested Stage 2 release execution (tag/push/publish) now that all targeted plans are committed locally. |
 
 ---
 
@@ -251,10 +252,15 @@ So that the platform starts up reliably without crash loops, even without extern
 ---
 
 ## Release v0.5.0 - Synthesis (MVP+)
-**Status**: Planned
-**Target Release**: Upcoming
+**Status**: Released (2026-01-28)
+**Released**: 2026-01-28
+**Target Release**: Completed (v0.5.0)
 
-**Strategic Goal**: Complete the output loop with synthesis.
+**Strategic Goal**: Complete the output loop with synthesis while stabilizing service startup resilience and QA infrastructure ahead of the next TTS expansion.
+
+### Delivered Work
+- **Plan 028**: Kafka consumer recovery hardening (shared tuning helper, structured telemetry, and steady-state vs cold-start smoke instrumentation).
+- **Plan 029**: uv-first reproducible QA workflow (runbook, dependency alignment, startup helper contract cleanup) that unblocks deterministic testing for v0.5.0.
 
 ### Epic 1.7: Text-to-Speech (TTS) (Stable Outcome)
 **Priority**: P1
@@ -286,7 +292,8 @@ So that I can consume the translation hands-free.
 - [ ] Basic duration/speed control implemented.
 
 **Status Notes**:
-- 2026-01-27: Infrastructure scope expanded. Plan 010 (Rev 31) pulls MinIO and Claim Check logic into this epic to handle large audio synthesis without blocking on v0.6.0.
+- 2026-01-28: Stage 2 release executed; Plans 028 and 029 shipped in v0.5.0, delivering Kafka consumer resilience and the uv-first QA workflow required before Epic 1.7 (TTS) can resume.
+ 2026-01-27: Infrastructure scope expanded. Plan 010 (Rev 31) pulls MinIO and Claim Check logic into this epic to handle large audio synthesis without blocking on v0.6.0.
 
 ---
 
@@ -367,6 +374,7 @@ So that I can certify the platform as "production-hardened" rather than just "fu
 | 029 | Test Infrastructure Hardening (uv-first) | Approved | ✓ |
 | 028 | Kafka Consumer Group Recovery Hardening | Approved | ✓ |
 
-**Release Status**: 2 of 2 plans committed
-**Ready for Release**: Yes
+**Release Status**: Released (2026-01-28)
+**Ready for Release**: N/A (release executed)
+**Release Approval**: Completed (Stage 2 release executed)
 **Blocking Items**: None
