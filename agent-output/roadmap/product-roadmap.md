@@ -24,6 +24,7 @@
 | 2026-01-28 18:10 | Plan 028 committed locally | Stage 1 commit created for Plan 028; v0.5.0 now has all targeted plans committed locally and is ready for release approval. |
 | 2026-01-28 18:20 | Stage 2 release approved (v0.5.0) | User requested Stage 2 release execution (tag/push/publish) now that all targeted plans are committed locally. |
 | 2026-01-29 09:00 | Released v0.5.0 | Stage 2 executed (tag/push complete); rolled Active Release Tracker forward to v0.6.0. |
+| 2026-01-29 09:10 | Roadmap refreshed | Fixed formatting/hygiene and aligned Epic 1.8 wording to the canonical Claim Check contract for v0.6.0 planning. |
 
 ---
 
@@ -294,15 +295,18 @@ So that I can consume the translation hands-free.
 
 **Status Notes**:
 - 2026-01-28: Stage 2 release executed; Plans 028 and 029 shipped in v0.5.0, delivering Kafka consumer resilience and the uv-first QA workflow required before Epic 1.7 (TTS) can resume.
- 2026-01-27: Infrastructure scope expanded. Plan 010 (Rev 31) pulls MinIO and Claim Check logic into this epic to handle large audio synthesis without blocking on v0.6.0.
+- 2026-01-27: Infrastructure scope expanded. Plan 010 (Rev 31) pulls MinIO and Claim Check logic into this epic to handle large audio synthesis without blocking on v0.6.0.
 
 ---
 
 ## Release v0.6.0 - Auditing & Persistence
+**Status**: Planned
 **Target Date**: Upcoming
 **Strategic Goal**: Enable deep auditing by persisting intermediate artifacts (audio/text) effectively implementing "Claim Check" pattern to keep Kafka request size low.
 
-### Epic 1.8Paused (Waiting for 1.9)
+### Epic 1.8: Artifact Persistence (Claim Check Rollout)
+**Priority**: P1
+**Status**: Planned
 
 **User Story**:
 As a Researcher,
@@ -315,9 +319,7 @@ So that I can manually inspect the quality of each stage and ensure the Event Bu
 - **Scalability**: Removes large blobs from Kafka (Claim Check Pattern), preventing throughput degradation.
 
 **Dependencies**:
-- Epic 1.9 (Service Resilience) - *Required for stable testing*.: Removes large blobs from Kafka (Claim Check Pattern), preventing throughput degradation.
-
-**Dependencies**:
+- Epic 1.9 (Service Resilience) - *Required for stable testing*.
 - Epic 1.1 (Shared Lib needs `ObjectStorage` support - *Delivered in v0.5.0*).
 - MinIO service in Docker Compose (*Delivered in v0.5.0*).
 
@@ -325,7 +327,7 @@ So that I can manually inspect the quality of each stage and ensure the Event Bu
 - [x] MinIO added to `docker-compose.yml` (Done in Epic 1.7).
 - [x] `ObjectStorage` utility in Shared Lib wired to environment variables (Done in Epic 1.7).
 - [ ] Pipeline Services (Gateway, VAD, ASR) configured to optionally offload blobs to S3.
-- [ ] Events updated to carry `payload_url` (optional) alongside or instead of inline bytes.
+- [ ] Events updated to carry canonical `*_uri` fields (non-secret `s3://{bucket}/{key}` references) alongside or instead of inline bytes.
 
 ---
 
@@ -351,7 +353,6 @@ So that I can certify the platform as "production-hardened" rather than just "fu
 
 ---
 
-### Epic 
 ## Backlog / Future Consideration
 **Strategic Note**: These items are valuable but strictly out of scope for the Hard MVP to ensure Thesis delivery date is met.
 
