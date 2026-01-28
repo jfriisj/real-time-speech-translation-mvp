@@ -9,6 +9,10 @@ from pathlib import Path
 class Settings:
     kafka_bootstrap_servers: str
     schema_registry_url: str
+    startup_max_wait_seconds: float
+    startup_initial_backoff_seconds: float
+    startup_max_backoff_seconds: float
+    startup_attempt_timeout_seconds: float
     consumer_group_id: str
     poll_timeout_seconds: float
     schema_dir: Path
@@ -35,6 +39,18 @@ class Settings:
         return cls(
             kafka_bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "127.0.0.1:29092"),
             schema_registry_url=os.getenv("SCHEMA_REGISTRY_URL", "http://127.0.0.1:8081"),
+            startup_max_wait_seconds=float(
+                os.getenv("STARTUP_MAX_WAIT_SECONDS", "60")
+            ),
+            startup_initial_backoff_seconds=float(
+                os.getenv("STARTUP_INITIAL_BACKOFF_SECONDS", "1")
+            ),
+            startup_max_backoff_seconds=float(
+                os.getenv("STARTUP_MAX_BACKOFF_SECONDS", "5")
+            ),
+            startup_attempt_timeout_seconds=float(
+                os.getenv("STARTUP_ATTEMPT_TIMEOUT_SECONDS", "2")
+            ),
             consumer_group_id=os.getenv("CONSUMER_GROUP_ID", "vad-service"),
             poll_timeout_seconds=float(os.getenv("POLL_TIMEOUT_SECONDS", "1.0")),
             schema_dir=Path(os.getenv("SCHEMA_DIR", "shared/schemas/avro")),

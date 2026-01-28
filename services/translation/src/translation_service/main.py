@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import logging
-import time
 from pathlib import Path
 from typing import Any, Dict
-
-import requests
 
 from speech_lib import (
     BaseEvent,
@@ -18,49 +15,11 @@ from speech_lib import (
 )
 
 from .config import Settings
+from .startup import wait_for_dependencies
 from .translator import HuggingFaceTranslator, Translator
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-def wait_for_schema_registry(
-    registry_url: str,
-    timeout_seconds: float,
-    *,
-    initial_backoff_seconds: float = 1.0,
-    max_backoff_seconds: float = 8.0,
-) -> None:
-    deadline = time.monotonic() + timeout_seconds
-    attempt = 0
-    while True:
-        attempt += 1
-        try:
-            response = requests.get(
-                f"{registry_url.rstrip('/')}/subjects",
-                timeout=5,
-            )
-            response.raise_for_status()
-            LOGGER.info("Schema Registry ready at %s", registry_url)
-            return
-        except Exception as exc:
-            if time.monotonic() >= deadline:
-                LOGGER.error(
-                    "Schema Registry not ready after %.0fs at %s",
-                    timeout_seconds,
-                    registry_url,
-                )
-                raise SystemExit(1) from exc
-            sleep_seconds = min(
-                initial_backoff_seconds * (2 ** (attempt - 1)),
-                max_backoff_seconds,
-            )
-            LOGGER.info(
-                "Waiting for Schema Registry at %s (retry in %.1fs)",
-                registry_url,
-                sleep_seconds,
-            )
-            time.sleep(sleep_seconds)
 
 
 def extract_translation_request(
@@ -188,10 +147,7 @@ def main() -> None:
     settings = Settings.from_env()
     schema_dir = _resolve_schema_dir(settings.schema_dir)
 
-    wait_for_schema_registry(
-        settings.schema_registry_url,
-        settings.schema_registry_wait_timeout_seconds,
-    )
+    wait_for_dependencies(settings)
 
     input_schema = load_schema("TextRecognizedEvent.avsc", schema_dir=schema_dir)
     output_schema = load_schema("TextTranslatedEvent.avsc", schema_dir=schema_dir)

@@ -25,6 +25,7 @@ from .processing import (
     resample_audio,
     validate_audio_payload,
 )
+from .startup import wait_for_dependencies
 from .vad import VadModel, infer_speech_probabilities, load_onnx_model
 
 
@@ -218,6 +219,8 @@ def main() -> None:
     )
     settings = Settings.from_env()
     schema_dir = _resolve_schema_dir(settings.schema_dir)
+
+    wait_for_dependencies(settings)
 
     input_schema = load_schema("AudioInputEvent.avsc", schema_dir=schema_dir)
     output_schema = load_schema("SpeechSegmentEvent.avsc", schema_dir=schema_dir)

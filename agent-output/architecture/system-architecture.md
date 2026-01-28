@@ -23,6 +23,8 @@
 | 2026-01-27 | Epic 1.8 platform rollout pre-planning constraints | Approves platform-wide artifact persistence rollout with required guardrails: canonical object reference semantics, lifecycle ownership, and deterministic storage failure behavior | Findings 022 |
 | 2026-01-28 | Plan 022 (Artifact Persistence Rollout) pre-implementation review | Confirms architectural fit; requires bucket naming consistency, shared-lib boundary tightening, deterministic failure signaling, and pinned trace propagation mechanism | Findings 023 |
 | 2026-01-28 | Plan 011 (Schema Registry Readiness) pre-implementation review | Approves intent but blocks shared-lib retry/backoff policy; requires service-level bounded startup waiting and/or compose health gating for Schema Registry readiness | Findings 024 |
+| 2026-01-28 | Epic 1.9 (Service Startup Resilience) pre-planning assessment | Establishes platform-level startup resilience invariant (bounded readiness gates at service boundary; no shared-lib orchestration) to unblock stable E2E for Epics 1.8–1.7 | Findings 025 |
+| 2026-01-28 | Plan 025 (Service Startup Resilience) pre-implementation review | Confirms architectural fit; requires plan cleanup + explicit readiness/healthcheck strategy and standardized startup-gate config to prevent drift | Findings 026 |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:
@@ -316,6 +318,27 @@ Implementation note (v0.5.0):
 **Consequences**:
 - Services may start slightly slower (controlled) but fail less often due to readiness races.
 - Operational configuration (timeouts) becomes an environment-level concern.
+
+### Decision: Service startup resilience is a platform invariant (Epic 1.9)
+**Context**: As the pipeline grows (Gateway → VAD → ASR → Translation → TTS) and adds optional storage, E2E validation becomes unreliable if services crash-loop on infra readiness races. This must be addressed before scaling pipeline complexity.
+
+**Choice (guardrail)**:
+- Every microservice MUST implement a **bounded** startup readiness gate for:
+	- **Schema Registry** (before schema registration / Avro serializer initialization)
+	- **Kafka broker connectivity** (before entering the main consume/produce loop)
+- Readiness gating MUST be diagnosable:
+	- clear INFO logs during waiting (rate-limited)
+	- single ERROR/FATAL on timeout with actionable context
+	- non-zero exit on timeout (no infinite hang)
+- The shared contract artifact / shared library MUST remain **thin** and MUST NOT contain workflow orchestration or retry/backoff policy.
+
+**Alternatives**:
+- Compose healthcheck gating only (helps local dev but is not portable) — allowed as an optimization, not sufficient alone.
+- Shared “wait-for-deps” helper in shared-lib (rejected: violates shared-lib boundary).
+
+**Consequences**:
+- Deterministic platform bring-up becomes testable and repeatable.
+- Slightly slower cold-starts are accepted to eliminate flaky E2E outcomes.
 
 ## Recommendations
 - Keep event set minimal for v0.1.0: audio ingress + recognized text + translated text.

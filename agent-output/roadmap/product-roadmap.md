@@ -18,6 +18,8 @@
 | 2026-01-27 10:00 | Scope Shift (Epics 1.7 & 1.8) | Pulled MinIO/Claim Check infrastructure from Epic 1.8 into Epic 1.7 to support TTS large audio requirements. |
 | 2026-01-27 10:30 | Started Epic 1.8 | Commencing platform-wide rollout of Claim Check persistence (S3/MinIO) for deep auditing/Thesis validation. |
 | 2026-01-28 10:00 | Added Epic 1.9 / Release v0.4.1 | Defined explicit work item for Service Startup Resilience following Translation Service fix (Plan 011). |
+| 2026-01-28 10:15 | Resequencing (Resilience First) | Paused Epics 1.7 (TTS) and 1.8 (Persistence) to prioritize Epic 1.9 (Resilience) and enforce strict dependency order (1.9 -> 1.8 -> 1.7). |
+| 2026-01-28 12:00 | Released v0.4.1 | Delivered Epic 1.9 (Service Startup Resilience); Added Epic 1.9.1 (Hardening) to Backlog for future deterministic verification. |
 
 ---
 
@@ -214,12 +216,13 @@ So that I don't waste GPU/CPU cycles transcribing background noise and latency i
 ---
 
 ## Release v0.4.1 - Stability & Resilience
-**Target Date**: 2026-02-05
+**Status**: Released
+**Released**: 2026-01-28
 **Strategic Goal**: Eliminate startup race conditions and improve platform reliability independent of orchestration tools.
 
 ### Epic 1.9: Service Startup Resilience
 **Priority**: P1
-**Status**: Planned
+**Status**: Delivered
 
 **User Story**:
 As an Operator,
@@ -234,11 +237,14 @@ So that the platform starts up reliably without crash loops, even without extern
 - Pattern established in Translation Service (Plan 011).
 
 **Acceptance Criteria**:
-- [ ] **ASR Service**: Implements bounded wait loop for Schema Registry.
-- [ ] **VAD Service**: Implements bounded wait loop for Schema Registry.
-- [ ] **TTS Service**: Implements bounded wait loop for Schema Registry.
-- [ ] **Gateway Service**: Implements bounded wait loop for Schema Registry.
-- [ ] Shared Library remains thin (logic lives in service main loops).
+- [x] **ASR Service**: Implements bounded wait loop for Schema Registry.
+- [x] **VAD Service**: Implements bounded wait loop for Schema Registry.
+- [x] **TTS Service**: Implements bounded wait loop for Schema Registry.
+- [x] **Gateway Service**: Implements bounded wait loop for Schema Registry.
+- [x] Shared Library remains thin (logic lives in service main loops).
+
+**Status Notes**:
+- 2026-01-28: Delivered in v0.4.1. Success metric (single cold start) met; 10x determinism proof deferred to Epic 1.9.1.
 
 ---
 
@@ -250,7 +256,7 @@ So that the platform starts up reliably without crash loops, even without extern
 
 ### Epic 1.7: Text-to-Speech (TTS) (Stable Outcome)
 **Priority**: P1
-**Status**: In Progress
+**Status**: Paused (Waiting for 1.9 & 1.8)
 
 **User Story**:
 As a User,
@@ -264,6 +270,8 @@ So that I can consume the translation hands-free.
 
 **Dependencies**:
 - Epic 1.3 (Translation output).
+- Epic 1.9 (Service Resilience) - *Required for stable testing*.
+- Epic 1.8 (Artifact Persistence) - *Required for large audio payload handling*.
 - **Infrastructure**: MinIO/S3 and ObjectStorage utility (pulled forward from Epic 1.8).
 
 **Acceptance Criteria**:
@@ -284,9 +292,7 @@ So that I can consume the translation hands-free.
 **Target Date**: Upcoming
 **Strategic Goal**: Enable deep auditing by persisting intermediate artifacts (audio/text) effectively implementing "Claim Check" pattern to keep Kafka request size low.
 
-### Epic 1.8: Artifact Persistence (S3/MinIO) - Platform Rollout
-**Priority**: P2
-**Status**: In Progress
+### Epic 1.8Paused (Waiting for 1.9)
 
 **User Story**:
 As a Researcher,
@@ -299,6 +305,9 @@ So that I can manually inspect the quality of each stage and ensure the Event Bu
 - **Scalability**: Removes large blobs from Kafka (Claim Check Pattern), preventing throughput degradation.
 
 **Dependencies**:
+- Epic 1.9 (Service Resilience) - *Required for stable testing*.: Removes large blobs from Kafka (Claim Check Pattern), preventing throughput degradation.
+
+**Dependencies**:
 - Epic 1.1 (Shared Lib needs `ObjectStorage` support - *Delivered in v0.5.0*).
 - MinIO service in Docker Compose (*Delivered in v0.5.0*).
 
@@ -309,7 +318,26 @@ So that I can manually inspect the quality of each stage and ensure the Event Bu
 - [ ] Events updated to carry `payload_url` (optional) alongside or instead of inline bytes.
 
 ---
+1.9.1: Service Startup Resilience Hardening
+**Priority**: P2
+**Status**: Planned
 
+**User Story**:
+As a System Architect,
+I want to statistically prove the reliability of service startup (e.g., 10 consecutive flawless starts),
+So that I can certify the platform as "production-hardened" rather than just "functional".
+
+**Business Value**:
+- **Confidence**: Certifies 99.9% reliability for automated deployments.
+- **Thesis Validation**: Provides statistical rigor for reliability claims.
+
+**Dependencies**:
+- Epic 1.9 (Base resilience logic).
+- Automated CI environment capable of rapid restart loops.
+
+---
+
+### Epic 
 ## Backlog / Future Consideration
 **Strategic Note**: These items are valuable but strictly out of scope for the Hard MVP to ensure Thesis delivery date is met.
 

@@ -26,6 +26,7 @@ from .processing import (
     extract_translation_request,
     select_audio_transport,
 )
+from .startup import wait_for_dependencies
 
 
 LOGGER = logging.getLogger(__name__)
@@ -74,6 +75,8 @@ def main() -> None:
     )
     settings = Settings.from_env()
     schema_dir = _resolve_schema_dir(settings.schema_dir)
+
+    wait_for_dependencies(settings)
 
     input_schema = load_schema("TextTranslatedEvent.avsc", schema_dir=schema_dir)
     output_schema = load_schema("AudioSynthesisEvent.avsc", schema_dir=schema_dir)

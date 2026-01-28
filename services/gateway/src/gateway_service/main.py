@@ -24,6 +24,7 @@ from .audio import pcm_to_wav
 from .config import Settings
 from .limits import BufferAccumulator, ConnectionLimiter, RateLimiter
 from .protocol import build_handshake_message, parse_sentinel_message
+from .startup import wait_for_dependencies
 
 
 LOGGER = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ def create_app(settings: Settings) -> FastAPI:
             level=logging.INFO,
             format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         )
+        wait_for_dependencies(settings)
         schema = load_schema("AudioInputEvent.avsc", schema_dir=settings.schema_dir)
         registry = SchemaRegistryClient(settings.schema_registry_url)
         schema_id = registry.register_schema(f"{TOPIC_AUDIO_INGRESS}-value", schema)

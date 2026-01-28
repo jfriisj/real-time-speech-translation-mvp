@@ -1,0 +1,26 @@
+{
+  "plan_id": "025",
+  "feature_slug": "service-startup-resilience",
+  "qa_status": "QA Complete",
+  "date": "2026-01-28",
+  "ruff": {
+    "issues": 0,
+    "status": "pass"
+  },
+  "unit_tests": {
+    "passed": 5,
+    "failed": 0
+  },
+  "integration_tests": {
+    "compose_startup_verification": "pass",
+    "dependency_down_scenario": "not_run"
+  },
+  "acceptance_criteria": {
+    "service_side_gates": true,
+    "startup_env_vars": true,
+    "safe_logging": true,
+    "jitter_backoff": true,
+    "compose_convergence": true,
+    "fail_fast_timeout": true
+  }
+}

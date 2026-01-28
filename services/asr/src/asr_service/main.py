@@ -17,6 +17,7 @@ from speech_lib import (
 
 from .config import Settings
 from .processing import decode_wav, validate_audio_payload
+from .startup import wait_for_dependencies
 from .transcriber import Transcriber
 
 
@@ -120,6 +121,8 @@ def process_event(
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
     settings = Settings.from_env()
+
+    wait_for_dependencies(settings)
 
     input_schema_name = resolve_input_schema_name(settings.input_topic)
     input_schema = load_schema(input_schema_name, schema_dir=settings.schema_dir)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1 - 2026-01-28
+- Added bounded startup readiness gates for Kafka and Schema Registry across services.
+- Standardized startup timing configuration via `STARTUP_*` environment variables.
+- Added a startup resilience verification script for compose runs.
+
 ## 0.5.0 - 2026-01-26
 - Added TTS service with Kokoro ONNX backend and pluggable synthesizer factory.
 - Enforced input length caps and dual-mode payload delivery for TTS outputs (inline vs URI).
