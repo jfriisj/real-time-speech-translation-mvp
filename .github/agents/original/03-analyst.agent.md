@@ -3,7 +3,7 @@ description: Research and analysis specialist for code-level investigation and d
 name: 03-Analyst
 target: vscode
 argument-hint: Describe the technical question, API, or system behavior to investigate
-tools: ['vscode/vscodeAPI', 'execute/getTerminalOutput', 'execute/runInTerminal', 'execute/runNotebookCell', 'read', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'filesystem/*', 'github/*', 'analyzer/*', 'memory/*', 'todo']
+tools: ['vscode/vscodeAPI', 'execute/runNotebookCell', 'execute/getTerminalOutput', 'execute/runInTerminal', 'read', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'analyzer/*', 'filesystem/*', 'github/*', 'memory/*', 'todo']
 model: GPT-5.2 (copilot)
 handoffs:
   - label: Create Plan
