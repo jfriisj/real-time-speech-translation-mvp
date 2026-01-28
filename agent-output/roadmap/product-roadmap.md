@@ -1,6 +1,6 @@
 # Universal Speech Translation Platform - Product Roadmap
 
-**Last Updated**: 2026-01-28
+**Last Updated**: 2026-01-29
 **Roadmap Owner**: Roadmap Agent
 **Strategic Vision**: Deliver a scalable, event-driven platform for real-time speech translation that demonstrates low-latency orchestration of independent AI microservices. The focus is on architectural proof, measurable performance, and expandability through shared contracts, serving as a robust foundation for academic research and future commercial application.
 
@@ -23,6 +23,7 @@
 | 2026-01-28 17:00 | Plan 029 retrospective closed | Recorded Plan 029 (uv-first test workflow) as committed for v0.5.0 and updated the release tracker accordingly. |
 | 2026-01-28 18:10 | Plan 028 committed locally | Stage 1 commit created for Plan 028; v0.5.0 now has all targeted plans committed locally and is ready for release approval. |
 | 2026-01-28 18:20 | Stage 2 release approved (v0.5.0) | User requested Stage 2 release execution (tag/push/publish) now that all targeted plans are committed locally. |
+| 2026-01-29 09:00 | Released v0.5.0 | Stage 2 executed (tag/push complete); rolled Active Release Tracker forward to v0.6.0. |
 
 ---
 
@@ -367,14 +368,18 @@ So that I can certify the platform as "production-hardened" rather than just "fu
 
 ## Active Release Tracker
 
-**Current Working Release**: v0.5.0
+**Current Working Release**: v0.6.0
 
 | Plan ID | Title | UAT Status | Committed |
 |---------|-------|------------|----------|
-| 029 | Test Infrastructure Hardening (uv-first) | Approved | ✓ |
-| 028 | Kafka Consumer Group Recovery Hardening | Approved | ✓ |
+| 022 | Artifact Persistence (Claim Check) Platform Rollout | Pending | ✗ |
 
-**Release Status**: Released (2026-01-28)
-**Ready for Release**: N/A (release executed)
-**Release Approval**: Completed (Stage 2 release executed)
-**Blocking Items**: None
+**Release Status**: 0 of 1 plans committed
+**Ready for Release**: No
+**Release Approval**: Not requested
+**Blocking Items**: Plan 022 needs implementation + QA/UAT + Stage 1 commit
+
+### Previous Releases
+| Version | Date | Plans Included | Status |
+|---------|------|----------------|--------|
+| v0.5.0 | 2026-01-28 | 028, 029 | Released |
