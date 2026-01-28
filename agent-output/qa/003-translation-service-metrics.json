@@ -1,0 +1,31 @@
+{
+  "plan_id": "003",
+  "epic": "1.3",
+  "date": "2026-01-28",
+  "qa_status": "QA Failed",
+  "code_quality_gate": {
+    "ruff": "pass",
+    "vulture": "pass"
+  },
+  "unit_tests": {
+    "status": "pass",
+    "passed": 6,
+    "failed": 0
+  },
+  "e2e_smoke": {
+    "status": "fail",
+    "attempts": 2,
+    "errors": [
+      "ModuleNotFoundError: No module named 'speech_lib'",
+      "ModuleNotFoundError: No module named 'fastavro'"
+    ]
+  },
+  "dependency_install": {
+    "status": "fail",
+    "error": "/usr/bin/python: No module named pip"
+  },
+  "blocking_issues": [
+    "Missing fastavro dependency",
+    "pip unavailable in environment"
+  ]
+}

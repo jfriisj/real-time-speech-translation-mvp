@@ -4,7 +4,7 @@
 **Implementation Reference**: agent-output/implementation/003-translation-service-implementation.md
 **Roadmap Reference**: agent-output/roadmap/product-roadmap.md (Epic 1.3)
 **Architecture Reference**: agent-output/architecture/system-architecture.md
-**QA Status**: QA Complete
+**QA Status**: QA Failed
 **QA Specialist**: qa
 
 ## Changelog
@@ -13,14 +13,15 @@
 |------|---------------|---------|---------|
 | 2026-01-16 | Implementer | Implementation complete, ready for testing | Ran code-quality gate (Ruff/Vulture) and full pytest suite. Attempted Docker/Compose build+smoke, but translation-service image build is prohibitively heavy (CUDA wheels) and failed due to Docker snapshotter error; integration test execution blocked. |
 | 2026-01-16 | QA | Address test gaps | Added unit coverage for `process_event` and consumer wrapper helpers, fixed integration schema dir resolution and timeout, and validated Docker CPU-only build; integration test passed. |
+| 2026-01-28 | User | Run all tests and E2E for translation service | Unit tests passed; legacy E2E smoke failed due to missing `fastavro` and unavailable `pip` in the environment. |
 
 ## Timeline
 - **Test Strategy Started**: 2026-01-16
 - **Test Strategy Completed**: 2026-01-16
 - **Implementation Received**: 2026-01-16
-- **Testing Started**: 2026-01-16
-- **Testing Completed**: 2026-01-16
-- **Final Status**: QA Complete
+- **Testing Started**: 2026-01-28
+- **Testing Completed**: 2026-01-28
+- **Final Status**: QA Failed
 
 ## Test Strategy (Pre-Implementation)
 Validate user-facing correctness and operational safety for the translation step:
@@ -74,6 +75,34 @@ Plan 003 originally called for mock-based unit tests; implementation intentional
 
 ## Test Execution Results
 
+### 2026-01-28 Diagnostic Run
+
+### Code Quality Gate
+- **Ruff lint**: PASS (0 issues)
+   - Targets scanned: `services/translation/src/translation_service/main.py`, `translator.py`, `config.py`, and translation unit tests
+- **Vulture dead-code scan**: PASS (0 high-confidence findings)
+   - Targets scanned: `main.py`, `translator.py`
+
+### Unit Tests
+- **Command**: `services/translation/tests/test_translation_processing.py`, `services/translation/tests/test_translator.py`
+- **Status**: PASS
+- **Output**: `6 passed`
+
+### E2E Smoke (Legacy Pipeline)
+- **Command**: `python tests/e2e/legacy_pipeline_smoke.py`
+- **Status**: FAIL
+- **Output**: `ModuleNotFoundError: No module named 'speech_lib'`
+
+### E2E Smoke Retry (PYTHONPATH)
+- **Command**: `PYTHONPATH=shared/speech-lib/src python tests/e2e/legacy_pipeline_smoke.py`
+- **Status**: FAIL
+- **Output**: `ModuleNotFoundError: No module named 'fastavro'`
+
+### Test Dependency Install Attempt
+- **Command**: `python -m pip install -r tests/requirements.txt`
+- **Status**: FAIL
+- **Output**: `/usr/bin/python: No module named pip`
+
 ### Code Quality Gate
 - **Ruff lint**: PASS (0 issues)
    - Targets scanned: translation service modules/tests and shared consumer wrapper (`main.py`, `translator.py`, `config.py`, `consumer.py`, and translation tests)
@@ -98,7 +127,7 @@ Plan 003 originally called for mock-based unit tests; implementation intentional
 ## Issues & Risks
 
 ### Blocking Issues
-- None.
+- **E2E smoke blocked by missing dependencies**: `fastavro` is missing and `pip` is unavailable in the environment, preventing the legacy pipeline smoke test from running.
 
 ### Non-Blocking Risks
 - **Default dev Python is 3.14**: host pytest passes without importing `torch` (model test skipped). Installing `torch` locally on 3.14 may be unsupported; Docker uses Python 3.11 and is the intended runtime.
@@ -106,6 +135,6 @@ Plan 003 originally called for mock-based unit tests; implementation intentional
 - **QA checklist doc missing**: process references `agent-output/qa/README.md`, but it does not exist in this workspace; QA format followed prior QA reports instead.
 
 ## Final Assessment
-QA Complete. Code-quality checks and unit tests pass, coverage gaps for `process_event` and consumer helpers are closed, Docker builds now install CPU-only torch, and the Kafka integration smoke test passes.
+QA Failed. Unit tests pass and the code-quality gate is clean, but E2E smoke testing for the translation service cannot run due to missing `fastavro` and unavailable `pip` in the environment. Resolve test dependencies and re-run the legacy pipeline smoke test.
 
 Handing off to uat agent for value delivery validation.

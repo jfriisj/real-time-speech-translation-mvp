@@ -9,6 +9,7 @@ from pathlib import Path
 class Settings:
     kafka_bootstrap_servers: str
     schema_registry_url: str
+    schema_registry_wait_timeout_seconds: float
     consumer_group_id: str
     poll_timeout_seconds: float
     schema_dir: Path
@@ -24,6 +25,9 @@ class Settings:
             ),
             schema_registry_url=os.getenv(
                 "SCHEMA_REGISTRY_URL", "http://127.0.0.1:8081"
+            ),
+            schema_registry_wait_timeout_seconds=float(
+                os.getenv("SCHEMA_REGISTRY_WAIT_TIMEOUT_SECONDS", "60")
             ),
             consumer_group_id=os.getenv("CONSUMER_GROUP_ID", "translation-service"),
             poll_timeout_seconds=float(os.getenv("POLL_TIMEOUT_SECONDS", "1.0")),

@@ -9,8 +9,8 @@
   "tests": {
     "unit": {
       "executed": true,
-      "tests_run": 17,
-      "tests_passed": 17,
+      "tests_run": 29,
+      "tests_passed": 29,
       "tests_failed": 0
     },
     "integration": {
@@ -24,15 +24,15 @@
       "notes": "Timed out waiting for AudioSynthesisEvent."
     },
     "e2e_uri": {
-      "executed": true,
+      "executed": false,
       "command": "EXPECT_PAYLOAD_MODE=URI TTS_SMOKE_PHRASE_SET=curated TTS_SMOKE_PHRASE_LIMIT=3 /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/tts_pipeline_smoke.py",
-      "result": "fail",
-      "notes": "Timed out waiting for AudioSynthesisEvent."
+      "result": "not_run",
+      "notes": "Cancelled before completion."
     }
   },
   "coverage": {
     "module": "tts_service.processing",
-    "percent": 96,
-    "missing_lines": [83, 84, 85]
+    "percent": 100,
+    "missing_lines": []
   }
 }

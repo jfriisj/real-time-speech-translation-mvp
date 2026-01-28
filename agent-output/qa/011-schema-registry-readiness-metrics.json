@@ -1,0 +1,40 @@
+{
+  "plan": "011-schema-registry-readiness",
+  "date": "2026-01-28",
+  "qa_status": "QA Complete",
+  "tests": {
+    "ruff": {
+      "status": "pass",
+      "targets": [
+        "services/translation/src/translation_service/main.py",
+        "services/translation/src/translation_service/config.py"
+      ]
+    },
+    "unit": {
+      "command": "/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python -m pytest services/translation/tests -m \"not integration\" --cov=translation_service --cov-report=term-missing",
+      "status": "pass",
+      "passed": 6,
+      "skipped": 1,
+      "deselected": 1
+    },
+    "integration": {
+      "command": "/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python -m pytest services/translation/tests/test_integration_translation.py -m integration",
+      "status": "skipped",
+      "passed": 0,
+      "skipped": 1
+    },
+    "e2e": {
+      "command": "TTS_SMOKE_TIMEOUT=60 PYTHONUNBUFFERED=1 /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python /home/jonfriis/github/real-time-speech-translation-mvp/tests/e2e/tts_pipeline_smoke.py",
+      "status": "pass"
+    }
+  },
+  "coverage": {
+    "module": "translation_service",
+    "total_percent": 49,
+    "files": {
+      "services/translation/src/translation_service/config.py": 94,
+      "services/translation/src/translation_service/main.py": 44,
+      "services/translation/src/translation_service/translator.py": 38
+    }
+  }
+}

@@ -22,6 +22,7 @@
 | 2026-01-27 | Scope shift: Claim Check enablement pulled into Epic 1.7 | Records that v0.5.0 introduces object storage/Claim Check for TTS output as a pilot; Epic 1.8 becomes the platform-wide rollout | Findings 020 |
 | 2026-01-27 | Epic 1.8 platform rollout pre-planning constraints | Approves platform-wide artifact persistence rollout with required guardrails: canonical object reference semantics, lifecycle ownership, and deterministic storage failure behavior | Findings 022 |
 | 2026-01-28 | Plan 022 (Artifact Persistence Rollout) pre-implementation review | Confirms architectural fit; requires bucket naming consistency, shared-lib boundary tightening, deterministic failure signaling, and pinned trace propagation mechanism | Findings 023 |
+| 2026-01-28 | Plan 011 (Schema Registry Readiness) pre-implementation review | Approves intent but blocks shared-lib retry/backoff policy; requires service-level bounded startup waiting and/or compose health gating for Schema Registry readiness | Findings 024 |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:
@@ -300,6 +301,21 @@ Implementation note (v0.5.0):
 **Choice**:
 - MVP processing semantics are **at-least-once**; duplicate outputs are possible.
 - Downstream services and demos MUST tolerate duplicates (use `correlation_id` for traceability; dedupe is out-of-scope for MVP).
+
+### Decision: Startup resilience policy boundary (Schema Registry readiness)
+**Context**: Local compose startup can race Schema Registry readiness, causing services to crash before entering their Kafka processing loops.
+
+**Choice (guardrail)**:
+- Services MAY implement a **bounded** startup retry/wait for Schema Registry readiness (clear logs + hard timeout + non-zero exit on timeout).
+- The shared contract artifact / shared library MUST NOT embed cross-service **retry/backoff policies** or workflow orchestration logic.
+
+**Rationale**:
+- Preserves the “shared artifact is not an SDK” boundary while still allowing reliable service bring-up.
+- Keeps resilience behavior explicit and diagnosable at the service boundary.
+
+**Consequences**:
+- Services may start slightly slower (controlled) but fail less often due to readiness races.
+- Operational configuration (timeouts) becomes an environment-level concern.
 
 ## Recommendations
 - Keep event set minimal for v0.1.0: audio ingress + recognized text + translated text.

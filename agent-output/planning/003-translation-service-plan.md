@@ -3,20 +3,30 @@
 **Plan ID**: 003
 **Target Release**: v0.2.0 (Core Services)
 **Epic**: 1.3 Text-to-Text Translation (Translation Service)
-**Status**: Proposed
-**Date**: 2026-01-15
+**Status**: Revised (Diagnostics & Stabilization)
+**Date**: 2026-01-28
 **Dependencies**: Plan 001 (Shared Infra), Plan 002 (ASR Service)
+**Revision History**:
+- Rev 1 (2026-01-15): Initial MVP plan (Approved).
+- Rev 2 (2026-01-15): Updated with Analysis 003 findings (Approved).
+- Rev 3 (2026-01-28): Reopened for Diagnostics. Updated with Analysis 016 findings to resolve host-environment test blockers.
 
 ## 1. Value Statement and Business Objective
 **As a** User,
 **I want** recognized text to be translated into my target language,
 **So that** I can understand the content.
 
+**Current Initiative (Stabilization)**:
+**As** a System Maintainer,
+**I want** to execute E2E diagnostic tests in a controlled environment,
+**So that** I can identify the root cause of service instability without fighting host-system dependency gaps.
+
 **Measure of Success**:
 - Translation Service consumes `TextRecognizedEvent` from `speech.asr.text`.
 - Translation Service produces `TextTranslatedEvent` to `speech.translation.text`.
 - Check: `correlation_id` is preserved.
 - Check: Produced payload contains valid translated text (`payload.text`) in the target language.
+- **Diagnostic Outcome**: Successful execution of the integration test suite in the target environment.
 
 ## 2. Context & Roadmap Alignment
 This plan implements the second core microservice of the v0.2.0 "Walking Skeleton", enabling the end-to-end flow from Audio -> Text -> Translated Text. It relies on the contracts established in v0.1.0 and populated by the ASR service (Epic 1.2).
@@ -86,22 +96,40 @@ This plan implements the second core microservice of the v0.2.0 "Walking Skeleto
 1.  **Version Update**: Set version to `0.2.0` (matching release target) in `services/translation/pyproject.toml`.
 2.  **CHANGELOG**: Create `services/translation/CHANGELOG.md`.
 
+### Milestone 6: Test Infrastructure (Diagnostic Enablement)
+**Objective**: Provide a reproducible, self-contained environment for E2E validation.
+**Rationale**: Analysis 016 confirms the host lacks `pip` and shared deps (`speech-lib`, `fastavro`), blocking E2E validation.
+1.  **Test Container Strategy**: Define a containerized test capability that includes:
+    - Python runtime with `pip` and build essentials.
+    - Installation of `services/translation/requirements.txt` (including `confluent-kafka` and internal `speech-lib`).
+    - Configuration ensuring `speech-lib` is importable via `PYTHONPATH` or package installation.
+2.  **Compose Integration**: Enable running the test container within the Docker Compose network.
+    - **Requirement**: Must resolve and reach `kafka` and `schema-registry` services.
+    - **Requirement**: Must allow execution of specific test targets via flags/variables (e.g., gating env vars).
+    - **Constraint**: Prefer ephemeral/run-once configurations to avoid creating permanent resource-heavy services.
+3.  **Stability Checks**: Ensure the test runner handles startup races (e.g., waiting for Schema Registry availability) before executing tests.
+
 ## 5. Verification Strategy (QA Handoff)
 - **Unit Tests**:
     - Test `MockTranslator` logic.
     - Test Kafka consumer handler (mocking the actual consumer) to verify `correlation_id` copy.
 - **Integration Tests (Smoke)**:
-    - **Marked**: `@pytest.mark.integration`.
-    - **Scenario**:
+    - **Execution Environment**: MUST run within the containerized capability defined in Milestone 6.
+    - **Dependencies**: Requires active Kafka and Schema Registry services.
+    - **Coverage**:
         1. Produce `TextRecognizedEvent` (valid sample) to `speech.asr.text`.
         2. Assert `TextTranslatedEvent` appears on `speech.translation.text`.
-        3. Validate `payload.text` matches expected mock transformation.
-        4. Validate `correlation_id` matches.
+        3. Validate `payload.text` matches expected mock/model transformation.
+        4. Validate `correlation_id` is preserved.
+    - **Configuration**: Use environment variables to gate E2E tests (`RUN_TRANSLATION_INTEGRATION=1`) to prevent accidental runs during unit testing.
 
 ## 6. Risks
-- **Topic Drift**: If ASR output topic changes, Translation input breaks. *Mitigation*: Hardcoded topic constants in `speech-lib` or strict adherence to plan architecture.
-- **Model Bloat (if real model used)**: Downloading translation models can be heavy. *Mitigation*: Use Mock/Stub by default for MVP connectivity.
+- **Topic Drift**: If ASR output topic changes, Translation input breaks. *Mitigation*: Hardcoded topic constants in `speech-lib`.
+- **Model Bloat (if real model used)**: Downloading translation models can be heavy. *Mitigation*: Use Mock/Stub by default for MVP; Integration test allows 180s timeout.
+- **Test Image Drift**: If the test container diverges from the production image, tests may pass falsely. *Mitigation*: Base the test container on the same Python base/requirements where possible.
 
 ## 7. Open Questions
-- None. Analysis 003 resolved configuration (env var) and failure semantics (commit-on-drop).
+- **Test Strategy**: Decision: Use `pytest` integration tests (standardized) rather than the legacy standalone script.
+- **Readiness**: Decision: Test runner is responsible for implementing wait/retry logic for Schema Registry availability.
+- **CI Constraints**: Decision: Use Docker Compose for both local and CI execution to ensure environment parity (Analysis 016).
 

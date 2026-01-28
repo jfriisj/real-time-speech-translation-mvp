@@ -17,6 +17,7 @@
 | 2026-01-25 10:00 | Pivoted Epic 1.7 to Kokoro ONNX | Changed TTS model strategy from IndexTTS-2 to Kokoro ONNX for runtime stability; mandated pluggable architecture for future swaps. |
 | 2026-01-27 10:00 | Scope Shift (Epics 1.7 & 1.8) | Pulled MinIO/Claim Check infrastructure from Epic 1.8 into Epic 1.7 to support TTS large audio requirements. |
 | 2026-01-27 10:30 | Started Epic 1.8 | Commencing platform-wide rollout of Claim Check persistence (S3/MinIO) for deep auditing/Thesis validation. |
+| 2026-01-28 10:00 | Added Epic 1.9 / Release v0.4.1 | Defined explicit work item for Service Startup Resilience following Translation Service fix (Plan 011). |
 
 ---
 
@@ -83,7 +84,7 @@ So that the system has raw material to translate.
 
 ### Epic 1.3: Text-to-Text Translation (Translation Service)
 **Priority**: P0
-**Status**: Delivered
+**Status**: In Progress
 
 **User Story**:
 As a User,
@@ -103,8 +104,11 @@ So that I can understand the content.
 - [x] Translation Service produces `TextTranslatedEvent`.
 - [x] Translation logic supports at least one language pair (e.g., EN -> ES) reliably.
 - [x] `correlation_id` is preserved.
+- [ ] **Diagnostic**: Full unit and E2E test suite executed with passed results.
+- [ ] **Stabilization**: Root cause of reported instability identified and fixed.
 
 **Status Notes**:
+- 2026-01-28: Reopened to address regression/instability. Objective is to run full diagnostics (Unit + E2E) to isolate the failure mode.
 - 2026-01-19: Implementation exceeded MVP scope by integrating real Hugging Face model (CPU-optimized) instead of mock, validating better functional value.
 
 ---
@@ -209,6 +213,35 @@ So that I don't waste GPU/CPU cycles transcribing background noise and latency i
 
 ---
 
+## Release v0.4.1 - Stability & Resilience
+**Target Date**: 2026-02-05
+**Strategic Goal**: Eliminate startup race conditions and improve platform reliability independent of orchestration tools.
+
+### Epic 1.9: Service Startup Resilience
+**Priority**: P1
+**Status**: Planned
+
+**User Story**:
+As an Operator,
+I want all microservices to autonomously wait for infrastructure dependencies (Schema Registry/Kafka),
+So that the platform starts up reliably without crash loops, even without external orchestration delays.
+
+**Business Value**:
+- **Reliability**: Prevents "CrashLoopBackOff" in Kubernetes or failure in simple localized runs.
+- **Portability**: Ensures services are robust regardless of deployment method (Compose, K8s, bare metal).
+
+**Dependencies**:
+- Pattern established in Translation Service (Plan 011).
+
+**Acceptance Criteria**:
+- [ ] **ASR Service**: Implements bounded wait loop for Schema Registry.
+- [ ] **VAD Service**: Implements bounded wait loop for Schema Registry.
+- [ ] **TTS Service**: Implements bounded wait loop for Schema Registry.
+- [ ] **Gateway Service**: Implements bounded wait loop for Schema Registry.
+- [ ] Shared Library remains thin (logic lives in service main loops).
+
+---
+
 ## Release v0.5.0 - Synthesis (MVP+)
 **Status**: Planned
 **Target Release**: Upcoming
@@ -247,13 +280,13 @@ So that I can consume the translation hands-free.
 
 ---
 
-## Release vIn Progress
-**Strategic Goal**: Enable deep auditing of the pipeline by persisting intermediate artifacts (audio/text) effectively implementing "Claim Check" pattern to keep Kafka request size low.
+## Release v0.6.0 - Auditing & Persistence
+**Target Date**: Upcoming
+**Strategic Goal**: Enable deep auditing by persisting intermediate artifacts (audio/text) effectively implementing "Claim Check" pattern to keep Kafka request size low.
 
 ### Epic 1.8: Artifact Persistence (S3/MinIO) - Platform Rollout
 **Priority**: P2
 **Status**: In Progress
-**Status**: Planned
 
 **User Story**:
 As a Researcher,
