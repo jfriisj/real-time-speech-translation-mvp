@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import os
 from typing import Any, Dict
 
-from speech_lib import AudioSynthesisPayload, BaseEvent
+from speech_lib import AudioSynthesisPayload, BaseEvent, select_transport_mode
 from speech_lib.storage import ObjectStorage
 
 
@@ -57,7 +57,12 @@ def select_audio_transport(
     correlation_id: str,
 ) -> tuple[bytes | None, str | None, str]:
     force_uri = os.getenv("FORCE_AUDIO_URI", "0") == "1"
-    if not force_uri and len(audio_bytes) <= inline_limit_bytes:
+    decision = select_transport_mode(
+        payload_size_bytes=len(audio_bytes),
+        threshold_bytes=inline_limit_bytes,
+        force_uri=force_uri,
+    )
+    if decision.mode == "inline":
         return audio_bytes, None, "inline"
 
     if disable_storage or storage is None:
@@ -75,13 +80,6 @@ def select_audio_transport(
     except Exception as exc:  # pragma: no cover - storage failure guard
         raise ValueError("Payload too large for inline and storage disabled") from exc
 
-    if return_key:
-        if audio_uri.startswith("s3://"):
-            bucket_key = audio_uri.replace("s3://", "", 1)
-            _bucket, resolved_key = bucket_key.split("/", 1)
-            return None, resolved_key, "uri"
-        return None, audio_uri, "uri"
-
     return None, audio_uri, "uri"
 
 
@@ -95,6 +93,8 @@ def build_audio_payload(
     speaker_reference_bytes: bytes | None,
     speaker_id: str | None,
     text_snippet: str | None,
+    audio_sha256: str | None = None,
+    audio_size_bytes: int | None = None,
 ) -> AudioSynthesisPayload:
     payload = AudioSynthesisPayload(
         audio_bytes=audio_bytes,
@@ -105,6 +105,8 @@ def build_audio_payload(
         speaker_id=speaker_id,
         speaker_reference_bytes=speaker_reference_bytes,
         text_snippet=text_snippet,
+        audio_sha256=audio_sha256,
+        audio_size_bytes=audio_size_bytes,
     )
     payload.validate()
     return payload
@@ -130,6 +132,8 @@ def build_output_event(
             "speaker_id": payload.speaker_id,
             "speaker_reference_bytes": payload.speaker_reference_bytes,
             "text_snippet": payload.text_snippet,
+            "audio_sha256": payload.audio_sha256,
+            "audio_size_bytes": payload.audio_size_bytes,
         },
     )
 

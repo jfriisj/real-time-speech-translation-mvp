@@ -6,13 +6,16 @@ from typing import Any, Dict, Optional
 from uuid import uuid4
 
 from speech_lib import (
+    AUDIO_PAYLOAD_MAX_BYTES,
     BaseEvent,
     KafkaConsumerWrapper,
     KafkaProducerWrapper,
+    ObjectStorage,
     SchemaRegistryClient,
     TOPIC_AUDIO_INGRESS,
     TOPIC_SPEECH_SEGMENT,
     load_schema,
+    select_transport_mode,
 )
 
 from .config import Settings
@@ -72,13 +75,15 @@ def process_event(
     output_schema_id: int,
     settings: Settings,
     vad_model: Optional[VadModel],
+    storage: ObjectStorage | None,
+    traceparent: str | None = None,
 ) -> None:
     correlation_id = str(event.get("correlation_id", "")).strip()
     if not correlation_id:
         raise ValueError("missing correlation_id")
 
     payload = event.get("payload") or {}
-    audio_bytes, sample_rate_hz, audio_format = validate_audio_payload(payload)
+    audio_bytes, sample_rate_hz, audio_format = validate_audio_payload(payload, storage)
     speaker_reference_bytes = payload.get("speaker_reference_bytes")
     speaker_id = payload.get("speaker_id")
     audio, actual_rate = decode_wav(audio_bytes, sample_rate_hz)
@@ -116,6 +121,42 @@ def process_event(
         return
 
     for index, segment in enumerate(segments):
+        decision = select_transport_mode(
+            payload_size_bytes=len(segment.audio_bytes),
+            threshold_bytes=AUDIO_PAYLOAD_MAX_BYTES,
+        )
+        audio_bytes_out: bytes | None = segment.audio_bytes
+        segment_uri: str | None = None
+        bucket: str | None = None
+        key: str | None = None
+        if decision.mode == "uri":
+            if settings.disable_storage or storage is None:
+                LOGGER.error(
+                    "event_name=claim_check_drop correlation_id=%s reason=storage_unavailable payload_size_bytes=%s threshold_bytes=%s",
+                    correlation_id,
+                    len(segment.audio_bytes),
+                    AUDIO_PAYLOAD_MAX_BYTES,
+                )
+                continue
+            key = f"{correlation_id}/{index}.wav"
+            try:
+                segment_uri = storage.upload_bytes(
+                    key=key,
+                    data=segment.audio_bytes,
+                    content_type="audio/wav",
+                    return_key=True,
+                )
+                bucket, key = ObjectStorage.parse_s3_uri(segment_uri)
+                audio_bytes_out = None
+            except Exception:  # pragma: no cover - storage failure guard
+                LOGGER.error(
+                    "event_name=claim_check_drop correlation_id=%s reason=storage_error payload_size_bytes=%s threshold_bytes=%s",
+                    correlation_id,
+                    len(segment.audio_bytes),
+                    AUDIO_PAYLOAD_MAX_BYTES,
+                )
+                continue
+
         output_event = BaseEvent(
             event_type="SpeechSegmentEvent",
             correlation_id=correlation_id,
@@ -125,7 +166,8 @@ def process_event(
                 "segment_index": index,
                 "start_ms": int(segment.start_ms),
                 "end_ms": int(segment.end_ms),
-                "audio_bytes": segment.audio_bytes,
+                "audio_bytes": audio_bytes_out,
+                "segment_uri": segment_uri,
                 "sample_rate_hz": effective_rate,
                 "audio_format": audio_format,
                 "speaker_reference_bytes": speaker_reference_bytes
@@ -135,17 +177,37 @@ def process_event(
             },
         )
 
-        producer.publish_event(
-            TOPIC_SPEECH_SEGMENT,
-            output_event,
-            output_schema,
-            key=correlation_id,
-            schema_id=output_schema_id,
-        )
+        if traceparent:
+            producer.publish_event(
+                TOPIC_SPEECH_SEGMENT,
+                output_event,
+                output_schema,
+                key=correlation_id,
+                headers={"traceparent": traceparent},
+                schema_id=output_schema_id,
+            )
+        else:
+            producer.publish_event(
+                TOPIC_SPEECH_SEGMENT,
+                output_event,
+                output_schema,
+                key=correlation_id,
+                schema_id=output_schema_id,
+            )
         LOGGER.info(
             "Published SpeechSegmentEvent correlation_id=%s segment_index=%s",
             correlation_id,
             index,
+        )
+        LOGGER.info(
+            "event_name=%s correlation_id=%s transport_mode=%s payload_size_bytes=%s threshold_bytes=%s bucket=%s key=%s",
+            "claim_check_offload" if decision.mode == "uri" else "claim_check_inline",
+            correlation_id,
+            decision.mode,
+            decision.payload_size_bytes,
+            decision.threshold_bytes,
+            bucket,
+            key,
         )
 
 
@@ -173,15 +235,38 @@ def main() -> None:
     )
     producer = KafkaProducerWrapper.from_confluent(settings.kafka_bootstrap_servers)
     vad_model = _load_vad_model(settings)
+    storage = None
+    if not settings.disable_storage:
+        storage = ObjectStorage(
+            endpoint=settings.minio_endpoint,
+            access_key=settings.minio_access_key,
+            secret_key=settings.minio_secret_key,
+            bucket=settings.minio_bucket,
+            secure=settings.minio_secure,
+        )
 
     LOGGER.info("VAD service started; consuming from %s", TOPIC_AUDIO_INGRESS)
 
     try:
         while True:
-            event = consumer.poll(input_schema, timeout=settings.poll_timeout_seconds)
-            if event is None:
+            polled = consumer.poll_with_message(
+                input_schema, timeout=settings.poll_timeout_seconds
+            )
+            if polled is None:
                 continue
+            event, message = polled
             try:
+                traceparent = None
+                headers = message.headers() if hasattr(message, "headers") else None
+                if headers:
+                    for key, value in headers:
+                        if key == "traceparent":
+                            traceparent = (
+                                value.decode("utf-8", errors="ignore")
+                                if isinstance(value, bytes)
+                                else value
+                            )
+                            break
                 process_event(
                     event=event,
                     producer=producer,
@@ -189,6 +274,8 @@ def main() -> None:
                     output_schema_id=output_schema_id,
                     settings=settings,
                     vad_model=vad_model,
+                    storage=storage,
+                    traceparent=traceparent,
                 )
             except ValueError as exc:
                 LOGGER.warning("Dropping event: %s", exc)

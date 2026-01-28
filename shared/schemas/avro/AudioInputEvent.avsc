@@ -15,7 +15,8 @@
         "type": "record",
         "name": "AudioInputPayload",
         "fields": [
-          {"name": "audio_bytes", "type": "bytes"},
+          {"name": "audio_bytes", "type": ["null", "bytes"], "default": null},
+          {"name": "audio_uri", "type": ["null", "string"], "default": null},
           {"name": "audio_format", "type": "string", "doc": "e.g., wav"},
           {"name": "sample_rate_hz", "type": "int"},
           {"name": "language_hint", "type": ["null", "string"], "default": null},

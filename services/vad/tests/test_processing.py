@@ -45,7 +45,7 @@ def test_validate_audio_payload_accepts_valid_payload() -> None:
         "audio_format": "wav",
         "sample_rate_hz": 16000,
     }
-    audio_bytes, sample_rate, audio_format = validate_audio_payload(payload)
+    audio_bytes, sample_rate, audio_format = validate_audio_payload(payload, None)
     assert audio_bytes == b"\x00\x01"
     assert sample_rate == 16000
     assert audio_format == "wav"
@@ -151,6 +151,12 @@ def test_process_event_passes_speaker_context() -> None:
         use_onnx=False,
         model_repo="",
         model_filename="",
+        minio_endpoint="http://localhost:9000",
+        minio_access_key="minioadmin",
+        minio_secret_key="minioadmin",
+        minio_bucket="vad-segments",
+        minio_secure=False,
+        disable_storage=True,
     )
     producer = _RecordingProducer()
 
@@ -169,6 +175,7 @@ def test_process_event_passes_speaker_context() -> None:
         output_schema={},
         settings=settings,
         vad_model=None,
+        storage=None,
     )
 
     assert producer.published

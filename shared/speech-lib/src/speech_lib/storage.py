@@ -38,18 +38,42 @@ class ObjectStorage:
         data: bytes,
         content_type: str,
         return_key: bool = False,
+        bucket: Optional[str] = None,
     ) -> str:
+        target_bucket = bucket or self.bucket
         client = self._client()
-        client.put_object(Bucket=self.bucket, Key=key, Body=data, ContentType=content_type)
+        client.put_object(
+            Bucket=target_bucket,
+            Key=key,
+            Body=data,
+            ContentType=content_type,
+        )
         if return_key:
-            return f"s3://{self.bucket}/{key}"
-        return self.presign_get(key=key)
+            return self.build_uri(key=key, bucket=target_bucket)
+        return self.presign_get(key=key, bucket=target_bucket)
 
-    def presign_get(self, *, key: str) -> str:
+    def download_bytes(
+        self,
+        *,
+        uri: Optional[str] = None,
+        key: Optional[str] = None,
+        bucket: Optional[str] = None,
+    ) -> bytes:
+        if uri:
+            bucket, key = self.parse_s3_uri(uri)
+        if not key:
+            raise ValueError("key or uri must be provided")
+        target_bucket = bucket or self.bucket
+        client = self._client()
+        response = client.get_object(Bucket=target_bucket, Key=key)
+        return response["Body"].read()
+
+    def presign_get(self, *, key: str, bucket: Optional[str] = None) -> str:
+        target_bucket = bucket or self.bucket
         client = self._client()
         url = client.generate_presigned_url(
             "get_object",
-            Params={"Bucket": self.bucket, "Key": key},
+            Params={"Bucket": target_bucket, "Key": key},
             ExpiresIn=self.presign_expiry_seconds,
         )
         if not self.public_endpoint:
@@ -62,3 +86,17 @@ class ObjectStorage:
             netloc=public_parsed.netloc or parsed.netloc,
         )
         return urlunparse(rewritten)
+
+    def build_uri(self, *, key: str, bucket: Optional[str] = None) -> str:
+        target_bucket = bucket or self.bucket
+        return f"s3://{target_bucket}/{key}"
+
+    @staticmethod
+    def parse_s3_uri(uri: str) -> tuple[str, str]:
+        if not uri.startswith("s3://"):
+            raise ValueError("uri must start with s3://")
+        without_scheme = uri.replace("s3://", "", 1)
+        bucket, _, key = without_scheme.partition("/")
+        if not bucket or not key:
+            raise ValueError("s3 uri must include bucket and key")
+        return bucket, key

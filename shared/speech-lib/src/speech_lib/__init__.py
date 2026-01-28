@@ -16,6 +16,7 @@ from .events import (
     TextTranslatedPayload,
 )
 from .correlation import correlation_context, get_correlation_id, set_correlation_id
+from .claim_check import ClaimCheckDecision, select_transport_mode
 from .schema_registry import SchemaRegistryClient
 from .serialization import load_schema, serialize_event, deserialize_event
 from .producer import KafkaProducerWrapper
@@ -39,6 +40,8 @@ __all__ = [
     "correlation_context",
     "get_correlation_id",
     "set_correlation_id",
+    "ClaimCheckDecision",
+    "select_transport_mode",
     "SchemaRegistryClient",
     "load_schema",
     "serialize_event",

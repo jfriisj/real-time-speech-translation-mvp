@@ -23,6 +23,12 @@ class Settings:
     use_onnx: bool
     model_repo: str
     model_filename: str
+    minio_endpoint: str
+    minio_access_key: str
+    minio_secret_key: str
+    minio_bucket: str
+    minio_secure: bool
+    disable_storage: bool
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -43,4 +49,10 @@ class Settings:
             use_onnx=os.getenv("VAD_USE_ONNX", "1") != "0",
             model_repo=os.getenv("VAD_MODEL_REPO", "onnx-community/silero-vad"),
             model_filename=os.getenv("VAD_MODEL_FILENAME", "silero_vad.onnx"),
+            minio_endpoint=os.getenv("MINIO_ENDPOINT", "http://127.0.0.1:9000"),
+            minio_access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
+            minio_secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
+            minio_bucket=os.getenv("MINIO_BUCKET", "vad-segments"),
+            minio_secure=os.getenv("MINIO_SECURE", "0") == "1",
+            disable_storage=os.getenv("VAD_DISABLE_STORAGE", "0") == "1",
         )

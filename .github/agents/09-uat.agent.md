@@ -14,12 +14,12 @@ handoffs:
     agent: 07 Implementer
     prompt: "UAT found gaps in value delivery. Please address the findings.\n\nInputs:\n- UAT report: agent-output/uat/NNN-feature-slug-uat.md\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n\nDeliverable:\n- Fix implementation + tests; update implementation report: agent-output/implementation/NNN-feature-slug-implementation.md"
     send: false
-  - label: 11 Prepare Release (DevOps -> After UAT Approval)
-    agent: 11 DevOps
+  - label: 10 Prepare Release (DevOps -> After UAT Approval)
+    agent: 10 DevOps
     prompt: "UAT is APPROVED FOR RELEASE. Please run release readiness + execution (with user confirmation).\n\nInputs:\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n- QA report: agent-output/qa/NNN-feature-slug-qa.md\n- UAT report: agent-output/uat/NNN-feature-slug-uat.md\n- Target version: vX.Y.Z\n\nDeliverable:\n- Create/update: agent-output/releases/vX.Y.Z.md"
     send: false
-  - label: 12 Trigger Retrospective (After Release)
-    agent: 12 Retrospective
+  - label: 11 Trigger Retrospective (After Release)
+    agent: 11 Retrospective
     prompt: "UAT is complete and release is done (or scheduled). Please run a retrospective.\n\nInputs:\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n- Release doc (if exists): agent-output/releases/vX.Y.Z.md\n- QA/UAT: agent-output/qa/NNN-feature-slug-qa.md, agent-output/uat/NNN-feature-slug-uat.md"
     send: false
   - label: 01 Update Roadmap (After Retrospective)

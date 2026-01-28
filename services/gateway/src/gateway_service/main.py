@@ -9,12 +9,15 @@ from uuid import uuid4
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 from speech_lib import (
+    AUDIO_PAYLOAD_MAX_BYTES,
     AudioInputPayload,
     BaseEvent,
     KafkaProducerWrapper,
+    ObjectStorage,
     SchemaRegistryClient,
     TOPIC_AUDIO_INGRESS,
     load_schema,
+    select_transport_mode,
 )
 
 from .audio import pcm_to_wav
@@ -45,6 +48,15 @@ def create_app(settings: Settings) -> FastAPI:
         app.state.producer = KafkaProducerWrapper.from_confluent(
             settings.kafka_bootstrap_servers
         )
+        app.state.storage = None
+        if not settings.disable_storage:
+            app.state.storage = ObjectStorage(
+                endpoint=settings.minio_endpoint,
+                access_key=settings.minio_access_key,
+                secret_key=settings.minio_secret_key,
+                bucket=settings.minio_bucket,
+                secure=settings.minio_secure,
+            )
         LOGGER.info("Gateway service started; ws endpoint ready")
 
     @app.websocket("/ws/audio")
@@ -166,8 +178,46 @@ async def finalize_publish(
         raise ValueError("no audio data received")
     audio_bytes = buffer.to_bytes()
     wav_bytes = pcm_to_wav(audio_bytes, settings.sample_rate_hz)
+    decision = select_transport_mode(
+        payload_size_bytes=len(wav_bytes),
+        threshold_bytes=AUDIO_PAYLOAD_MAX_BYTES,
+    )
+    audio_bytes_out: bytes | None = wav_bytes
+    audio_uri: str | None = None
+    bucket: str | None = None
+    key: str | None = None
+    if decision.mode == "uri":
+        storage: ObjectStorage | None = state.storage
+        if settings.disable_storage or storage is None:
+            LOGGER.error(
+                "event_name=claim_check_drop correlation_id=%s reason=storage_unavailable payload_size_bytes=%s threshold_bytes=%s",
+                correlation_id,
+                len(wav_bytes),
+                AUDIO_PAYLOAD_MAX_BYTES,
+            )
+            raise ValueError("Payload too large for inline and storage disabled")
+        key = f"{correlation_id}.wav"
+        try:
+            audio_uri = storage.upload_bytes(
+                key=key,
+                data=wav_bytes,
+                content_type="audio/wav",
+                return_key=True,
+            )
+            bucket, key = ObjectStorage.parse_s3_uri(audio_uri)
+            audio_bytes_out = None
+        except Exception as exc:  # pragma: no cover - storage failure guard
+            LOGGER.error(
+                "event_name=claim_check_drop correlation_id=%s reason=storage_error payload_size_bytes=%s threshold_bytes=%s",
+                correlation_id,
+                len(wav_bytes),
+                AUDIO_PAYLOAD_MAX_BYTES,
+            )
+            raise ValueError("Payload too large for inline and storage disabled") from exc
+
     payload = AudioInputPayload(
-        audio_bytes=wav_bytes,
+        audio_bytes=audio_bytes_out,
+        audio_uri=audio_uri,
         audio_format=settings.audio_format,
         sample_rate_hz=settings.sample_rate_hz,
     )
@@ -179,6 +229,7 @@ async def finalize_publish(
         source_service="gateway-service",
         payload={
             "audio_bytes": payload.audio_bytes,
+            "audio_uri": payload.audio_uri,
             "audio_format": payload.audio_format,
             "sample_rate_hz": payload.sample_rate_hz,
             "language_hint": payload.language_hint,
@@ -194,6 +245,17 @@ async def finalize_publish(
         schema,
         key=correlation_id,
         schema_id=schema_id,
+    )
+
+    LOGGER.info(
+        "event_name=%s correlation_id=%s transport_mode=%s payload_size_bytes=%s threshold_bytes=%s bucket=%s key=%s",
+        "claim_check_offload" if decision.mode == "uri" else "claim_check_inline",
+        correlation_id,
+        decision.mode,
+        decision.payload_size_bytes,
+        decision.threshold_bytes,
+        bucket,
+        key,
     )
 
 

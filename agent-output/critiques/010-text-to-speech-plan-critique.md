@@ -1,10 +1,11 @@
 # Plan Critique: 010-text-to-speech (TTS)
 
 **Artifact**: agent-output/planning/010-text-to-speech-plan.md
-**Related Analysis**: agent-output/analysis/010-text-to-speech-plan-analysis.md, agent-output/analysis/011-claim-check-unknowns-analysis.md
-**Related Architecture Findings**: agent-output/architecture/019-text-to-speech-plan-architecture-findings.md, agent-output/architecture/020-claim-check-scope-shift-architecture-findings.md
+**Related Analysis**: agent-output/analysis/010-text-to-speech-plan-analysis.md, agent-output/analysis/012-text-to-speech-claim-check-analysis.md, agent-output/analysis/013-minio-default-credentials-analysis.md
+**Related Architecture Findings**: agent-output/architecture/019-text-to-speech-plan-architecture-findings.md, agent-output/architecture/020-claim-check-scope-shift-architecture-findings.md, agent-output/architecture/021-text-to-speech-plan-rev33-architecture-findings.md
+**Related Security Review**: agent-output/security/010-text-to-speech-security-pre-implementation.md
 **Date**: 2026-01-27
-**Status**: APPROVED (Revision 8)
+**Status**: APPROVED (Revision 11)
 
 ## Changelog
 
@@ -18,33 +19,38 @@
 | 2026-01-27 | User → Critic | Critique for clarity/completeness/scope/risks/alignment | Reviewed Plan 010 Rev 26 against the planner rubric; corrected outdated critique assertions; captured remaining non-blocking risks/questions. |
 | 2026-01-27 | User → Critic | Critique for clarity/completeness/scope/risks/alignment | Reviewed Plan 010 Rev 27; confirmed prior open questions resolved (DLQ, rollback constraint, metrics/logging). Added remaining non-blocking clarity gaps. |
 | 2026-01-27 | User → Critic | Critique after architecture gate | Reviewed Plan 010 Rev 30 against Architecture Findings 019 and the planner rubric; found core architectural alignment but identified blocking plan text defects (Milestones corruption, schema artifact naming) and minor scope hygiene issues. |
-| 2026-01-27 | User → Critic | Critique after plan update | Reviewed Plan 010 Rev 31 after incorporating Analysis 011 / Findings 020 (Claim Check scope shift). Prior Milestones naming defects appear resolved, but new blocking text corruption/regressions exist in Schema Contract, M4 deliverables, and Verification & Acceptance. |
+| 2026-01-27 | User → Critic | Critique after plan update | Reviewed Plan 010 Rev 31 after incorporating Findings 020 (Claim Check scope shift). Prior Milestones naming defects appear resolved, but new blocking text corruption/regressions exist in Schema Contract, M4 deliverables, and Verification & Acceptance. |
 | 2026-01-27 | User → Critic | Critique after plan repair | Reviewed Plan 010 Rev 31 after text repairs; contract sections are clean and unambiguous. All prior blockers resolved. |
+| 2026-01-27 | User → Critic | Critique after security gate update | Reviewed current Plan 010 (header says Rev 34) after adding explicit security constraints; flagged remaining clarity and security-alignment gaps that should be resolved before implementation/release. |
+| 2026-01-27 | User → Critic | Re-critique after critique remediation | Reviewed Plan 010 Rev 35; verified the security TTL ambiguity, revision metadata drift, integrity narrative, and key-collision decision have been addressed. |
+| 2026-01-27 | User → Critic | Re-critique after security investigation | Reviewed Plan 010 Rev 35 in light of Analysis 013 (MinIO default credentials + compose drift). Plan remains sound; additional release-gating alignment checks recommended. |
 
 ## Value Statement Assessment
 - **Present and well-formed**: “As a User, I want…, So that…” is clear.
 - **Business objective is understandable** (hands-free consumption) and matches the epic intent.
 
 ## Overview
-Plan 010 (Rev 31) is **architecturally aligned** with the Claim Check scope shift (v0.5.0 pilot for TTS; v0.6.0 platform rollout). Prior text corruption in contract-defining sections has been repaired, and no blocking issues remain.
+Plan 010 is **strongly aligned** with Epic 1.7 in the roadmap (Kokoro ONNX + Claim Check enablement for large TTS outputs) and matches the architecture’s key boundaries (XOR Claim Check semantics; SR governance; edge presigning responsibility).
+
+Security constraints are explicitly captured (secrets hygiene, supply-chain pinning, edge URL policy, logging minimization, integrity metadata) without undermining the edge boundary or the Claim Check semantics.
 
 ## Roadmap Alignment
 - **Aligned**: Target release `v0.5.0` and Epic 1.7 user story match the roadmap wording.
-- **Minor documentation drift risk**: the roadmap “Status Notes” mention an older plan revision; this does not block the plan but can confuse cross-team readers.
+- **Minor documentation drift risk**: the roadmap “Status Notes” reference older Plan 010 revision numbers, which can confuse cross-team readers during release governance.
 
 ## Architectural Alignment
 - **Mostly aligned**: Plan references Findings 019 and now also reflects Findings 020 (early Claim Check enablement for TTS).
 - **Speaker Context**: Correctly set to "Pass-through" to support future Voice Cloning without contract breakage.
 - **Claim Check**: Correctly implements strict inline (<1.25 MiB) vs external (>1.25 MiB) handling.
-- **Security**: "Don't log presigned URLs" constraint is present.
+- **Security boundary**: "Don’t emit presigned URLs from TTS" + "don’t log presigned URLs" constraints are present.
 - **Microservices**: Decoupling logic (SynthesizerFactory) from implementation (Kokoro ONNX) is preserved.
 
 ## Completeness (Contract Decision Gates)
 - **Message/schema contract**: Present (producer/consumer, evolution rules, Registry `BACKWARD`).
 - **Speaker context propagation**: Present (explicit pass-through requirement).
 - **Data retention & privacy**: Present (24h default target + configurable; “do not log presigned URLs”).
-- **Observability**: Present (trace propagation + required log fields). Consider adding minimal metrics as a future refinement (non-blocking).
- - **Observability**: Present (trace propagation + required log fields, including latency/RTF). Metrics are explicitly optional for v0.5.0, which removes ambiguity.
+- **Observability**: Present (trace propagation + required log fields, including latency/RTF). Metrics are explicitly optional for v0.5.0, which removes ambiguity.
+- **Security constraints**: Present as a dedicated “Security Controls (Pre-Implementation Gate)” section and consistent with the configuration table and edge contract.
 
 ## Scope Assessment
 - Scope is properly constrained to the TTS service implementation.
@@ -53,7 +59,7 @@ Plan 010 (Rev 31) is **architecturally aligned** with the Claim Check scope shif
 
 ## Clarity Notes
 - The plan is generally clear and structured.
-- The “Verification & Acceptance” section still includes concrete test actions; consider moving procedural steps to QA artifacts while keeping plan-level outcomes.
+- The “Verification & Acceptance” section includes some procedural verification steps (specific scripts/paths). This is not necessarily wrong, but it is close to the repo rubric’s “plans are WHAT/WHY, QA is HOW”. Consider reframing to outcomes + pointers to QA artifacts.
 
 ## Technical Debt Risks
 - **Low**: The updated plan mitigates the major debt risk (contract divergence) by strictly adhering to the "Backward Compatible" and "Pass-through" strategies.
@@ -66,80 +72,81 @@ Plan 010 (Rev 31) is **architecturally aligned** with the Claim Check scope shif
 
 ### Critical (Blocking)
 
-#### C1 — Speaker Context Propagation Misaligned with Architecture
+#### C1 — Security gate introduces a TTL/ownership ambiguity
 **Status**: RESOLVED
 
-**Resolution**: Plan Rev 26 now explicitly states: "The service receives optional `speaker_reference_bytes` ... and propagates it to `AudioSynthesisEvent`. (Even if Kokoro does not use it)." This aligns with the "Pass-through" architecture requirement.
+**Description**: Previously, the plan mixed “short-lived client presigns” with a 24h presign setting in a way that could be read as endorsing long-lived presigned URLs.
 
-#### C2 — QA Thresholds Missing
+**Resolution**: Plan Rev 35 explicitly distinguishes:
+- Gateway client policy (short TTL; never persisted/logged)
+- `MINIO_PRESIGN_EXPIRY_SECONDS` as **internal/testing-only** with a note that Gateway applies a separate, shorter client-facing TTL.
+
+**Impact**: Removes ambiguity that could lead to long-lived URL exposure.
+
+### Medium
+
+#### M1 — Plan revision metadata drift
 **Status**: RESOLVED
 
-**Resolution**: Plan Rev 26 includes explicit performance verification intent (RTF measured/recorded) without over-specifying plan-level benchmark protocols.
+**Description**: Previously, the plan revision header did not reflect post-security edits.
 
-#### C3 — Retention Default Conflicts with Architecture Guardrail
+**Impact**: Auditability and cross-document traceability suffer (roadmap, architecture findings, and security review all cite specific revs).
+
+**Resolution**: Plan header is now Rev 35 and includes a security reference.
+
+#### M2 — Integrity metadata is introduced but not fully integrated into the contract narrative
 **Status**: RESOLVED
 
-**Resolution**: Plan Rev 26 updates retention to "24h default (configurable)", aligning with the architecture guardrail.
+**Description**: Previously, integrity metadata was introduced in milestones without consumer guidance.
 
-#### C4 — Schema Compatibility Conflicts with Registry Policy
+**Impact**: Implementers may treat integrity fields as “nice-to-have” and omit downstream validation, reducing their value and leaving a false sense of safety.
+
+**Resolution**: Schema Contract now includes integrity metadata guidance and non-fatal handling expectations.
+
+#### M3 — Key collision risk remains a known integrity issue
 **Status**: RESOLVED
 
-**Resolution**: Plan Rev 26 specifies "Schema Compatibility: BACKWARD", matching the platform Registry policy.
+**Description**: The plan’s canonical key format `tts/{correlation_id}.wav` is stable and simple, but collision-prone under replay/retry scenarios.
 
-#### C5 — Milestones section contains corrupted/duplicated text
-**Status**: RESOLVED
+**Impact**: Potential overwrites or confusing “wrong audio served for the right correlation_id”, undermining trust and traceability.
 
-**Resolution**: Plan 010 Rev 31 Milestones are cleanly structured (M1–M5) without the prior stray header/corrupted duplication.
+**Resolution**: Plan Rev 35 explicitly accepts overwrite (“Last Write Wins”) as v0.5.0 MVP debt with rationale.
 
-#### C6 — M1 deliverable naming conflicts with the contract source-of-truth
-**Status**: RESOLVED
+### Low
 
-**Resolution**: Plan 010 Rev 31 M1 deliverables correctly distinguish:
-- Schema artifact path: `shared/schemas/avro/AudioSynthesisEvent.avsc`
-- Schema Registry subject: `speech.tts.audio-value` (TopicNameStrategy)
+#### L1 — Plan/QA coupling is borderline
+**Status**: ADDRESSED
 
-#### C7 — Schema Contract section is corrupted (source-of-truth and `audio_uri` semantics)
-**Status**: RESOLVED
+**Description**: The plan still references specific scripts/paths as evidence pointers in a few places.
 
-**Resolution**: Schema Contract now cleanly identifies `shared/schemas/avro/AudioSynthesisEvent.avsc` as source-of-truth and defines `audio_uri` as an internal object key (Gateway presigns).
+**Impact**: Minor; primarily maintainability and governance drift.
 
-#### C8 — M4 deliverables are corrupted (Claim Check fallback and observability enforcement)
-**Status**: RESOLVED
-
-**Resolution**: M4 now lists three explicit Claim Check cases (inline, URI/key, log-and-drop).
-
-#### C9 — Verification & Acceptance section is corrupted/duplicated
-**Status**: RESOLVED
-
-**Resolution**: Verification & Acceptance is clean and non-duplicated.
-
-### Major (Important)
-
-#### M5 — URI Ownership/Expiry Strategy Fragile
-**Status**: RESOLVED
-
-**Resolution**: Plan Rev 26 adopts the "Internal Key (Preferred)" strategy where the Gateway is responsible for presigning at read-time, addressing the fragility of long-lived presigned URLs.
-
-#### M6 — “Exactly-one-of” payload invariant not explicit
-**Status**: RESOLVED
-
-**Resolution**: Plan Rev 30 explicitly states the XOR invariant in the Schema Contract.
-
-#### M7 — Field naming drift risks contract confusion
-**Status**: RESOLVED
-
-**Resolution**: Plan Rev 31 uses `sample_rate_hz`, matching the canonical schema naming convention.
-
-**Impact**: Small naming drift is a common integration failure mode (especially across services and generated models).
-
-**Recommendation**: In M1 deliverables, align field names to the canonical schema file names/fields (or explicitly link to the schema file as source of truth).
+**Recommendation**: Keep the current light-touch approach (outcome-first, scripts as examples). If this becomes a recurring maintenance pain, migrate procedural steps to QA artifacts.
 
 ## Recommendations
-- **Proceed to implementation**: Blocking defects are resolved; implementation can start.
-- **Reduce plan/QA coupling**: Keep acceptance criteria as observable outcomes; move step-by-step test procedure (script paths, exact phrase lists) into QA artifacts unless they are explicitly contract-level requirements.
-- **Gateway alignment**: Keep the “internal key + gateway presigning” rule explicit and consistent across Schema Contract + Retention sections.
+- **Proceed to implementation/release gating**: Plan 010 Rev 35 is clear, complete on contract decisions, and aligned with roadmap/architecture/security.
+- **Track MVP debt explicitly**: The accepted overwrite behavior for `tts/{correlation_id}.wav` should be carried as a known debt item into the Epic 1.8 rollout.
+
+## Additional Risks (Non-Blocking, from Analysis 013)
+
+### R1 — Default MinIO credentials are easy to cargo-cult beyond localhost
+**Status**: OPEN
+
+**Description**: The plan’s security controls correctly state MinIO defaults must not be used outside localhost. Analysis 013 confirms the repo’s local compose uses `minioadmin/minioadmin` in both MinIO and the TTS service, which is fine for local dev but risky if copied to any shared/staging environment.
+
+**Impact**: Confidentiality/integrity risk (audio objects can be read/overwritten/deleted with well-known credentials).
+
+**Recommendation**: Keep plan approved, but treat this as a release-gating checklist item: document a required non-local secrets injection mechanism and ensure any non-local compose/deployment config explicitly overrides defaults.
+
+### R2 — Infrastructure config drift against plan constraints
+**Status**: OPEN
+
+**Description**: The plan requires v0.5.0 to use `TTS_AUDIO_URI_MODE=internal` and requires container pinning (no `:latest`). The current `docker-compose.yml` still uses `minio/minio:latest` / `minio/mc:latest` and sets `TTS_AUDIO_URI_MODE` default to `presigned`.
+
+**Impact**: Confusing behavior for QA/UAT (URI semantics differ from the contract) and avoidable supply-chain drift.
+
+**Recommendation**: This is not a plan defect, but it is an implementation/release alignment risk. Ensure the implementation report and QA/UAT evidence explicitly confirm the runtime config matches the plan constraints.
 
 ## Questions (Non-Blocking)
-1. Should the plan remove the “QA Script path” requirement and instead reference a QA artifact location, to match the repo plan rubric (plans are WHAT/WHY, QA docs are HOW)?
-2. Should M1 list fields at all (risk of drift), or should it only point to `shared/schemas/avro/AudioSynthesisEvent.avsc` as the single source-of-truth?
+1. Do we want to explicitly state a default posture for `text_snippet` (e.g., schema may carry it, but logs do not emit it by default) to align privacy guidance end-to-end?
 

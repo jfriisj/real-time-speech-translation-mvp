@@ -62,7 +62,9 @@ def test_kokoro_synthesize_uses_onnx_and_speed(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(
         kokoro,
         "hf_hub_download",
-        lambda repo_id, filename, cache_dir=None: str(tokenizer_path if filename == "tokenizer.json" else model_path),
+        lambda repo_id, filename, cache_dir=None, revision=None: str(
+            tokenizer_path if filename == "tokenizer.json" else model_path
+        ),
     )
     monkeypatch.setattr(kokoro, "_phonemize", lambda _text: "AH B")
 
@@ -71,6 +73,7 @@ def test_kokoro_synthesize_uses_onnx_and_speed(tmp_path, monkeypatch) -> None:
 
     synth = kokoro.KokoroSynthesizer(
         model_repo="dummy",
+        model_revision="rev",
         model_filename="model.onnx",
         cache_dir=tmp_path,
         sample_rate_hz=24000,

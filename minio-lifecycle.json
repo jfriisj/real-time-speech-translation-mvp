@@ -1,0 +1,10 @@
+{
+  "Rules": [
+    {
+      "ID": "expire-artifacts-24h",
+      "Status": "Enabled",
+      "Filter": {"Prefix": ""},
+      "Expiration": {"Days": 1}
+    }
+  ]
+}

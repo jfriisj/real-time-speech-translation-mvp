@@ -14,6 +14,12 @@ class Settings:
     poll_timeout_seconds: float
     schema_dir: Path
     input_topic: str
+    minio_endpoint: str
+    minio_access_key: str
+    minio_secret_key: str
+    minio_bucket: str
+    minio_secure: bool
+    disable_storage: bool
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -25,4 +31,10 @@ class Settings:
             poll_timeout_seconds=float(os.getenv("POLL_TIMEOUT_SECONDS", "1.0")),
             schema_dir=Path(os.getenv("SCHEMA_DIR", "shared/schemas/avro")),
             input_topic=os.getenv("ASR_INPUT_TOPIC", "speech.audio.ingress"),
+            minio_endpoint=os.getenv("MINIO_ENDPOINT", "http://127.0.0.1:9000"),
+            minio_access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
+            minio_secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
+            minio_bucket=os.getenv("MINIO_BUCKET", "audio-ingress"),
+            minio_secure=os.getenv("MINIO_SECURE", "0") == "1",
+            disable_storage=os.getenv("ASR_DISABLE_STORAGE", "0") == "1",
         )

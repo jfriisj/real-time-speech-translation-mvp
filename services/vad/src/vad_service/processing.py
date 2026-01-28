@@ -10,6 +10,7 @@ import soundfile as sf
 import librosa
 
 from speech_lib.constants import AUDIO_PAYLOAD_MAX_BYTES
+from speech_lib.storage import ObjectStorage
 
 
 LOGGER = logging.getLogger(__name__)
@@ -22,15 +23,27 @@ class SpeechSegment:
     audio_bytes: bytes
 
 
-def validate_audio_payload(payload: Dict[str, Any]) -> tuple[bytes, int, str]:
+def validate_audio_payload(
+    payload: Dict[str, Any],
+    storage: ObjectStorage | None,
+) -> tuple[bytes, int, str]:
     audio_bytes = payload.get("audio_bytes")
+    audio_uri = payload.get("audio_uri")
     audio_format = payload.get("audio_format")
     sample_rate_hz = payload.get("sample_rate_hz")
 
+    has_bytes = isinstance(audio_bytes, (bytes, bytearray)) and bool(audio_bytes)
+    has_uri = isinstance(audio_uri, str) and bool(str(audio_uri).strip())
+    if has_bytes == has_uri:
+        raise ValueError("exactly one of audio_bytes or audio_uri must be set")
+    if has_uri:
+        if storage is None:
+            raise ValueError("audio_uri provided but storage unavailable")
+        audio_bytes = storage.download_bytes(uri=str(audio_uri))
     if not isinstance(audio_bytes, (bytes, bytearray)) or not audio_bytes:
         raise ValueError("audio_bytes missing or empty")
 
-    if len(audio_bytes) > AUDIO_PAYLOAD_MAX_BYTES:
+    if not has_uri and len(audio_bytes) > AUDIO_PAYLOAD_MAX_BYTES:
         raise ValueError(f"audio_bytes exceeds {AUDIO_PAYLOAD_MAX_BYTES} bytes (MVP limit)")
 
     if audio_format != "wav":

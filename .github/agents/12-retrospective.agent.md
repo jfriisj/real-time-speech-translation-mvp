@@ -1,6 +1,6 @@
 ---
 description: Captures lessons learned, architectural decisions, and patterns after implementation completes.
-name: 12 Retrospective
+name: 11 Retrospective
 target: vscode
 argument-hint: Reference the completed plan or release to retrospect on
 tools: ['read/readFile', 'edit/createDirectory', 'edit/createFile', 'search', 'web', 'memory/*', 'todo']
@@ -10,8 +10,8 @@ handoffs:
     agent: 04 Architect
     prompt: "Retrospective reveals architectural patterns/decisions that should be documented.\n\nInputs:\n- Retrospective: agent-output/retrospectives/NNN-feature-slug-retrospective.md\n\nDeliverable:\n- Update: agent-output/architecture/system-architecture.md (changelog + decisions)\n- Optional: agent-output/architecture/NNN-feature-slug-architecture-findings.md"
     send: false
-  - label: 13 Improve Process (Retrospective → ProcessImprovement)
-    agent: 13 ProcessImprovement
+  - label: 12 Improve Process (Retrospective → ProcessImprovement)
+    agent: 12 ProcessImprovement
     prompt: "Retrospective identifies repeatable workflow improvements. Please analyze and propose updates.\n\nInputs:\n- Retrospective: agent-output/retrospectives/NNN-feature-slug-retrospective.md\n\nDeliverable:\n- Create: agent-output/process-improvement/NNN-process-improvement-analysis.md"
     send: false
   - label: 01 Update Roadmap (Retrospective → Roadmap)

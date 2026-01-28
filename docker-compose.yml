@@ -46,35 +46,40 @@ services:
       - speech_net
 
   minio:
-    image: minio/minio:latest
+    image: ${MINIO_IMAGE_REF:-minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e}
     container_name: speech-minio
     command: server /data --console-address ":9001"
     ports:
       - "127.0.0.1:9000:9000"
       - "127.0.0.1:9001:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     networks:
       - speech_net
 
   minio-init:
-    image: minio/mc:latest
+    image: ${MINIO_MC_IMAGE_REF:-minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727}
     container_name: speech-minio-init
     depends_on:
       - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     entrypoint: >
       /bin/sh -c "
       for i in $(seq 1 20); do
-        mc alias set local http://minio:9000 minioadmin minioadmin && break;
+        mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin} && break;
         echo 'waiting for minio...';
         sleep 2;
       done &&
-      mc mb -p local/tts-audio || true &&
-      mc ilm import local/tts-audio < /lifecycle.json
+      for bucket in audio-ingress vad-segments asr-transcripts tts-audio; do
+        mc mb -p local/$bucket || true;
+        mc ilm import local/$bucket < /lifecycle.json;
+      done
       "
     volumes:
-      - ./services/tts/minio-lifecycle.json:/lifecycle.json:ro
+      - ./minio-lifecycle.json:/lifecycle.json:ro
     networks:
       - speech_net
 
@@ -92,6 +97,11 @@ services:
       MODEL_NAME: openai/whisper-tiny
       SCHEMA_DIR: /app/shared/schemas/avro
       ASR_INPUT_TOPIC: speech.audio.ingress
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: audio-ingress
+      MINIO_SECURE: "0"
     volumes:
       - hf_cache:/app/.cache/huggingface
     networks:
@@ -120,6 +130,11 @@ services:
       VAD_USE_ONNX: "1"
       VAD_MODEL_REPO: onnx-community/silero-vad
       VAD_MODEL_FILENAME: silero_vad.onnx
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: vad-segments
+      MINIO_SECURE: "0"
     volumes:
       - hf_cache:/app/.cache/huggingface
     networks:
@@ -159,14 +174,15 @@ services:
       SCHEMA_DIR: /app/shared/schemas/avro
       TTS_MODEL_NAME: kokoro-82m-onnx
       TTS_MODEL_CACHE_DIR: /app/model_cache
+      TTS_MODEL_REVISION: ${TTS_MODEL_REVISION:-1939ad2a8e416c0acfeecc08a694d14ef25f2231}
       HF_TOKEN: ${HF_TOKEN:-}
       MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
       MINIO_BUCKET: tts-audio
       MINIO_SECURE: "0"
       INLINE_PAYLOAD_MAX_BYTES: ${INLINE_PAYLOAD_MAX_BYTES:-1310720}
-      TTS_AUDIO_URI_MODE: ${TTS_AUDIO_URI_MODE:-presigned}
+      TTS_AUDIO_URI_MODE: ${TTS_AUDIO_URI_MODE:-internal}
     volumes:
       - ./model_cache:/app/model_cache
     networks:
@@ -190,13 +206,18 @@ services:
       GATEWAY_PORT: 8000
       SAMPLE_RATE_HZ: 16000
       AUDIO_FORMAT: wav
-      MAX_BUFFER_BYTES: 1310720
+      MAX_BUFFER_BYTES: 5242880
       MAX_CHUNK_BYTES: 65536
       MAX_CONNECTIONS: 10
       IDLE_TIMEOUT_SECONDS: 10
       MAX_SESSION_SECONDS: 60
       MAX_MESSAGES_PER_SECOND: 200
       ORIGIN_ALLOWLIST: ""
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: audio-ingress
+      MINIO_SECURE: "0"
     user: "1000:1000"
     cap_drop:
       - ALL

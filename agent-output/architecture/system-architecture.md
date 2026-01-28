@@ -1,6 +1,6 @@
 # System Architecture — Universal Speech Translation Platform
 
-**Last Updated**: 2026-01-27
+**Last Updated**: 2026-01-28
 
 ## Changelog
 
@@ -20,6 +20,8 @@
 | 2026-01-27 | Plan 010 (TTS) re-review after contract additions | Flags required alignment fixes (speaker context pass-through, SR compatibility wording, retention defaults, `audio_uri` ownership) before implementation | Findings 017 |
 | 2026-01-27 | Plan 010 (TTS) pre-implementation review (Rev 29) | Confirms architectural fit; requires pinning topic/subject naming and repairing acceptance criteria text to prevent integration drift | Findings 019 |
 | 2026-01-27 | Scope shift: Claim Check enablement pulled into Epic 1.7 | Records that v0.5.0 introduces object storage/Claim Check for TTS output as a pilot; Epic 1.8 becomes the platform-wide rollout | Findings 020 |
+| 2026-01-27 | Epic 1.8 platform rollout pre-planning constraints | Approves platform-wide artifact persistence rollout with required guardrails: canonical object reference semantics, lifecycle ownership, and deterministic storage failure behavior | Findings 022 |
+| 2026-01-28 | Plan 022 (Artifact Persistence Rollout) pre-implementation review | Confirms architectural fit; requires bucket naming consistency, shared-lib boundary tightening, deterministic failure signaling, and pinned trace propagation mechanism | Findings 023 |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:
@@ -182,6 +184,18 @@ Implementation note (v0.5.0):
 **Choice (guardrail)**:
 - Artifact retention MUST be time-bounded (default target: 24 hours) and configurable by environment.
 - Presigned URLs (if used) MUST NOT be logged in full and MUST be time-bounded.
+
+### Decision: Artifact references in events must be non-secret (v0.6.0)
+**Context**: Claim Check references can accidentally become bearer credentials if presigned URLs are embedded in events.
+
+**Choice (guardrail)**:
+- Events SHOULD carry an internal object reference (e.g., bucket + key) or other non-secret identifier.
+- Presigning/authorization for client access SHOULD occur at the edge boundary (Ingress Gateway) rather than inside internal pipeline services.
+- If presigned URLs are used anywhere, they MUST be short-lived and MUST NOT be logged in full.
+
+**Consequences**:
+- Avoids credential leakage via Kafka, logs, and traces.
+- Keeps internal services simpler and reduces inconsistent URL refresh logic.
 
 **Consequences**:
 - Adds governance requirements (lifecycle rules, internal-only endpoints by default in dev).

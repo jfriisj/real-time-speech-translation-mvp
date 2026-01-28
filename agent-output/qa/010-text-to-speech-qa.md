@@ -1,7 +1,7 @@
 # QA Report: Plan 010 Text-to-Speech (TTS) Service
 
 **Plan Reference**: [agent-output/planning/010-text-to-speech-plan.md](agent-output/planning/010-text-to-speech-plan.md)
-**QA Status**: QA Passed
+**QA Status**: QA Failed
 **QA Specialist**: qa
 
 ## Changelog
@@ -13,13 +13,14 @@
 | 2026-01-27 | User → QA | Implementation complete; verify coverage and run tests | Re-ran unit tests and coverage in .venv; Ruff clean; integration/e2e still pending. |
 | 2026-01-27 | User → QA | Run integration/e2e smoke for TTS | Rebuilt TTS service and ran TTS pipeline smoke test (inline payload) successfully. |
 | 2026-01-27 | User → QA | Run URI/MinIO smoke for TTS | Forced URI storage and validated MinIO path via TTS pipeline smoke test (URI payload) successfully. |
+| 2026-01-28 | User → QA | Implementation complete; verify coverage and run tests | Re-ran Ruff checks, unit tests, and coverage; e2e inline/URI smoke tests timed out waiting for `AudioSynthesisEvent`. |
 
 ## Timeline
 - **Test Strategy Started**: 2026-01-27
 - **Test Strategy Completed**: 2026-01-27
 - **Implementation Received**: 2026-01-27
 - **Testing Started**: 2026-01-27
-- **Testing Completed**: 2026-01-27
+- **Testing Completed**: 2026-01-28
 - **Final Status**: QA Failed
 
 ## Test Strategy (Pre-Implementation)
@@ -107,21 +108,21 @@ python -m venv /home/jonfriis/github/real-time-speech-translation-mvp/.venv-qa
 - **Tests Added Beyond Plan**: None
 
 ## Analyzer Verification Gate
-- Ruff lint: PASS on TTS service sources/tests and TTS smoke script (0 issues).
+- Ruff lint: PASS on TTS service sources/tests and shared events model (0 issues).
 - Dead-code scan: Not executed (not required for this pass).
 
 ## Test Execution Results
 
 ### Unit Tests
-- **Command**: `/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python -m pytest services/tts/tests/test_processing.py services/tts/tests/test_kokoro.py services/tts/tests/test_config.py services/tts/tests/test_main.py`
+- **Command**: `/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python -m pytest services/tts/tests/test_processing.py services/tts/tests/test_main.py services/tts/tests/test_kokoro.py services/tts/tests/test_config.py`
 - **Status**: PASS (17 tests)
-- **Output**: All tests passed.
+- **Output**: All tests passed (17/17).
 - **Coverage Percentage**: Not measured for full suite.
 
 ### Unit Test Coverage
 - **Command**: `/home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python -m pytest services/tts/tests/test_processing.py --cov=tts_service.processing --cov-report=term-missing`
 - **Status**: PASS (10 tests)
-- **Coverage Percentage**: 96% for `tts_service.processing` (missing lines 81-83)
+- **Coverage Percentage**: 96% for `tts_service.processing` (missing lines 83-85)
 
 ### Integration Tests
 - **Command**: Not executed (requires Kafka/Schema Registry/MinIO).
@@ -130,18 +131,18 @@ python -m venv /home/jonfriis/github/real-time-speech-translation-mvp/.venv-qa
 
 ### E2E Tests
 - **Command**: `TTS_SMOKE_PHRASE_SET=curated TTS_SMOKE_PHRASE_LIMIT=5 /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/tts_pipeline_smoke.py`
-- **Status**: PASS
-- **Output**: 5/5 phrases synthesized; inline payload validation succeeded.
+- **Status**: FAIL
+- **Output**: Timed out waiting for `AudioSynthesisEvent`.
 
 ### E2E Tests (URI/MinIO)
 - **Command**: `EXPECT_PAYLOAD_MODE=URI TTS_SMOKE_PHRASE_SET=curated TTS_SMOKE_PHRASE_LIMIT=3 /home/jonfriis/github/real-time-speech-translation-mvp/.venv/bin/python tests/e2e/tts_pipeline_smoke.py`
-- **Status**: PASS
-- **Output**: 3/3 phrases synthesized; URI payload validation succeeded (MinIO path exercised).
+- **Status**: FAIL
+- **Output**: Timed out waiting for `AudioSynthesisEvent`.
 
 ## QA Assessment
 - Unit tests executed successfully; processing coverage is 96% and meets the 90% threshold.
-- E2E pipeline smoke tests pass for inline and URI payloads (Kafka → TTS → AudioSynthesisEvent, MinIO storage path validated).
+- E2E pipeline smoke tests failed (inline and URI) due to timeouts waiting for `AudioSynthesisEvent` while the Docker stack was running. Translation service logs show Schema Registry connection errors, which likely blocked downstream processing.
 - Service-level latency/RTF evidence remains a follow-up for UAT readiness.
 
 ## QA Status
-**QA Passed** — inline and URI payload paths validated end-to-end.
+**QA Failed** — e2e smoke tests timed out; infrastructure readiness needs remediation before UAT handoff.

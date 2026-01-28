@@ -24,7 +24,9 @@
           {"name": "model_name", "type": ["null", "string"], "default": null},
           {"name": "speaker_id", "type": ["null", "string"], "default": null},
           {"name": "speaker_reference_bytes", "type": ["null", "bytes"], "default": null},
-          {"name": "text_snippet", "type": ["null", "string"], "default": null}
+          {"name": "text_snippet", "type": ["null", "string"], "default": null},
+          {"name": "audio_sha256", "type": ["null", "string"], "default": null},
+          {"name": "audio_size_bytes", "type": ["null", "long"], "default": null}
         ]
       }
     }

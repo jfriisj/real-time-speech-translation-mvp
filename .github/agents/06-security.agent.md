@@ -22,8 +22,8 @@ handoffs:
     agent: 04 Architect
     prompt: "Security audit reveals architectural concerns requiring design changes.\n\nInputs:\n- Security report: agent-output/security/NNN-feature-slug-security-[mode].md\n\nDeliverable:\n- Create/update: agent-output/architecture/NNN-feature-slug-architecture-findings.md\n- Update: agent-output/architecture/system-architecture.md if needed"
     send: false
-  - label: 11 Pre-Release Security Gate (Before DevOps)
-    agent: 11 DevOps
+  - label: 10 Pre-Release Security Gate (Before DevOps)
+    agent: 10 DevOps
     prompt: "Release is blocked on security gate verification.\n\nInputs:\n- UAT decision: agent-output/uat/NNN-feature-slug-uat.md\n- QA status: agent-output/qa/NNN-feature-slug-qa.md\n- Security report: agent-output/security/NNN-feature-slug-security-pre-production-gate.md\n\nAsk:\n- Do not proceed with release until security issues are resolved or explicitly accepted by user."
     send: false
 ---

@@ -7,6 +7,7 @@ from speech_lib import (
     BaseEvent,
     KafkaConsumerWrapper,
     KafkaProducerWrapper,
+    ObjectStorage,
     SchemaRegistryClient,
     TOPIC_ASR_TEXT,
     TOPIC_AUDIO_INGRESS,
@@ -75,13 +76,15 @@ def process_event(
     producer: KafkaProducerWrapper,
     output_schema: Dict[str, Any],
     output_schema_id: int,
+    storage: ObjectStorage | None,
+    traceparent: str | None,
 ) -> None:
     correlation_id = str(event.get("correlation_id", ""))
     payload = event.get("payload") or {}
     speaker_reference_bytes = payload.get("speaker_reference_bytes")
     speaker_id = payload.get("speaker_id")
 
-    audio_bytes, sample_rate_hz = validate_audio_payload(payload)
+    audio_bytes, sample_rate_hz = validate_audio_payload(payload, storage)
     audio, effective_rate = decode_wav(audio_bytes, sample_rate_hz)
 
     result = transcriber.transcribe(audio, effective_rate)
@@ -100,6 +103,7 @@ def process_event(
         TOPIC_ASR_TEXT,
         output_event,
         output_schema,
+        headers={"traceparent": traceparent} if traceparent else None,
         schema_id=output_schema_id,
     )
     segment_index = payload.get("segment_index")
@@ -134,16 +138,47 @@ def main() -> None:
     )
     producer = KafkaProducerWrapper.from_confluent(settings.kafka_bootstrap_servers)
     transcriber = Transcriber(settings.model_name)
+    storage = None
+    if not settings.disable_storage:
+        storage = ObjectStorage(
+            endpoint=settings.minio_endpoint,
+            access_key=settings.minio_access_key,
+            secret_key=settings.minio_secret_key,
+            bucket=settings.minio_bucket,
+            secure=settings.minio_secure,
+        )
 
     LOGGER.info("ASR service started; consuming from %s", settings.input_topic)
 
     try:
         while True:
-            event = consumer.poll(input_schema, timeout=settings.poll_timeout_seconds)
-            if event is None:
+            polled = consumer.poll_with_message(
+                input_schema, timeout=settings.poll_timeout_seconds
+            )
+            if polled is None:
                 continue
+            event, message = polled
             try:
-                process_event(event, transcriber, producer, output_schema, output_schema_id)
+                traceparent = None
+                headers = message.headers() if hasattr(message, "headers") else None
+                if headers:
+                    for key, value in headers:
+                        if key == "traceparent":
+                            traceparent = (
+                                value.decode("utf-8", errors="ignore")
+                                if isinstance(value, bytes)
+                                else value
+                            )
+                            break
+                process_event(
+                    event,
+                    transcriber,
+                    producer,
+                    output_schema,
+                    output_schema_id,
+                    storage,
+                    traceparent,
+                )
             except ValueError as exc:
                 LOGGER.warning("Dropping event: %s", exc)
             except Exception:  # pragma: no cover - safety net for runtime errors

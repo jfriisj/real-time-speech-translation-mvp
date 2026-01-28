@@ -1,9 +1,9 @@
 ---
 description: DevOps specialist responsible for packaging, versioning, deployment readiness, and release execution with user confirmation.
-name: 11 DevOps
+name: 10 DevOps
 target: vscode
 argument-hint: Specify the version to release or deployment task to perform
-tools: ['execute/getTerminalOutput', 'execute/runInTerminal', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'copilot-container-tools/*', 'analyzer/*', 'filesystem/*', 'github/*', 'memory/*', 'github/*', 'todo']
+tools: ['execute/getTerminalOutput', 'execute/runInTerminal', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'analyzer/*', 'filesystem/*', 'github/*', 'memory/*', 'github/*', 'ms-azuretools.vscode-containers/containerToolsConfig', 'todo']
 model: GPT-5.1-Codex-Mini (Preview) (copilot)
 handoffs:
   - label: 07 Request Implementation Fixes (Release Blocker)
@@ -14,8 +14,8 @@ handoffs:
     agent: 06 Security
     prompt: "Please perform a Pre-Production Gate security review for the pending release.\n\nInputs:\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n- QA: agent-output/qa/NNN-feature-slug-qa.md\n- UAT: agent-output/uat/NNN-feature-slug-uat.md\n- Release doc: agent-output/releases/vX.Y.Z.md\n\nDeliverable:\n- Create: agent-output/security/NNN-feature-slug-security-pre-production-gate.md"
     send: false
-  - label: 12 Hand Off to Retrospective (Post-Release)
-    agent: 12 Retrospective
+  - label: 11 Hand Off to Retrospective (Post-Release)
+    agent: 11 Retrospective
     prompt: "Release complete. Please capture lessons learned and process improvements.\n\nInputs:\n- Release doc: agent-output/releases/vX.Y.Z.md\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n- QA/UAT: agent-output/qa/NNN-feature-slug-qa.md, agent-output/uat/NNN-feature-slug-uat.md"
     send: false
 ---

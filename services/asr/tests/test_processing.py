@@ -38,7 +38,7 @@ def test_validate_audio_payload_accepts_valid_payload() -> None:
         "audio_format": "wav",
         "sample_rate_hz": 16000,
     }
-    audio_bytes, sample_rate = validate_audio_payload(payload)
+    audio_bytes, sample_rate = validate_audio_payload(payload, None)
     assert audio_bytes == b"\x00\x01"
     assert sample_rate == 16000
 
@@ -46,13 +46,13 @@ def test_validate_audio_payload_accepts_valid_payload() -> None:
 def test_validate_audio_payload_rejects_empty() -> None:
     payload = {"audio_bytes": b"", "audio_format": "wav", "sample_rate_hz": 16000}
     with pytest.raises(ValueError):
-        validate_audio_payload(payload)
+        validate_audio_payload(payload, None)
 
 
 def test_validate_audio_payload_rejects_format() -> None:
     payload = {"audio_bytes": b"\x00", "audio_format": "mp3", "sample_rate_hz": 16000}
     with pytest.raises(ValueError):
-        validate_audio_payload(payload)
+        validate_audio_payload(payload, None)
 
 
 def test_validate_audio_payload_rejects_oversize() -> None:
@@ -62,7 +62,7 @@ def test_validate_audio_payload_rejects_oversize() -> None:
         "sample_rate_hz": 16000,
     }
     with pytest.raises(ValueError):
-        validate_audio_payload(payload)
+        validate_audio_payload(payload, None)
 
 
 def test_decode_wav_returns_float32_audio() -> None:

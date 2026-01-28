@@ -1,6 +1,6 @@
 # Universal Speech Translation Platform - Product Roadmap
 
-**Last Updated**: 2026-01-19
+**Last Updated**: 2026-01-27
 **Roadmap Owner**: Roadmap Agent
 **Strategic Vision**: Deliver a scalable, event-driven platform for real-time speech translation that demonstrates low-latency orchestration of independent AI microservices. The focus is on architectural proof, measurable performance, and expandability through shared contracts, serving as a robust foundation for academic research and future commercial application.
 
@@ -16,6 +16,7 @@
 | 2026-01-19 17:00 | Released v0.3.0 (Ingress) | Delivered Epic 1.5 (Phase 1); Moved Epics 1.6 & 1.7 to new v0.4.0 Release to reflect iterative delivery. |
 | 2026-01-25 10:00 | Pivoted Epic 1.7 to Kokoro ONNX | Changed TTS model strategy from IndexTTS-2 to Kokoro ONNX for runtime stability; mandated pluggable architecture for future swaps. |
 | 2026-01-27 10:00 | Scope Shift (Epics 1.7 & 1.8) | Pulled MinIO/Claim Check infrastructure from Epic 1.8 into Epic 1.7 to support TTS large audio requirements. |
+| 2026-01-27 10:30 | Started Epic 1.8 | Commencing platform-wide rollout of Claim Check persistence (S3/MinIO) for deep auditing/Thesis validation. |
 
 ---
 
@@ -246,12 +247,12 @@ So that I can consume the translation hands-free.
 
 ---
 
-## Release v0.6.0 - Observability & Persistence (Thesis Validation)
-**Status**: Planned
+## Release vIn Progress
 **Strategic Goal**: Enable deep auditing of the pipeline by persisting intermediate artifacts (audio/text) effectively implementing "Claim Check" pattern to keep Kafka request size low.
 
 ### Epic 1.8: Artifact Persistence (S3/MinIO) - Platform Rollout
 **Priority**: P2
+**Status**: In Progress
 **Status**: Planned
 
 **User Story**:

@@ -71,6 +71,7 @@ class KokoroSynthesizer:
         self,
         *,
         model_repo: str,
+        model_revision: str,
         model_filename: str,
         cache_dir: Path,
         sample_rate_hz: int,
@@ -79,10 +80,20 @@ class KokoroSynthesizer:
         self.sample_rate_hz = sample_rate_hz
         self.model_name = model_name
         self.model_path = Path(
-            hf_hub_download(repo_id=model_repo, filename=model_filename, cache_dir=str(cache_dir))
+            hf_hub_download(
+                repo_id=model_repo,
+                filename=model_filename,
+                cache_dir=str(cache_dir),
+                revision=model_revision,
+            )
         )
         self.tokenizer_path = Path(
-            hf_hub_download(repo_id=model_repo, filename="tokenizer.json", cache_dir=str(cache_dir))
+            hf_hub_download(
+                repo_id=model_repo,
+                filename="tokenizer.json",
+                cache_dir=str(cache_dir),
+                revision=model_revision,
+            )
         )
         self.tokenizer = KokoroTokenizer.from_json(self.tokenizer_path)
         self.session = _load_onnx_session(self.model_path)

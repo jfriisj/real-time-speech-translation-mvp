@@ -16,6 +16,7 @@ class Settings:
     schema_dir: Path
     model_engine: str
     model_repo: str
+    model_revision: str
     model_filename: str
     model_cache_dir: Path
     model_name: str
@@ -43,6 +44,9 @@ class Settings:
             schema_dir=Path(os.getenv("SCHEMA_DIR", "shared/schemas/avro")),
             model_engine=os.getenv("TTS_MODEL_ENGINE", "kokoro_onnx"),
             model_repo=os.getenv("TTS_MODEL_REPO", "onnx-community/Kokoro-82M-v1.0-ONNX"),
+            model_revision=os.getenv(
+                "TTS_MODEL_REVISION", "1939ad2a8e416c0acfeecc08a694d14ef25f2231"
+            ),
             model_filename=os.getenv("TTS_MODEL_FILENAME", "onnx/model.onnx"),
             model_cache_dir=Path(os.getenv("TTS_MODEL_CACHE_DIR", "model_cache")),
             model_name=os.getenv("TTS_MODEL_NAME", "kokoro-82m-onnx"),

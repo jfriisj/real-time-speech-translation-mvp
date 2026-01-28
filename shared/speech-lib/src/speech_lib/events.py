@@ -10,18 +10,27 @@ from .constants import AUDIO_PAYLOAD_MAX_BYTES
 
 @dataclass(frozen=True)
 class AudioInputPayload:
-    audio_bytes: bytes
+    audio_bytes: Optional[bytes]
     audio_format: str
     sample_rate_hz: int
+    audio_uri: Optional[str] = None
     language_hint: Optional[str] = None
     speaker_reference_bytes: Optional[bytes] = None
     speaker_id: Optional[str] = None
 
     def validate(self) -> None:
-        if len(self.audio_bytes) > AUDIO_PAYLOAD_MAX_BYTES:
+        has_bytes = isinstance(self.audio_bytes, (bytes, bytearray)) and bool(self.audio_bytes)
+        has_uri = isinstance(self.audio_uri, str) and bool(self.audio_uri.strip())
+        if has_bytes == has_uri:
+            raise ValueError("exactly one of audio_bytes or audio_uri must be set")
+        if has_bytes and len(self.audio_bytes or b"") > AUDIO_PAYLOAD_MAX_BYTES:
             raise ValueError(
                 f"audio_bytes exceeds {AUDIO_PAYLOAD_MAX_BYTES} bytes (MVP limit)"
             )
+        if self.audio_format != "wav":
+            raise ValueError("audio_format must be 'wav' for MVP")
+        if self.sample_rate_hz <= 0:
+            raise ValueError("sample_rate_hz must be positive")
 
 
 @dataclass(frozen=True)
@@ -49,8 +58,9 @@ class SpeechSegmentPayload:
     segment_index: int
     start_ms: int
     end_ms: int
-    audio_bytes: bytes
+    audio_bytes: Optional[bytes]
     sample_rate_hz: int
+    segment_uri: Optional[str] = None
     audio_format: str = "wav"
     speaker_reference_bytes: Optional[bytes] = None
     speaker_id: Optional[str] = None
@@ -62,7 +72,11 @@ class SpeechSegmentPayload:
             raise ValueError("segment_index must be non-negative")
         if self.start_ms < 0 or self.end_ms <= self.start_ms:
             raise ValueError("start_ms/end_ms are invalid")
-        if len(self.audio_bytes) > AUDIO_PAYLOAD_MAX_BYTES:
+        has_bytes = isinstance(self.audio_bytes, (bytes, bytearray)) and bool(self.audio_bytes)
+        has_uri = isinstance(self.segment_uri, str) and bool(self.segment_uri.strip())
+        if has_bytes == has_uri:
+            raise ValueError("exactly one of audio_bytes or segment_uri must be set")
+        if has_bytes and len(self.audio_bytes or b"") > AUDIO_PAYLOAD_MAX_BYTES:
             raise ValueError(
                 f"audio_bytes exceeds {AUDIO_PAYLOAD_MAX_BYTES} bytes (MVP limit)"
             )
@@ -84,6 +98,8 @@ class AudioSynthesisPayload:
     speaker_id: Optional[str] = None
     speaker_reference_bytes: Optional[bytes] = None
     text_snippet: Optional[str] = None
+    audio_sha256: Optional[str] = None
+    audio_size_bytes: Optional[int] = None
 
     def validate(self) -> None:
         has_bytes = isinstance(self.audio_bytes, (bytes, bytearray)) and bool(self.audio_bytes)
@@ -100,6 +116,8 @@ class AudioSynthesisPayload:
             raise ValueError("sample_rate_hz must be positive")
         if self.duration_ms <= 0:
             raise ValueError("duration_ms must be positive")
+        if self.audio_size_bytes is not None and self.audio_size_bytes <= 0:
+            raise ValueError("audio_size_bytes must be positive when provided")
 
 
 @dataclass(frozen=True)

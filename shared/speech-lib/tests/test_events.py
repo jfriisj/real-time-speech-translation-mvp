@@ -11,6 +11,7 @@ from speech_lib.events import (
 def test_audio_payload_size_limit():
     payload = AudioInputPayload(
         audio_bytes=b"a" * (AUDIO_PAYLOAD_MAX_BYTES + 1),
+        audio_uri=None,
         audio_format="wav",
         sample_rate_hz=16000,
     )
@@ -46,6 +47,7 @@ def test_speech_segment_payload_validation() -> None:
         start_ms=0,
         end_ms=1000,
         audio_bytes=b"\x00\x01",
+        segment_uri=None,
         sample_rate_hz=16000,
         audio_format="wav",
     )
@@ -57,7 +59,8 @@ def test_speech_segment_payload_validation() -> None:
         segment_index=-1,
         start_ms=10,
         end_ms=5,
-        audio_bytes=b"\x00",
+        audio_bytes=None,
+        segment_uri=None,
         sample_rate_hz=0,
         audio_format="mp3",
     )

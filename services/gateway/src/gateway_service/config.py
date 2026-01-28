@@ -24,6 +24,12 @@ class Settings:
     max_session_seconds: float
     max_messages_per_second: int
     origin_allowlist: FrozenSet[str]
+    minio_endpoint: str
+    minio_access_key: str
+    minio_secret_key: str
+    minio_bucket: str
+    minio_secure: bool
+    disable_storage: bool
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -35,13 +41,21 @@ class Settings:
             port=int(os.getenv("GATEWAY_PORT", "8000")),
             audio_format=os.getenv("AUDIO_FORMAT", "wav"),
             sample_rate_hz=int(os.getenv("SAMPLE_RATE_HZ", "16000")),
-            max_buffer_bytes=int(os.getenv("MAX_BUFFER_BYTES", str(AUDIO_PAYLOAD_MAX_BYTES))),
+            max_buffer_bytes=int(
+                os.getenv("MAX_BUFFER_BYTES", str(AUDIO_PAYLOAD_MAX_BYTES * 4))
+            ),
             max_chunk_bytes=int(os.getenv("MAX_CHUNK_BYTES", "65536")),
             max_connections=int(os.getenv("MAX_CONNECTIONS", "10")),
             idle_timeout_seconds=float(os.getenv("IDLE_TIMEOUT_SECONDS", "10")),
             max_session_seconds=float(os.getenv("MAX_SESSION_SECONDS", "60")),
             max_messages_per_second=int(os.getenv("MAX_MESSAGES_PER_SECOND", "200")),
             origin_allowlist=_parse_allowlist(os.getenv("ORIGIN_ALLOWLIST", "")),
+            minio_endpoint=os.getenv("MINIO_ENDPOINT", "http://127.0.0.1:9000"),
+            minio_access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
+            minio_secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
+            minio_bucket=os.getenv("MINIO_BUCKET", "audio-ingress"),
+            minio_secure=os.getenv("MINIO_SECURE", "0") == "1",
+            disable_storage=os.getenv("GATEWAY_DISABLE_STORAGE", "0") == "1",
         )
 
 

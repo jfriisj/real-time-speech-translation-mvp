@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 import time
 from pathlib import Path
@@ -125,6 +126,8 @@ def main() -> None:
                 rtf = compute_rtf(synthesized.duration_ms, synthesis_latency_ms)
 
                 audio_bytes = synthesized.audio_bytes
+                audio_size_bytes = len(audio_bytes)
+                audio_sha256 = hashlib.sha256(audio_bytes).hexdigest()
                 audio_bytes_out, audio_uri, mode = select_audio_transport(
                     audio_bytes=audio_bytes,
                     inline_limit_bytes=settings.inline_payload_max_bytes,
@@ -143,6 +146,8 @@ def main() -> None:
                     speaker_reference_bytes=request.speaker_reference_bytes,
                     speaker_id=request.speaker_id,
                     text_snippet=request.text[:120],
+                    audio_sha256=audio_sha256,
+                    audio_size_bytes=audio_size_bytes,
                 )
 
                 output_event = build_output_event(
@@ -160,15 +165,41 @@ def main() -> None:
                     schema_id=output_schema_id,
                 )
 
+                bucket = None
+                key = None
+                if audio_uri and audio_uri.startswith("s3://"):
+                    try:
+                        bucket, key = ObjectStorage.parse_s3_uri(audio_uri)
+                    except ValueError:
+                        bucket = None
+                        key = None
+
                 LOGGER.info(
                     "Published AudioSynthesisEvent correlation_id=%s audio_size_bytes=%s transport_mode=%s synthesis_latency_ms=%.2f rtf=%s",
                     request.correlation_id,
-                    len(audio_bytes),
+                    audio_size_bytes,
                     mode,
                     synthesis_latency_ms,
                     f"{rtf:.3f}" if rtf is not None else "n/a",
                 )
+                LOGGER.info(
+                    "event_name=%s correlation_id=%s transport_mode=%s payload_size_bytes=%s threshold_bytes=%s bucket=%s key=%s",
+                    "claim_check_offload" if mode == "uri" else "claim_check_inline",
+                    request.correlation_id,
+                    mode,
+                    audio_size_bytes,
+                    settings.inline_payload_max_bytes,
+                    bucket,
+                    key,
+                )
             except ValueError as exc:
+                if "Payload too large" in str(exc):
+                    LOGGER.error(
+                        "event_name=claim_check_drop correlation_id=%s reason=storage_unavailable payload_size_bytes=%s threshold_bytes=%s",
+                        correlation_id,
+                        "unknown",
+                        settings.inline_payload_max_bytes,
+                    )
                 LOGGER.warning("Dropping event correlation_id=%s: %s", correlation_id, exc)
             except Exception:  # pragma: no cover - safety net
                 LOGGER.exception(

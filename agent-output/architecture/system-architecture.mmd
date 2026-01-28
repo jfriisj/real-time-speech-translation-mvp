@@ -37,11 +37,13 @@ flowchart TB
     TTS -->|"speech.tts.audio\nAudioSynthesisEvent"| Kafka
     Kafka -->|"speech.tts.audio\nAudioSynthesisEvent"| Client
 
-    %% Optional artifact persistence + large-payload path (URIs carried in events)
-    %% Speaker context may be carried inline (speaker_id / speaker_reference_bytes) or as a URI when needed.
-    GW -. "audio_uri (optional)" .-> Obj
-    VAD -. "segment_uri (optional)" .-> Obj
-    TTS -. "audio_uri (optional)" .-> Obj
+    %% Optional artifact persistence + large-payload path (non-secret object references carried in events)
+    %% Presigned URLs (if used) should be generated at the edge when serving clients.
+    %% Speaker context may be carried inline (speaker_id / speaker_reference_bytes) or as an object reference when needed.
+    GW -. "audio_ref (bucket+key) (optional)" .-> Obj
+    VAD -. "segment_ref (bucket+key) (optional)" .-> Obj
+    ASR -. "text_ref (bucket+key) (optional)" .-> Obj
+    TTS -. "audio_ref (bucket+key) (optional)" .-> Obj
 
     %% Registry usage
     ASR --- SR

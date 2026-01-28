@@ -65,6 +65,7 @@ Review Method:
 4. Read target doc in full.
 5. Execute review:
    - **Plan**: Value Statement? Semver? Direct value delivery? Architectural fit? Scope/debt? No code?
+   - **Performance Plans**: Is "Success Metric Measurement Method" defined? (Dataset, formula, guardrails).
    - **Architecture**: ADR format (Context/Decision/Status/Consequences)? Supports roadmap? Consistency? Alternatives/downsides?
    - **Roadmap**: Clear "So that"? P0 feasibility? Dependencies ordered? Master objective preserved?
 6. Document: Create/update `agent-output/critiques/Name-critique.md`. Track status (OPEN/ADDRESSED/RESOLVED/DEFERRED).

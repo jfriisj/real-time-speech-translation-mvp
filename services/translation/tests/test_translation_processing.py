@@ -109,6 +109,7 @@ def test_process_event_publishes_translated_event() -> None:
         translator=translator,
         producer=producer,
         output_schema={},
+        output_schema_id=1,
         target_language="es",
     )
 
@@ -136,5 +137,6 @@ def test_process_event_raises_on_empty_translation() -> None:
             translator=translator,
             producer=producer,
             output_schema={},
+            output_schema_id=1,
             target_language="es",
         )

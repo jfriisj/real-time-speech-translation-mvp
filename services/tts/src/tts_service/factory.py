@@ -12,6 +12,7 @@ class SynthesizerFactory:
         if engine == "kokoro_onnx":
             return KokoroSynthesizer(
                 model_repo=settings.model_repo,
+                model_revision=settings.model_revision,
                 model_filename=settings.model_filename,
                 cache_dir=settings.model_cache_dir,
                 sample_rate_hz=settings.sample_rate_hz,

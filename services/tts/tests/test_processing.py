@@ -89,7 +89,7 @@ def test_select_audio_transport_uploads_when_configured() -> None:
         correlation_id="corr-1",
     )
     assert audio_bytes is None
-    assert audio_uri == "tts/corr-1.wav"
+    assert audio_uri == "s3://tts-audio/tts/corr-1.wav"
     assert mode == "uri"
 
 
@@ -103,12 +103,16 @@ def test_build_output_event_includes_speaker_context() -> None:
         speaker_reference_bytes=b"\x01\x02",
         speaker_id="speaker-1",
         text_snippet="hello",
+        audio_sha256="deadbeef",
+        audio_size_bytes=1,
     )
     event = build_output_event(correlation_id="corr-1", payload=payload)
     data = event.to_dict()
     assert data["payload"]["speaker_reference_bytes"] == b"\x01\x02"
     assert data["payload"]["speaker_id"] == "speaker-1"
     assert data["payload"]["text_snippet"] == "hello"
+    assert data["payload"]["audio_sha256"] == "deadbeef"
+    assert data["payload"]["audio_size_bytes"] == 1
 
 
 def test_compute_rtf_returns_value() -> None:

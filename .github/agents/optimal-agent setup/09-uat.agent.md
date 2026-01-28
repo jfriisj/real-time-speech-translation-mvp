@@ -6,10 +6,6 @@ argument-hint: Reference the implementation or plan to validate (e.g., plan 002)
 tools: ['execute/testFailure', 'execute/getTerminalOutput', 'execute/runInTerminal', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'memory/*', 'todo']
 model: GPT-5.2-Codex (copilot)
 handoffs:
-  - label: 10 Request Live Testing Evidence (Real Environment)
-    agent: 10 LiveTesting
-    prompt: "UAT needs real-environment validation/evidence before a go/no-go decision. Please run live testing and provide reproducible results.\n\nInputs:\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n- QA report (if available): agent-output/qa/NNN-feature-slug-qa.md\n- Implementation report: agent-output/implementation/NNN-feature-slug-implementation.md\n- Target environment: [docker-compose local / staging]\n\nDeliverable:\n- Create/update: agent-output/live-testing/NNN-feature-slug-live-testing.md\n\nNote:\n- Redact any sensitive data; do not include raw user audio/PII."
-    send: false
   - label: 02 Report UAT Failure (Plan Revision)
     agent: 02 Planner
     prompt: "UAT failed: implementation does not deliver the stated value. A plan revision may be needed.\n\nInputs:\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n- UAT report (evidence): agent-output/uat/NNN-feature-slug-uat.md\n\nAsk:\n- Update plan objectives/acceptance criteria (WHAT/WHY) to resolve mismatch."
@@ -18,12 +14,12 @@ handoffs:
     agent: 07 Implementer
     prompt: "UAT found gaps in value delivery. Please address the findings.\n\nInputs:\n- UAT report: agent-output/uat/NNN-feature-slug-uat.md\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n\nDeliverable:\n- Fix implementation + tests; update implementation report: agent-output/implementation/NNN-feature-slug-implementation.md"
     send: false
-  - label: 11 Prepare Release (DevOps -> After UAT Approval)
-    agent: 11 DevOps
+  - label: 10 Prepare Release (DevOps -> After UAT Approval)
+    agent: 10 DevOps
     prompt: "UAT is APPROVED FOR RELEASE. Please run release readiness + execution (with user confirmation).\n\nInputs:\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n- QA report: agent-output/qa/NNN-feature-slug-qa.md\n- UAT report: agent-output/uat/NNN-feature-slug-uat.md\n- Target version: vX.Y.Z\n\nDeliverable:\n- Create/update: agent-output/releases/vX.Y.Z.md"
     send: false
-  - label: 12 Trigger Retrospective (After Release)
-    agent: 12 Retrospective
+  - label: 11 Trigger Retrospective (After Release)
+    agent: 11 Retrospective
     prompt: "UAT is complete and release is done (or scheduled). Please run a retrospective.\n\nInputs:\n- Plan: agent-output/planning/NNN-feature-slug-plan.md\n- Release doc (if exists): agent-output/releases/vX.Y.Z.md\n- QA/UAT: agent-output/qa/NNN-feature-slug-qa.md, agent-output/uat/NNN-feature-slug-uat.md"
     send: false
   - label: 01 Update Roadmap (After Retrospective)
@@ -166,6 +162,7 @@ Part of structured workflow: planner → analyst → critic → architect → im
 - Reviews implementer output AFTER QA completes ("QA Complete" required first)
 - Independently validates objective alignment: read plan → assess code → review QA skeptically
 - Creates UAT document in `agent-output/uat/`; implementation incomplete until "UAT Complete"
+- **Evidence**: Consume machine-readable QA artifacts (JSON) as primary evidence where available.
 - References QA skeptically: QA passing ≠ objective met
 - References original plan as source of truth for value statement
 - May reference analyst findings if plan referenced analysis
