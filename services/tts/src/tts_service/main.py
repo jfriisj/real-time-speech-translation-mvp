@@ -7,12 +7,15 @@ from pathlib import Path
 from typing import Any
 
 from speech_lib import (
+    ConsumerTuning,
     KafkaConsumerWrapper,
     KafkaProducerWrapper,
     SchemaRegistryClient,
     TOPIC_TRANSLATION_TEXT,
     TOPIC_TTS_OUTPUT,
+    build_consumer_config,
     load_schema,
+    validate_consumer_tuning,
 )
 from speech_lib.storage import ObjectStorage
 
@@ -89,11 +92,43 @@ def main() -> None:
         f"{TOPIC_TTS_OUTPUT}-value", output_schema
     )
 
+    tuning = ConsumerTuning(
+        session_timeout_ms=settings.consumer_session_timeout_ms,
+        heartbeat_interval_ms=settings.consumer_heartbeat_interval_ms,
+        max_poll_interval_ms=settings.consumer_max_poll_interval_ms,
+        partition_assignment_strategy=settings.consumer_partition_assignment_strategy,
+        enable_static_membership=settings.consumer_enable_static_membership,
+        group_instance_id=settings.consumer_group_instance_id,
+    )
+    errors = validate_consumer_tuning(tuning)
+    if errors:
+        raise ValueError("Invalid consumer tuning: " + "; ".join(errors))
+
+    consumer_config = build_consumer_config(tuning)
+    consumer_config["enable.auto.commit"] = False
+
+    assignment_state = {"first_input_logged": False}
+
+    def _on_assign(_consumer: Any, partitions: list[Any]) -> None:
+        assignment_state["first_input_logged"] = False
+        topics = sorted({partition.topic for partition in partitions})
+        LOGGER.info(
+            "kafka_consumer_assignment_acquired %s",
+            {
+                "event": "kafka_consumer_assignment_acquired",
+                "service_name": "tts-service",
+                "consumer_group_id": settings.consumer_group_id,
+                "topic": ",".join(topics),
+                "partitions": [partition.partition for partition in partitions],
+            },
+        )
+
     consumer = KafkaConsumerWrapper.from_confluent(
         settings.kafka_bootstrap_servers,
         group_id=settings.consumer_group_id,
         topics=[TOPIC_TRANSLATION_TEXT],
-        config={"enable.auto.commit": False},
+        config=consumer_config,
+        on_assign=_on_assign,
         schema_registry=registry,
     )
     producer = KafkaProducerWrapper.from_confluent(settings.kafka_bootstrap_servers)
@@ -105,6 +140,19 @@ def main() -> None:
         TOPIC_TRANSLATION_TEXT,
         settings.model_engine,
     )
+    LOGGER.info(
+        "kafka_consumer_config_effective %s",
+        {
+            "event": "kafka_consumer_config_effective",
+            "service_name": "tts-service",
+            "consumer_group_id": settings.consumer_group_id,
+            "session_timeout_ms": settings.consumer_session_timeout_ms,
+            "heartbeat_interval_ms": settings.consumer_heartbeat_interval_ms,
+            "max_poll_interval_ms": settings.consumer_max_poll_interval_ms,
+            "partition_assignment_strategy": settings.consumer_partition_assignment_strategy,
+            "static_membership_enabled": settings.consumer_enable_static_membership,
+        },
+    )
 
     try:
         while True:
@@ -113,6 +161,26 @@ def main() -> None:
                 continue
 
             event, message = polled
+            if not assignment_state["first_input_logged"]:
+                timestamp_value = None
+                try:
+                    timestamp_value = message.timestamp()[1]
+                except Exception:
+                    timestamp_value = None
+                LOGGER.info(
+                    "kafka_consumer_first_input_received %s",
+                    {
+                        "event": "kafka_consumer_first_input_received",
+                        "service_name": "tts-service",
+                        "consumer_group_id": settings.consumer_group_id,
+                        "correlation_id": event.get("correlation_id"),
+                        "topic": message.topic(),
+                        "partition": message.partition(),
+                        "offset": message.offset(),
+                        "kafka_message_timestamp": timestamp_value,
+                    },
+                )
+                assignment_state["first_input_logged"] = True
             traceparent = _extract_traceparent(message)
             correlation_id = str(event.get("correlation_id", "")).strip() or "unknown"
             try:

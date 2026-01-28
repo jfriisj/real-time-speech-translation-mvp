@@ -184,7 +184,14 @@ def main() -> int:
     schema_registry_url = os.getenv("SCHEMA_REGISTRY_URL", "http://127.0.0.1:8081")
     public_endpoint = os.getenv("MINIO_PUBLIC_ENDPOINT", "http://127.0.0.1:9000")
     expected_mode = os.getenv("EXPECT_PAYLOAD_MODE", "").upper() or None
-    timeout_seconds = float(os.getenv("TTS_SMOKE_TIMEOUT", "240"))
+    mode = os.getenv("TTS_SMOKE_MODE", "steady-state").strip().lower()
+    if mode not in {"steady-state", "cold-start"}:
+        raise ValueError("TTS_SMOKE_MODE must be steady-state or cold-start")
+
+    steady_timeout = float(os.getenv("TTS_SMOKE_TIMEOUT_STEADY", "120"))
+    cold_timeout = float(os.getenv("TTS_SMOKE_TIMEOUT_COLD", "240"))
+    timeout_seconds = steady_timeout if mode == "steady-state" else cold_timeout
+    warmup_seconds = float(os.getenv("TTS_SMOKE_WARMUP_SECONDS", "0"))
     input_text = os.getenv(
         "TTS_SMOKE_TEXT",
         "Hello from the TTS smoke test. This checks inline or URI payload delivery.",
@@ -209,6 +216,8 @@ def main() -> int:
     )
 
     _prime_consumer(consumer, schemas["tts"])
+    if mode == "steady-state" and warmup_seconds > 0:
+        time.sleep(warmup_seconds)
 
     speaker_reference = _make_wav_bytes()
     if phrases:

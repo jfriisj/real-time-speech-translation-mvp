@@ -10,6 +10,9 @@
 - Enforced input length caps and dual-mode payload delivery for TTS outputs (inline vs URI).
 - Added AudioSynthesisEvent speaker context pass-through and text snippet fields.
 - Added MinIO lifecycle retention policy for TTS audio URIs (24h).
+- Standardized Kafka consumer tuning and validation across VAD/ASR/Translation/TTS.
+- Added low-volume Kafka consumer recovery telemetry events for diagnosability.
+- Added explicit steady-state vs cold-start modes in the TTS smoke pipeline.
 
 ## 0.5.0-rc - 2026-01-25
 - Added TTS service with IndexTTS-2 integration and dual-mode audio transport.

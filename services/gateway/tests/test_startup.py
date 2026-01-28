@@ -1,6 +1,6 @@
 import pytest
 
-from gateway_service import startup
+from speech_lib import startup
 
 
 def test_parse_kafka_bootstrap_plain() -> None:

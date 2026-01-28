@@ -21,6 +21,7 @@ from .schema_registry import SchemaRegistryClient
 from .serialization import load_schema, serialize_event, deserialize_event
 from .producer import KafkaProducerWrapper
 from .consumer import KafkaConsumerWrapper
+from .consumer_config import ConsumerTuning, build_consumer_config, validate_consumer_tuning
 from .storage import ObjectStorage
 from .startup import StartupSettings, wait_for_dependencies
 
@@ -49,6 +50,9 @@ __all__ = [
     "deserialize_event",
     "KafkaProducerWrapper",
     "KafkaConsumerWrapper",
+    "ConsumerTuning",
+    "build_consumer_config",
+    "validate_consumer_tuning",
     "ObjectStorage",
     "StartupSettings",
     "wait_for_dependencies",

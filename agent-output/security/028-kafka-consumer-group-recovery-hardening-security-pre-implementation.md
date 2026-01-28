@@ -1,6 +1,6 @@
 # Security Assessment: Plan 028 (Kafka Consumer Group Recovery Hardening)
 
-**Plan Reference**: agent-output/planning/028-kafka-consumer-group-recovery-hardening-plan.md  
+**Plan Reference**: agent-output/planning/closed/028-kafka-consumer-group-recovery-hardening-plan.md  
 **Architecture Reference**: agent-output/architecture/system-architecture.md  
 **Assessment Type**: Pre-Implementation Security + Compliance Review (Plan/Architecture)  
 **Status/Verdict**: APPROVED_WITH_CONTROLS

@@ -12,6 +12,7 @@ Status: Active
 |------|--------|-----------|
 | 2026-01-28 | Initial architecture review of Plan 028 | Validate architectural alignment and require boundary/telemetry fixes before implementation. |
 | 2026-01-28 | Re-review after plan revision | Confirm Plan 028 addresses MUST items; upgrade verdict to APPROVED. |
+| 2026-01-28 | Re-review after Analysis 030 parity finding | Confirm measurement/evidence requirements include image/workspace parity to avoid stale-image false conclusions. |
 
 ## Verdict
 **APPROVED**
@@ -23,7 +24,7 @@ Plan 028 now satisfies the architectural requirements below (recorded for tracea
 ## Architectural Alignment (What’s Good)
 - **Correct problem framing**: Treats the restart tail as a Kafka consumer-group coordination/recovery issue, not “slow inference”.
 - **Boundary-respecting intent**: Keeps resilience behavior at the service boundary and limits shared-lib to a thin helper.
-- **Cross-service standardization**: Reasonable DRY use-case (config + telemetry field naming) to prevent drift across Gateway/VAD/ASR/Translation/TTS.
+- **Cross-service standardization**: Reasonable DRY use-case (config + telemetry field naming) to prevent drift across VAD/ASR/Translation/TTS.
 - **Diagnosability-first**: Adds assignment-acquired and input-received timestamps, matching the platform’s observability priority.
 
 ## Required Changes (MUST) — Status
@@ -74,6 +75,15 @@ Milestone 4’s acceptance criterion (“default local smoke runs no longer fail
 
 Status: **SATISFIED** (Plan 028 now requires explicit steady-state vs cold-start modes and preserves cold-start as a first-class check.)
 
+### MUST-5: Measurement evidence MUST include image/workspace parity proof
+Status: **SATISFIED** (Plan 028 Milestone 1 now requires parity verification before collecting baseline/post-change evidence.)
+
+**Requirement**:
+- Any baseline or post-change tail-latency measurements MUST be taken against containers/images that match the workspace code under test.
+- Evidence artifacts MUST include enough information to confirm parity (e.g., rebuilt/recreated containers plus effective config telemetry from the running service).
+
+**Rationale**: Stale Docker images can produce timing artifacts that look like regressions or mask improvements, making the plan’s evidence non-actionable.
+
 ## Recommended Improvements (SHOULD)
 
 ### SHOULD-1: Prefer “minimally invasive” Kafka tuning first
@@ -102,3 +112,34 @@ Changing consumer liveness parameters can change duplicate/replay behavior aroun
 
 ## Plan Update Checklist (What to change in Plan 028)
 - Completed in Plan 028 revision dated 2026-01-28.
+
+## Architecture Acceptance Checklist (QA/UAT Gate)
+Use this checklist as the “architecture compliance” gate before QA/UAT is treated as meaningful.
+
+### A. Boundary (Shared-lib vs Service)
+- [ ] Shared-lib provides only **pure** consumer tuning helpers (constants/builder/validator); no env reads, no I/O, no Kafka client construction, no sleeps/retries/backoff.
+- [ ] Each service owns env parsing + validation and passes explicit overrides into the shared-lib helper.
+
+### B. Telemetry (Normal vs Debug)
+- [ ] Always-on logs are low-volume (no per-message INFO logs in default mode).
+- [ ] Each consuming service emits:
+  - [ ] `kafka_consumer_config_effective` once at startup (allowlisted values only)
+  - [ ] `kafka_consumer_assignment_acquired` on assignment changes
+  - [ ] `kafka_consumer_first_input_received` once after startup and after assignment changes
+- [ ] Any per-message diagnostics are behind an explicit opt-in flag and/or sampling.
+
+### C. Configuration Contract
+- [ ] All services use the canonical `KAFKA_CONSUMER_*` env vars (same names across services).
+- [ ] Validation guardrails enforced (bounds + type checks), including:
+  - [ ] `session.timeout.ms > heartbeat.interval.ms`
+  - [ ] `max.poll.interval.ms > session.timeout.ms`
+  - [ ] assignment strategy allowlist
+- [ ] Static membership remains opt-in; if enabled, `group.instance.id` is required and uniqueness constraints are documented.
+
+### D. Evidence Integrity (Measurement Parity)
+- [ ] Baseline/post-change measurements include proof the running containers match the workspace code (rebuild/recreate + effective config telemetry).
+- [ ] Evidence captures timestamps/deltas sufficient to attribute tail latency to assignment vs processing.
+
+### E. Smoke Governance
+- [ ] Smoke tooling keeps **steady-state** vs **cold-start/restart recovery** checks as distinct modes.
+- [ ] Default developer flow targets steady-state, but cold-start remains a first-class check.

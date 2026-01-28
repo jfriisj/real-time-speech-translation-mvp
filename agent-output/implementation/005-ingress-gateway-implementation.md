@@ -78,7 +78,7 @@ Partially delivered: WebSocket ingress and Kafka publishing are implemented, but
 2. **Analysis 007 Stop Conditions**: gRPC follow-up bookkeeping remains open (Critique M-004). Sentinel/EOF behavior and load verification are now implemented and exercised.
 3. **Integration Verification**: End-to-end Kafka → ASR processing still not executed.
 4. **Roadmap Check-off**: Epic 1.5 is not yet checked off in the roadmap (Plan Milestone 4).
-5. **QA/UAT Criteria Access**: QA/UAT prompt files could not be read due to workspace access restrictions (`~/.config/Code/User/prompts/qa.agent.md` and `uat.agent.md`).
+5. **QA/UAT Criteria Access**: QA/UAT prompt files could not be read due to workspace access restrictions (`.github/agents/qa.agent.md` and `uat.agent.md`).
 
 ## Assumptions & Open Questions
 | Description | Rationale | Risk | Validation Method | Escalation Evidence |

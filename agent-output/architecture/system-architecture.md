@@ -26,6 +26,7 @@
 | 2026-01-28 | Epic 1.9 (Service Startup Resilience) pre-planning assessment | Establishes platform-level startup resilience invariant (bounded readiness gates at service boundary; no shared-lib orchestration) to unblock stable E2E for Epics 1.8–1.7 | Findings 025 |
 | 2026-01-28 | Plan 025 (Service Startup Resilience) pre-implementation review | Confirms architectural fit; requires plan cleanup + explicit readiness/healthcheck strategy and standardized startup-gate config to prevent drift | Findings 026 |
 | 2026-01-28 | Plan 028 (Kafka Consumer Group Recovery Hardening) architecture review | Aligns consumer-group recovery tuning + diagnosability with Epic 1.9 boundaries; requires shared-lib helper to remain pure/thin and telemetry to stay low-volume | Findings 028 |
+| 2026-01-28 | Standardized Kafka consumer recovery tuning contract | Makes post-restart tail latency diagnosable and tunable via a consistent env/telemetry contract across services | Plan 028 |
 
 ## Purpose
 Deliver a **hard MVP** event-driven speech translation pipeline that is:
@@ -304,6 +305,30 @@ Implementation note (v0.5.0):
 **Choice**:
 - MVP processing semantics are **at-least-once**; duplicate outputs are possible.
 - Downstream services and demos MUST tolerate duplicates (use `correlation_id` for traceability; dedupe is out-of-scope for MVP).
+
+### Decision: Kafka consumer recovery tuning contract (Epic 1.9.1 / Plan 028)
+**Context**: Post-restart tail latency can be dominated by Kafka consumer group recovery (assignment acquisition / membership expiration). Without a standard contract, tuning and incident diagnosis will drift per service.
+
+**Choice (guardrail)**:
+- Services that consume from Kafka SHOULD expose a standard set of **consumer tuning** environment variables (service-owned parsing; shared-lib remains thin):
+	- `KAFKA_CONSUMER_SESSION_TIMEOUT_MS`
+	- `KAFKA_CONSUMER_HEARTBEAT_INTERVAL_MS`
+	- `KAFKA_CONSUMER_MAX_POLL_INTERVAL_MS`
+	- `KAFKA_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY`
+	- `KAFKA_CONSUMER_ENABLE_STATIC_MEMBERSHIP` (opt-in)
+	- `KAFKA_CONSUMER_GROUP_INSTANCE_ID` (required iff static membership is enabled; must be unique per replica)
+- Services MUST validate these values with safe bounds and fail fast on invalid combinations.
+- Services MUST emit low-volume, always-on structured telemetry to make restart tail diagnosable without debug logging:
+	- `kafka_consumer_config_effective` (once at startup; allowlisted values only)
+	- `kafka_consumer_assignment_acquired` (on assignment changes)
+	- `kafka_consumer_first_input_received` (once after startup and after assignment changes)
+- Shared-lib MAY provide constants and a **pure** config builder/validator, but MUST NOT read env vars, perform I/O, or implement orchestration (sleep/retry/backoff).
+
+**Rationale**: Observability is architecture; standard contracts prevent drift and accelerate triage. Keeping shared-lib pure preserves the “shared artifact is not an SDK” boundary.
+
+**Consequences**:
+- Adds a small, governed configuration surface area across services.
+- Requires log hygiene (no endpoint/auth/payload logging) to avoid information disclosure risks.
 
 ### Decision: Startup resilience policy boundary (Schema Registry readiness)
 **Context**: Local compose startup can race Schema Registry readiness, causing services to crash before entering their Kafka processing loops.

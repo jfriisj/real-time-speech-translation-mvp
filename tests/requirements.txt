@@ -1,4 +1,8 @@
 ./shared/speech-lib
 confluent-kafka>=2.3.0
+huggingface-hub>=0.20.0
+librosa>=0.10.1
 numpy>=1.26.0
+pytest>=7.4.0
+soundfile>=0.12.1
 websockets>=12.0

@@ -19,6 +19,7 @@ class KafkaConsumerWrapper:
         group_id: str,
         topics: Iterable[str],
         config: Mapping[str, Any] | None = None,
+        on_assign: Any | None = None,
         schema_registry: SchemaRegistryClient | None = None,
     ) -> "KafkaConsumerWrapper":
         try:
@@ -38,7 +39,10 @@ class KafkaConsumerWrapper:
             consumer_config.update(dict(config))
 
         consumer = Consumer(consumer_config)
-        consumer.subscribe(list(topics))
+        if on_assign is None:
+            consumer.subscribe(list(topics))
+        else:
+            consumer.subscribe(list(topics), on_assign=on_assign)
         return cls(consumer=consumer, schema_registry=schema_registry)
 
     def poll(self, schema: Dict[str, Any], timeout: float = 1.0) -> Dict[str, Any] | None:

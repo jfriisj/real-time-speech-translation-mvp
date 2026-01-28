@@ -1,7 +1,7 @@
 # Plan 010: Text-to-Speech (TTS) Service (Kokoro ONNX)
 
 **ID**: 010 (Rev 35)
-**Target Release**: v0.5.0
+**Target Release**: v0.5.0 (Roadmap target; blocked by dependencies)
 **Epic**: Epic 1.7 (TTS)
 **Status**: Approved (Detailed Design) — **PAUSED per Roadmap sequencing**
 **Plan Owner**: Planner Agent
@@ -61,9 +61,9 @@
   - **Collision Risk (Accepted Debt)**: If a `correlation_id` is reused (retry/replay), the object will be overwritten ("Last Write Wins"). This is accepted for v0.5.0 MVP to keep logic simple.
   - Retention is managed by MinIO bucket configuration (lifecycle policy). Target: 24h retention.
 
-**OPEN QUESTION (Roadmap/Release Target Conflict)**: The roadmap currently places Epic 1.7 under **v0.5.0** while also requiring Epic 1.7 to wait for Epic 1.8, which is described under **v0.6.0**. Decision needed:
-- Move Epic 1.7 target release to v0.6.x (after v0.6.0), OR
-- Pull the minimal Epic 1.8 prerequisites into v0.5.x explicitly.
+**OPEN QUESTION (Roadmap/Release Target Conflict) [CLOSED]**: The roadmap enforces dependency order **Epic 1.9 → Epic 1.8 → Epic 1.7**. This plan remains roadmap-targeted to **v0.5.0**, but execution/release is blocked until Epic 1.8’s persistence/claim-check rollout is treated as delivered and stable enough for TTS E2E verification.
+
+**Status Note (2026-01-28)**: v0.5.0 has an active release tracker; Plan 010 is not on the current v0.5.0 “commit-ready” set while it remains paused and blocked by Epic 1.8.
 
 ## Contract Decisions
 

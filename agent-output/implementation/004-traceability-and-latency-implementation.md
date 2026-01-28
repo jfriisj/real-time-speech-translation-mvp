@@ -64,7 +64,7 @@ Addressed QA failures by separating warmup requests from measured runs, ensuring
 | `python tests/e2e/measure_latency.py --count 100 --output latency_summary.json` | ✅ Success | 100/100 successes; P50=1045ms, P90=1155.8ms, P99=1402.73ms |
 
 ## Code Quality / Governance Notes
-- QA/UAT prompt files at `~/.config/Code/User/prompts/qa.agent.md` and `~/.config/Code/User/prompts/uat.agent.md` were not accessible from the workspace tooling, so their checklists could not be applied directly.
+- QA/UAT prompt files at `.github/agents/qa.agent.md` and `.github/agents/uat.agent.md` were not accessible from the workspace tooling, so their checklists could not be applied directly.
 - TODO/FIXME scan hit large volumes inside `.venv/` and `.pytest_cache/`; no new TODO/FIXME markers were introduced in repo-owned source files for this change.
 
 ## Outstanding Items

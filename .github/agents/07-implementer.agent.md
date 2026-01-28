@@ -149,8 +149,8 @@ Best design meeting requirements without over-engineering. Pragmatic craft (good
 
 ## Workflow
 1. Read complete plan from `agent-output/planning/` + analysis (if exists) in full. These—not chat—are authoritative.
-2. Read evaluation criteria: `~/.config/Code/User/prompts/qa.agent.md` + `~/.config/Code/User/prompts/uat.agent.md` to understand evaluation.
-3. When addressing QA findings: Read complete QA report from `agent-output/qa/` + `~/.config/Code/User/prompts/qa.agent.md`. QA report—not chat—is authoritative.
+2. Read evaluation criteria: `.github/agents/qa.agent.md` + `.github/agents/uat.agent.md` to understand evaluation.
+3. When addressing QA findings: Read complete QA report from `agent-output/qa/` + `.github/agents/qa.agent.md`. QA report—not chat—is authoritative.
 4. Confirm Value Statement understanding. State how implementation delivers value.
 5. **Check for unresolved open questions** (see Core Responsibility #4). If found, halt and recommend resolution before proceeding.
 6. Confirm plan name, summarize change before coding.

@@ -17,6 +17,7 @@ Status: Committed for Release v0.5.0
 |------|---------------|---------|---------|
 | 2026-01-28 | QA | Validate uv-first workflow and QA evidence | UAT Complete — QA artifact documents uv-managed `.venv`, dependency installs, targeted startup/consumer tests, and full suite run that demonstrate the documented workflow meets the value statement. |
 | 2026-01-28 | DevOps | Record commitment | UAT artifact marked as committed for release v0.5.0 as part of Stage 1 processing. |
+| 2026-01-28 | UAT | Lifecycle cleanup | Document moved to closed/ per lifecycle rule (Status: Committed for Release v0.5.0). |
 
 ## Value Statement Under Test
 As an operator/contributor, I want a reproducible, dependency-complete test runner workflow that does not depend on host `pip` availability, so that QA and future CI can validate changes consistently and quickly. ([agent-output/planning/closed/029-testing-infrastructure-uv-first-plan.md](agent-output/planning/closed/029-testing-infrastructure-uv-first-plan.md))

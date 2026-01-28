@@ -1,6 +1,6 @@
 # Universal Speech Translation Platform - Product Roadmap
 
-**Last Updated**: 2026-01-27
+**Last Updated**: 2026-01-28
 **Roadmap Owner**: Roadmap Agent
 **Strategic Vision**: Deliver a scalable, event-driven platform for real-time speech translation that demonstrates low-latency orchestration of independent AI microservices. The focus is on architectural proof, measurable performance, and expandability through shared contracts, serving as a robust foundation for academic research and future commercial application.
 
@@ -20,6 +20,7 @@
 | 2026-01-28 10:00 | Added Epic 1.9 / Release v0.4.1 | Defined explicit work item for Service Startup Resilience following Translation Service fix (Plan 011). |
 | 2026-01-28 10:15 | Resequencing (Resilience First) | Paused Epics 1.7 (TTS) and 1.8 (Persistence) to prioritize Epic 1.9 (Resilience) and enforce strict dependency order (1.9 -> 1.8 -> 1.7). |
 | 2026-01-28 12:00 | Released v0.4.1 | Delivered Epic 1.9 (Service Startup Resilience); Added Epic 1.9.1 (Hardening) to Backlog for future deterministic verification. |
+| 2026-01-28 17:00 | Plan 029 retrospective closed | Recorded Plan 029 (uv-first test workflow) as committed for v0.5.0 and updated the release tracker accordingly. |
 
 ---
 
@@ -318,9 +319,10 @@ So that I can manually inspect the quality of each stage and ensure the Event Bu
 - [ ] Events updated to carry `payload_url` (optional) alongside or instead of inline bytes.
 
 ---
-1.9.1: Service Startup Resilience Hardening
+
+### Epic 1.9.1: Service Startup Resilience Hardening
 **Priority**: P2
-**Status**: Planned
+**Status**: In Progress
 
 **User Story**:
 As a System Architect,
@@ -334,6 +336,9 @@ So that I can certify the platform as "production-hardened" rather than just "fu
 **Dependencies**:
 - Epic 1.9 (Base resilience logic).
 - Automated CI environment capable of rapid restart loops.
+
+**Status Notes**:
+- 2026-01-28: Plan 029 retrospective closed; uv-first test workflow committed for v0.5.0.
 
 ---
 
@@ -349,3 +354,18 @@ So that I can certify the platform as "production-hardened" rather than just "fu
 
 ### Epic 1.5b: Ingress Gateway — Phase 2 (gRPC)
 *Add gRPC endpoint support to the Gateway service for high-performance inter-service or mobile client communication.*
+
+---
+
+## Active Release Tracker
+
+**Current Working Release**: v0.5.0
+
+| Plan ID | Title | UAT Status | Committed |
+|---------|-------|------------|----------|
+| 029 | Test Infrastructure Hardening (uv-first) | Approved | ✓ |
+| 028 | Kafka Consumer Group Recovery Hardening | UAT Complete | ✓ |
+
+**Release Status**: 2 of 2 plans committed
+**Ready for Release**: Yes
+**Blocking Items**: None

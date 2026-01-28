@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from typing import Any, List
+import sys
+import types
 
 from speech_lib.consumer import KafkaConsumerWrapper
 from speech_lib.events import BaseEvent
@@ -24,7 +26,7 @@ class _FakeConsumer:
         self._messages = list(messages)
         self.commit_args: tuple[Any, bool] | None = None
 
-    def poll(self, _timeout: float = 1.0) -> _FakeMessage | None:
+    def poll(self, timeout: float = 1.0) -> _FakeMessage | None:
         if self._messages:
             return self._messages.pop(0)
         return None
@@ -80,3 +82,28 @@ def test_commit_message_commits_sync() -> None:
 
     wrapper.commit_message("msg-1")
     assert consumer.commit_args == ("msg-1", False)
+
+
+def test_from_confluent_passes_on_assign(monkeypatch: Any) -> None:
+    class _StubConsumer:
+        def __init__(self, config: dict) -> None:
+            self.config = config
+            self.subscribed: tuple[list[str], Any] | None = None
+
+        def subscribe(self, topics: list[str], on_assign: Any = None) -> None:
+            self.subscribed = (topics, on_assign)
+
+    stub_module = types.SimpleNamespace(Consumer=_StubConsumer)
+    monkeypatch.setitem(sys.modules, "confluent_kafka", stub_module)
+
+    def _on_assign(_consumer: Any, _partitions: list[Any]) -> None:
+        return None
+
+    wrapper = KafkaConsumerWrapper.from_confluent(
+        "localhost:9092",
+        "group-1",
+        ["topic-1"],
+        on_assign=_on_assign,
+    )
+
+    assert wrapper.consumer.subscribed == (["topic-1"], _on_assign)

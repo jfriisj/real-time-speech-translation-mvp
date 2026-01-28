@@ -4,6 +4,7 @@ src/speech_lib/__init__.py
 src/speech_lib/claim_check.py
 src/speech_lib/constants.py
 src/speech_lib/consumer.py
+src/speech_lib/consumer_config.py
 src/speech_lib/correlation.py
 src/speech_lib/events.py
 src/speech_lib/producer.py
@@ -18,5 +19,6 @@ src/speech_lib.egg-info/requires.txt
 src/speech_lib.egg-info/top_level.txt
 tests/test_claim_check.py
 tests/test_consumer.py
+tests/test_consumer_config.py
 tests/test_events.py
 tests/test_serialization.py
